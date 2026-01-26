@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.products.repositories;
+package com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductCategory;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,14 +1,14 @@
-package com.finalproject.ecommerce.ecommerce.products.rest;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateCategoryCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateCategoryCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetAllCategoriesQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryQueryService;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.CategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.CreateCategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.UpdateCategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.transform.CategoryResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateCategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateCategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.CategoryResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

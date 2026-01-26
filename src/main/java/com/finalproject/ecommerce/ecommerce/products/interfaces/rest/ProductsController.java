@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.products.rest;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
@@ -6,12 +6,12 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetAll
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.CreateProductResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.ProductResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.UpdateProductResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.transform.CreateProductCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.products.rest.transform.ProductResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.products.rest.transform.UpdateProductCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.CreateProductCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.ProductResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.UpdateProductCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;

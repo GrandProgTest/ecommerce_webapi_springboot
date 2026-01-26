@@ -8,19 +8,20 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.M
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 @Entity
 public class Product extends AuditableAbstractAggregateRoot<Product> {
 
-    @Getter
     @Column(nullable = false)
     private String name;
 
-    @Getter
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -28,11 +29,9 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @AttributeOverride(name = "amount", column = @Column(name = "price", nullable = false, precision = 10, scale = 2))
     private Money price;
 
-    @Getter
     @Column(name = "stock", nullable = false)
     private Integer stock;
 
-    @Getter
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
@@ -40,7 +39,6 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @JoinColumn(name = "product_id")
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
-    @Getter
     @Column(name = "created_by_user_id", nullable = false)
     private Long createdByUserId;
 

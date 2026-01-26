@@ -1,7 +1,7 @@
-package com.finalproject.ecommerce.ecommerce.products.rest.transform;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.CreateProductResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
 
 public class CreateProductCommandFromResourceAssembler {
 

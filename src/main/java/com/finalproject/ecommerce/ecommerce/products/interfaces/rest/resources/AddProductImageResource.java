@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.products.rest.resources;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources;
 
 public record AddProductImageResource(
     String imageUrl,

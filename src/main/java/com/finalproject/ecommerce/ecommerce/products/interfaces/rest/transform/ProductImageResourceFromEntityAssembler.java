@@ -1,7 +1,7 @@
-package com.finalproject.ecommerce.ecommerce.products.rest.transform;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductImage;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.ProductImageResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductImageResource;
 
 public class ProductImageResourceFromEntityAssembler {
 

@@ -1,7 +1,7 @@
-package com.finalproject.ecommerce.ecommerce.products.rest.transform;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.UpdateProductResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
 
 public class UpdateProductCommandFromResourceAssembler {
 

@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.products.rest.resources;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources;
 
 import java.math.BigDecimal;
 import java.util.List;

@@ -6,7 +6,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Creat
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateCategoryCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryCommandService;
-import com.finalproject.ecommerce.ecommerce.products.repositories.CategoryRepository;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

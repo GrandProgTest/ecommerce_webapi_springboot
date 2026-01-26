@@ -3,7 +3,7 @@ package com.finalproject.ecommerce.ecommerce.products.application.internal.query
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetAllCategoriesQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryQueryService;
-import com.finalproject.ecommerce.ecommerce.products.repositories.CategoryRepository;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -5,11 +5,10 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 
-
+@Getter
 @Entity
 @Table(name = "product_categories",
        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "category_id"}))
-@Getter
 public class ProductCategory {
 
     @Id

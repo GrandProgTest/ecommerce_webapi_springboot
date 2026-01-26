@@ -1,11 +1,11 @@
-package com.finalproject.ecommerce.ecommerce.products.rest.transform;
+package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateCategoryCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateCategoryCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.CategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.CreateCategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.UpdateCategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateCategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateCategoryResource;
 
 public class CategoryResourceFromEntityAssembler {
 

@@ -3,7 +3,7 @@ package com.finalproject.ecommerce.ecommerce.products.application.internal.query
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
-import com.finalproject.ecommerce.ecommerce.products.repositories.ProductRepository;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -5,10 +5,10 @@ import lombok.Getter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
 @Table(name = "product_like")
 @IdClass(ProductLike.ProductLikeId.class)
-@Getter
 public class ProductLike {
 
     @Id

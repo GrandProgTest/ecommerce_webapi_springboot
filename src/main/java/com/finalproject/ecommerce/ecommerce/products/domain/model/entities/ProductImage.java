@@ -5,9 +5,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import java.time.LocalDateTime;
 
+@Getter
 @Entity
 @Table(name = "product_image")
-@Getter
 public class ProductImage {
 
     @Id

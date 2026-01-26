@@ -9,9 +9,9 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Creat
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
-import com.finalproject.ecommerce.ecommerce.products.repositories.CategoryRepository;
-import com.finalproject.ecommerce.ecommerce.products.repositories.ProductCategoryRepository;
-import com.finalproject.ecommerce.ecommerce.products.repositories.ProductRepository;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.CategoryRepository;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductCategoryRepository;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
