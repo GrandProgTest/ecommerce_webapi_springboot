@@ -6,7 +6,7 @@ import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.A
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
-import com.finalproject.ecommerce.ecommerce.products.rest.resources.*;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.*;
 
 public class ProductResourceFromEntityAssembler {
 
