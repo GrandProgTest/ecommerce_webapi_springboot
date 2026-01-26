@@ -1,5 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.commandservices;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.CategoryNotFoundException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.DuplicateCategoryAssignmentException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
@@ -40,7 +43,6 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         this.productCategoryRepository = productCategoryRepository;
     }
 
-    // inherit javadoc
     @Override
     public Long handle(CreateProductCommand command) {
         var product = new Product(command);
@@ -52,12 +54,11 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         return product.getId();
     }
 
-    // inherit javadoc
     @Override
     public Optional<Product> handle(UpdateProductCommand command) {
         var result = productRepository.findById(command.productId());
         if (result.isEmpty())
-            throw new IllegalArgumentException("Product with id %s not found".formatted(command.productId()));
+            throw new ProductNotFoundException(command.productId());
         var productToUpdate = result.get();
         try {
             productToUpdate.updateProductInfo(
@@ -73,11 +74,10 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
     }
 
-    // inherit javadoc
     @Override
     public void handle(DeleteProductCommand command) {
         if (!productRepository.existsById(command.productId())) {
-            throw new IllegalArgumentException("Product with id %s not found".formatted(command.productId()));
+            throw new ProductNotFoundException(command.productId());
         }
         try {
             productRepository.deleteById(command.productId());
@@ -86,22 +86,18 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
     }
 
-    // inherit javadoc
     @Override
     public Optional<Product> handle(AssignCategoryToProductCommand command) {
-        // Validate that product exists
         if (!productRepository.existsById(command.productId())) {
-            throw new IllegalArgumentException("Product with id %s not found".formatted(command.productId()));
+            throw new ProductNotFoundException(command.productId());
         }
 
-        // Validate that category exists
         if (!categoryRepository.existsById(command.categoryId())) {
-            throw new IllegalArgumentException("Category with id %s not found".formatted(command.categoryId()));
+            throw new CategoryNotFoundException(command.categoryId());
         }
 
-        // Check for duplicate assignment
         if (productCategoryRepository.existsByProductIdAndCategoryId(command.productId(), command.categoryId())) {
-            throw new IllegalArgumentException("Category with id %s is already assigned to product with id %s".formatted(command.categoryId(), command.productId()));
+            throw new DuplicateCategoryAssignmentException(command.productId(), command.categoryId());
         }
 
         try {
