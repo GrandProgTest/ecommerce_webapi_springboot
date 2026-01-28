@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,10 +38,12 @@ public class CategoriesController {
 
 
     @PostMapping
-    @Operation(summary = "Create a new category", description = "Create a new category")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Create a new category", description = "Create a new category. Only ROLE_MANAGER can create categories.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Category created"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Category not found")})
     public ResponseEntity<CategoryResource> createCategory(@RequestBody CreateCategoryResource resource) {
         var createCategoryCommand = new CreateCategoryCommand(resource.name());
@@ -54,7 +57,7 @@ public class CategoriesController {
     }
 
     @GetMapping("/{categoryId}")
-    @Operation(summary = "Get category by id", description = "Get category by id")
+    @Operation(summary = "Get category by id", description = "Get category by id. Public endpoint - No authentication required.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category found"),
             @ApiResponse(responseCode = "404", description = "Category not found")})
@@ -67,13 +70,11 @@ public class CategoriesController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all categories", description = "Get all categories")
+    @Operation(summary = "Get all categories", description = "Get all categories. Public endpoint - No authentication required.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Categories found"),
-            @ApiResponse(responseCode = "404", description = "Categories not found")})
+            @ApiResponse(responseCode = "200", description = "Categories retrieved successfully (may be empty list)")})
     public ResponseEntity<List<CategoryResource>> getAllCategories() {
         var categories = categoryQueryService.handle(new GetAllCategoriesQuery());
-        if (categories.isEmpty()) return ResponseEntity.notFound().build();
         var categoryResources = categories.stream()
                 .map(CategoryResourceFromEntityAssembler::toResourceFromEntity)
                 .toList();
@@ -81,9 +82,11 @@ public class CategoriesController {
     }
 
     @PutMapping("/{categoryId}")
-    @Operation(summary = "Update category", description = "Update category")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Update category", description = "Update category. Only ROLE_MANAGER can update categories.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category updated"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Category not found")})
     public ResponseEntity<CategoryResource> updateCategory(@PathVariable Long categoryId, @RequestBody UpdateCategoryResource resource) {
         var updateCategoryCommand = new UpdateCategoryCommand(categoryId, resource.name());

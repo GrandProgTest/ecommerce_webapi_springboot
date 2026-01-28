@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,10 +41,12 @@ public class ProductsController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a new product", description = "Create a new product")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Create a new product", description = "Create a new product. Only users with ROLE_MANAGER can create products.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Product created"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductResource> createProduct(@RequestBody CreateProductResource resource) {
         var createProductCommand = CreateProductCommandFromResourceAssembler.toCommandFromResource(resource);
@@ -59,9 +62,11 @@ public class ProductsController {
 
 
     @PutMapping("/{productId}")
-    @Operation(summary = "Update product", description = "Update product")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Update product", description = "Update product. Only ROLE_MANAGER can update products.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product updated"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductResource> updateProduct(@PathVariable Long productId, @RequestBody UpdateProductResource resource) {
         var updateProductCommand = UpdateProductCommandFromResourceAssembler.toCommandFromResource(productId, resource);
@@ -74,9 +79,11 @@ public class ProductsController {
 
 
     @DeleteMapping("/{productId}")
-    @Operation(summary = "Delete product", description = "Delete product")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Delete product", description = "Delete product. Only ROLE_MANAGER can delete products.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product deleted"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<?> deleteProduct(@PathVariable Long productId) {
         var deleteProductCommand = new DeleteProductCommand(productId);
@@ -85,9 +92,11 @@ public class ProductsController {
     }
 
     @PostMapping("/{productId}/category")
-    @Operation(summary = "Assign category to product", description = "Assign an existing category to a product")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Assign category to product", description = "Assign an existing category to a product. Only ROLE_MANAGER can assign categories.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Category assigned to product"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product or category not found"),
             @ApiResponse(responseCode = "400", description = "Category already assigned to product")})
     public ResponseEntity<ProductResource> assignCategoryToProduct(
@@ -102,7 +111,7 @@ public class ProductsController {
     }
 
     @GetMapping("/{productId}")
-    @Operation(summary = "Get product by id", description = "Get product by id")
+    @Operation(summary = "Get product by id", description = "Get product details by id. Public endpoint - No authentication required.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product found"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
@@ -116,13 +125,11 @@ public class ProductsController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all products", description = "Get all products")
+    @Operation(summary = "Get all products", description = "Get all products. Public endpoint - No authentication required.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Products found"),
-            @ApiResponse(responseCode = "404", description = "Products not found")})
+            @ApiResponse(responseCode = "200", description = "Products retrieved successfully (may be empty list)")})
     public ResponseEntity<List<ProductResource>> getAllProducts() {
         var products = productQueryService.handle(new GetAllProductsQuery());
-        if (products.isEmpty()) return ResponseEntity.notFound().build();
         var productResources = products.stream()
                 .map(ProductResourceFromEntityAssembler::toResourceFromEntity)
                 .toList();

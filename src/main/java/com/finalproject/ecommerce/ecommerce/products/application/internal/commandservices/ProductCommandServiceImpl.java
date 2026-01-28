@@ -16,14 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-/**
- * Implementation of the ProductCommandService interface.
- * <p>This class is responsible for handling the commands related to the Product aggregate. It requires a ProductRepository, CategoryRepository, and ProductCategoryRepository.</p>
- * @see ProductCommandService
- * @see ProductRepository
- * @see CategoryRepository
- * @see ProductCategoryRepository
- */
+
 @Service
 public class ProductCommandServiceImpl implements ProductCommandService {
 
@@ -31,12 +24,6 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final CategoryRepository categoryRepository;
     private final ProductCategoryRepository productCategoryRepository;
 
-    /**
-     * Constructor of the class.
-     * @param productRepository the product repository to be used by the class.
-     * @param categoryRepository the category repository to be used by the class.
-     * @param productCategoryRepository the product category repository to be used by the class.
-     */
     public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
@@ -108,6 +95,23 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             });
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while assigning category to product: %s".formatted(e.getMessage()));
+        }
+    }
+
+    public Optional<Product> decreaseProductStock(Long productId, Integer quantity) {
+        var result = productRepository.findById(productId);
+        if (result.isEmpty())
+            throw new ProductNotFoundException(productId);
+        var product = result.get();
+        if (product.getStock() < quantity) {
+            throw new IllegalArgumentException("Insufficient stock for product with id %d".formatted(productId));
+        }
+        try {
+            product.setStock(product.getStock() - quantity);
+            var updatedProduct = productRepository.save(product);
+            return Optional.of(updatedProduct);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error while decreasing product stock: %s".formatted(e.getMessage()));
         }
     }
 }

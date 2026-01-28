@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
@@ -33,6 +34,8 @@ public class WebSecurityConfiguration {
     private final BCryptHashingService hashingService;
 
     private final AuthenticationEntryPoint unauthorizedRequestHandler;
+
+    private final AccessDeniedHandler forbiddenRequestHandler;
 
     @Bean
     public BearerAuthorizationRequestFilter authorizationRequestFilter() {
@@ -69,16 +72,23 @@ public class WebSecurityConfiguration {
             return cors;
         }));
         http.csrf(csrfConfigurer -> csrfConfigurer.disable())
-                .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(unauthorizedRequestHandler))
+                .exceptionHandling(exceptionHandling -> {
+                    exceptionHandling.authenticationEntryPoint(unauthorizedRequestHandler);
+                    exceptionHandling.accessDeniedHandler(forbiddenRequestHandler);
+                })
                 .sessionManagement( customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers(
-                                "/api/v1/users/**",
+                                "/api/v1/users/sign-in",
+                                "/api/v1/users/sign-up",
+                                "/graphiql/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/swagger-resources/**",
                                 "/webjars/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .anyRequest().authenticated());
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authorizationRequestFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -87,10 +97,16 @@ public class WebSecurityConfiguration {
     }
 
 
-    public WebSecurityConfiguration(@Qualifier("defaultUserDetailsService") UserDetailsService userDetailsService, BearerTokenService tokenService, BCryptHashingService hashingService, AuthenticationEntryPoint authenticationEntryPoint) {
+    public WebSecurityConfiguration(
+            @Qualifier("defaultUserDetailsService") UserDetailsService userDetailsService,
+            BearerTokenService tokenService,
+            BCryptHashingService hashingService,
+            AuthenticationEntryPoint authenticationEntryPoint,
+            AccessDeniedHandler accessDeniedHandler) {
         this.userDetailsService = userDetailsService;
         this.tokenService = tokenService;
         this.hashingService = hashingService;
         this.unauthorizedRequestHandler = authenticationEntryPoint;
+        this.forbiddenRequestHandler = accessDeniedHandler;
     }
 }
