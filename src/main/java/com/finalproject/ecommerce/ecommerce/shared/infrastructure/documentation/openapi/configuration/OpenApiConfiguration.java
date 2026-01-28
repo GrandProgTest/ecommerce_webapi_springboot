@@ -23,7 +23,7 @@ public class OpenApiConfiguration {
                         .license(new License().name("Apache 2.0")
                                 .url("https://springdoc.org")));
 
-        /*final String securitySchemeName = "bearerAuth";
+        final String securitySchemeName = "bearerAuth";
 
         openApi.addSecurityItem(new SecurityRequirement()
                         .addList(securitySchemeName))
@@ -34,7 +34,6 @@ public class OpenApiConfiguration {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")));
-*/
         return openApi;
     }
 }

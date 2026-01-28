@@ -1,6 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.iam.domain.model.commands;
 
-import com.finalproject.ecommerce.ecommerce.iam.domain.model.valueobjects.Roles;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Role;
 
-public record SignUpCommand(String username, String email, String password, Roles role) {
+public record SignUpCommand(String username, String email, String password, Role role) {
 }

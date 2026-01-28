@@ -1,5 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.iam.application.internal.commandservices;
 
+import com.finalproject.ecommerce.ecommerce.iam.application.internal.outboundservices.hashing.HashingService;
+import com.finalproject.ecommerce.ecommerce.iam.application.internal.outboundservices.tokens.TokenService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.DeleteUserCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignInCommand;
@@ -8,79 +10,102 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.UpdateUser
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
 @Service
 public class UserCommandServiceImpl implements UserCommandService {
+
     private final UserRepository userRepository;
+    private final HashingService hashingService;
+    private final TokenService tokenService;
     private final RoleRepository roleRepository;
 
-    public UserCommandServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
+    public UserCommandServiceImpl(UserRepository userRepository, HashingService hashingService, TokenService tokenService, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.hashingService = hashingService;
+        this.tokenService = tokenService;
         this.roleRepository = roleRepository;
     }
 
+
     @Override
-    public Long handle(SignUpCommand command) {
+    public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
+        var user = userRepository.findByUsername(command.username());
+        if (user.isEmpty())
+            throw new RuntimeException("User not found");
+        if (!hashingService.matches(command.password(), user.get().getPassword()))
+            throw new RuntimeException("Invalid password");
+        var token = tokenService.generateToken(user.get().getUsername());
+        return Optional.of(ImmutablePair.of(user.get(), token));
+    }
+
+
+    @Override
+    public Optional<User> handle(SignUpCommand command) {
         if (userRepository.existsByUsername(command.username()))
-            throw new IllegalArgumentException("User with username %s already exists".formatted(command.username()));
+            throw new RuntimeException("Username already exists");
 
-        var role = roleRepository.findByName(command.role())
-                .orElseThrow(() -> new IllegalArgumentException("Role %s not found".formatted(command.role())));
+        if (userRepository.existsByEmail(command.email()))
+            throw new RuntimeException("Email already exists");
 
-        var user = new User(command.username(), command.password(), role);
+        var role = roleRepository.findByName(command.role().getName())
+                .orElseThrow(() -> new RuntimeException("Role name not found"));
 
-        try {
-            userRepository.save(user);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error saving user: %s".formatted(e.getMessage()));
-        }
-        return user.getId();
+        var user = new User(
+            command.username(),
+            command.email(),
+            hashingService.encode(command.password()),
+            role
+        );
+
+        userRepository.save(user);
+        return userRepository.findByUsername(command.username());
     }
-
-    @Override
-    public Optional<User> handle(SignInCommand command) {
-        var user = userRepository.findByUsername(command.email())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
-
-        if (!user.getPassword().equals(command.password()))
-            throw new IllegalArgumentException("Invalid credentials");
-
-        return Optional.of(user);
-    }
-
     @Override
     public Optional<User> handle(UpdateUserCommand command) {
-        var result = userRepository.findById(command.userId());
-        if (result.isEmpty())
-            throw new IllegalArgumentException("User with id %s not found".formatted(command.userId()));
+        var user = userRepository.findById(command.userId())
+                .orElseThrow(() ->
+                        new RuntimeException("User with id %s not found".formatted(command.userId()))
+                );
 
         if (userRepository.existsByUsernameAndIdIsNot(command.username(), command.userId()))
-            throw new IllegalArgumentException("User with username %s already exists".formatted(command.username()));
+            throw new RuntimeException("User with username %s already exists".formatted(command.username()));
 
-        var userToUpdate = result.get();
-        userToUpdate.setUsername(command.username());
-        userToUpdate.setPassword(command.password());
+        if (userRepository.existsByEmailAndIdIsNot(command.email(), command.userId()))
+            throw new RuntimeException("User with email %s already exists".formatted(command.email()));
+
+        var roleName = command.role().getName();
+        var role = roleRepository.findByName(roleName)
+                .orElseThrow(() ->
+                        new RuntimeException("Role with name %s not found".formatted(roleName))
+                );
+
+        user.setUsername(command.username());
+        user.setEmail(command.email());
+        user.setPassword(hashingService.encode(command.password()));
+        user.setRole(role); // 👈 update role here
 
         try {
-            var updatedUser = userRepository.save(userToUpdate);
-            return Optional.of(updatedUser);
+            return Optional.of(userRepository.save(user));
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error while updating user: %s".formatted(e.getMessage()));
+            throw new RuntimeException("Error while updating user: %s".formatted(e.getMessage()));
         }
     }
+
+
 
     @Override
     public void handle(DeleteUserCommand command) {
         if (!userRepository.existsById(command.userId()))
-            throw new IllegalArgumentException("User with id %s not found".formatted(command.userId()));
+            throw new RuntimeException("User with id %s not found".formatted(command.userId()));
 
         try {
             userRepository.deleteById(command.userId());
         } catch (Exception e) {
-            throw new IllegalArgumentException("Error while deleting user: %s".formatted(e.getMessage()));
+            throw new RuntimeException("Error while deleting user: %s".formatted(e.getMessage()));
         }
     }
 }

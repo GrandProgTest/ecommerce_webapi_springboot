@@ -3,6 +3,7 @@ package com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Role;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -20,6 +21,12 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     private String username;
 
     @NotBlank
+    @Email
+    @Size(max = 100)
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @NotBlank
     @Size(max = 120)
     @Column(nullable = false)
     private String password;
@@ -30,8 +37,9 @@ public class User extends AuditableAbstractAggregateRoot<User> {
 
     protected User() {}
 
-    public User(String username, String password, Role role) {
+    public User(String username, String email, String password, Role role) {
         this.username = username;
+        this.email = email;
         this.password = password;
         this.role = role;
     }

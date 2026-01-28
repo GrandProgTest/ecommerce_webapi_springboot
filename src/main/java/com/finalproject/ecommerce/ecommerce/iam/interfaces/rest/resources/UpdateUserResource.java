@@ -1,4 +1,4 @@
 package com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources;
 
-public record UpdateUserResource(String username, String password) {
+public record UpdateUserResource(String username, String email, String password, String role) {
 }
