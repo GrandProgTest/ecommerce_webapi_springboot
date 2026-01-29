@@ -81,6 +81,8 @@ public class WebSecurityConfiguration {
                         .requestMatchers(
                                 "/api/v1/auth/sign-in",
                                 "/api/v1/auth/sign-up",
+                                "/api/v1/auth/refresh",
+                                "/api/v1/auth/logout",
                                 "/graphiql/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",

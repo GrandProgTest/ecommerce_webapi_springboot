@@ -5,7 +5,13 @@ import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.Authen
 
 public class AuthenticatedUserResourceFromEntityAssembler {
 
-    public static AuthenticatedUserResource toResourceFromEntity(User user, String token) {
-        return new AuthenticatedUserResource(user.getId(), user.getUsername(),user.getEmail(), token);
+    public static AuthenticatedUserResource toResourceFromEntity(User user, String accessToken, String refreshToken) {
+        return new AuthenticatedUserResource(
+            user.getId(),
+            user.getUsername(),
+            user.getEmail(),
+            accessToken,
+            refreshToken
+        );
     }
 }

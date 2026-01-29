@@ -7,6 +7,7 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.DeleteUser
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignInCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignUpCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.UpdateUserCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
@@ -22,24 +23,40 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final HashingService hashingService;
     private final TokenService tokenService;
     private final RoleRepository roleRepository;
+    private final RefreshTokenCommandService refreshTokenCommandService;
 
-    public UserCommandServiceImpl(UserRepository userRepository, HashingService hashingService, TokenService tokenService, RoleRepository roleRepository) {
+    public UserCommandServiceImpl(
+            UserRepository userRepository,
+            HashingService hashingService,
+            TokenService tokenService,
+            RoleRepository roleRepository,
+            RefreshTokenCommandService refreshTokenCommandService) {
         this.userRepository = userRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
         this.roleRepository = roleRepository;
+        this.refreshTokenCommandService = refreshTokenCommandService;
     }
 
 
     @Override
-    public Optional<ImmutablePair<User, String>> handle(SignInCommand command) {
+    public Optional<ImmutablePair<ImmutablePair<User, String>, String>> handle(SignInCommand command) {
         var user = userRepository.findByUsername(command.username());
         if (user.isEmpty())
             throw new RuntimeException("User not found");
         if (!hashingService.matches(command.password(), user.get().getPassword()))
             throw new RuntimeException("Invalid password");
-        var token = tokenService.generateToken(user.get().getUsername());
-        return Optional.of(ImmutablePair.of(user.get(), token));
+
+        var accessToken = tokenService.generateToken(user.get().getUsername());
+
+        var refreshToken = refreshTokenCommandService.createRefreshToken(user.get());
+
+        return Optional.of(
+            ImmutablePair.of(
+                ImmutablePair.of(user.get(), accessToken),
+                refreshToken
+            )
+        );
     }
 
 
@@ -86,7 +103,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         user.setUsername(command.username());
         user.setEmail(command.email());
         user.setPassword(hashingService.encode(command.password()));
-        user.setRole(role); // 👈 update role here
+        user.setRole(role);
 
         try {
             return Optional.of(userRepository.save(user));

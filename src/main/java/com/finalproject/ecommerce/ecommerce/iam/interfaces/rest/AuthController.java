@@ -1,15 +1,21 @@
 package com.finalproject.ecommerce.ecommerce.iam.interfaces.rest;
 
+import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.RevokeRefreshTokenCommand;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.AuthenticatedUserResource;
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.RefreshTokenResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.SignInResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.SignUpResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.UserResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.AuthenticatedUserResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.RefreshTokenCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.SignInCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.SignUpCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,14 +32,22 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserCommandService userCommandService;
+    private final RefreshTokenCommandService refreshTokenCommandService;
 
-    public AuthController(UserCommandService userCommandService) {
+    public AuthController(
+            UserCommandService userCommandService,
+            RefreshTokenCommandService refreshTokenCommandService) {
         this.userCommandService = userCommandService;
+        this.refreshTokenCommandService = refreshTokenCommandService;
     }
 
-
     @PostMapping("/sign-in")
-    @Operation(summary = "Sign in", description = "Authenticate user and return JWT token")
+    @Operation(summary = "Sign in", description = "Authenticate user and return access + refresh tokens")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Successfully authenticated"),
+        @ApiResponse(responseCode = "404", description = "User not found"),
+        @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
     public ResponseEntity<AuthenticatedUserResource> signIn(@RequestBody SignInResource resource) {
         var signInCommand = SignInCommandFromResourceAssembler.toCommandFromResource(resource);
         var result = userCommandService.handle(signInCommand);
@@ -42,16 +56,23 @@ public class AuthController {
             return ResponseEntity.notFound().build();
         }
 
-        var user = result.get().getLeft();
-        var token = result.get().getRight();
-        var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler.toResourceFromEntity(user, token);
+        var userAndAccessToken = result.get().getLeft();
+        var user = userAndAccessToken.getLeft();
+        var accessToken = userAndAccessToken.getRight();
+        var refreshToken = result.get().getRight();
+
+        var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler
+            .toResourceFromEntity(user, accessToken, refreshToken);
 
         return ResponseEntity.ok(authenticatedUserResource);
     }
 
-
     @PostMapping("/sign-up")
     @Operation(summary = "Sign up", description = "Register a new user")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "User created successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid input or user already exists")
+    })
     public ResponseEntity<UserResource> signUp(@RequestBody SignUpResource resource) {
         var signUpCommand = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
         var result = userCommandService.handle(signUpCommand);
@@ -63,4 +84,49 @@ public class AuthController {
         var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(result.get());
         return ResponseEntity.status(HttpStatus.CREATED).body(userResource);
     }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh token", description = "Get new access token using refresh token (with rotation)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
+        @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token"),
+        @ApiResponse(responseCode = "403", description = "Token reuse detected - security breach")
+    })
+    public ResponseEntity<AuthenticatedUserResource> refresh(@RequestBody RefreshTokenResource resource) {
+        try {
+            var refreshCommand = RefreshTokenCommandFromResourceAssembler.toCommandFromResource(resource);
+            var result = refreshTokenCommandService.handle(refreshCommand);
+
+            if (result.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            var userAndAccessToken = result.get().getLeft();
+            var user = userAndAccessToken.getLeft();
+            var newAccessToken = userAndAccessToken.getRight();
+            var newRefreshToken = result.get().getRight();
+
+            var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler
+                .toResourceFromEntity(user, newAccessToken, newRefreshToken);
+
+            return ResponseEntity.ok(authenticatedUserResource);
+
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout", description = "Revoke refresh token (logout from current device)")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Logged out successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid request")
+    })
+    public ResponseEntity<String> logout(@RequestBody RefreshTokenResource resource) {
+        var revokeCommand = new RevokeRefreshTokenCommand(resource.refreshToken());
+        refreshTokenCommandService.handle(revokeCommand);
+        return ResponseEntity.ok("Logged out successfully");
+    }
 }
+

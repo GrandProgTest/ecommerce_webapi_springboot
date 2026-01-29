@@ -35,7 +35,6 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     public static UserDetailsImpl build(User user) {
-        // A user has only ONE role
         var authority = new SimpleGrantedAuthority(user.getRole().getStringName());
         return new UserDetailsImpl(
                 user.getUsername(),
