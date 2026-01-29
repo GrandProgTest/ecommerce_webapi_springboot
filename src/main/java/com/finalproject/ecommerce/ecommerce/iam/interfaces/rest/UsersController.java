@@ -5,14 +5,8 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetAllUsers
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetUserByIdQuery;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserQueryService;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.AuthenticatedUserResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.SignInResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.SignUpResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.UpdateUserResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.UserResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.AuthenticatedUserResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.SignInCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.SignUpCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.UpdateUserCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,37 +33,6 @@ public class UsersController {
         this.userQueryService = userQueryService;
     }
 
-
-    @PostMapping("/sign-up")
-    @Operation(summary = "Sign up a new user", description = "Create a new user account")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input"),
-            @ApiResponse(responseCode = "404", description = "User not found")})
-    public ResponseEntity<UserResource> signUp(@RequestBody SignUpResource resource) {
-        var signUpCommand = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
-        var user = userCommandService.handle(signUpCommand);
-        if (user.isEmpty()) return ResponseEntity.badRequest().build();
-        var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user.get());
-        return new ResponseEntity<>(userResource, HttpStatus.CREATED);
-    }
-
-
-    @PostMapping("/sign-in")
-    @Operation(summary = "Sign in a user", description = "Authenticate a user and get a token")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User authenticated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid credentials")})
-    public ResponseEntity<AuthenticatedUserResource> signIn(@RequestBody SignInResource resource) {
-        var signInCommand = SignInCommandFromResourceAssembler.toCommandFromResource(resource);
-        var userWithToken = userCommandService.handle(signInCommand);
-        if (userWithToken.isEmpty()) return ResponseEntity.badRequest().build();
-        var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler.toResourceFromEntity(
-                userWithToken.get().getLeft(),
-                userWithToken.get().getRight()
-        );
-        return ResponseEntity.ok(authenticatedUserResource);
-    }
 
 
     @GetMapping
