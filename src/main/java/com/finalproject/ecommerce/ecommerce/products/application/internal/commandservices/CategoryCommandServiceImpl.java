@@ -17,7 +17,6 @@ public class CategoryCommandServiceImpl implements CategoryCommandService {
 
     private final CategoryRepository categoryRepository;
 
-
     public CategoryCommandServiceImpl(CategoryRepository categoryRepository) {
         this.categoryRepository = categoryRepository;
     }

@@ -6,6 +6,7 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.RefreshTokenCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.RevokeAllUserRefreshTokensCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.RevokeRefreshTokenCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignOutCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RefreshTokenRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
@@ -25,6 +26,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Optional;
 
+
+//Later implementation HttpOnlY Cookie
 @Service
 public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandService {
 
@@ -154,10 +157,25 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
         revokeAllUserTokens(command.userId());
     }
 
+    @Override
+    @Transactional
+    public void handle(SignOutCommand command) {
+        LOGGER.info("Sign-out requested for user: {}", command.username());
+
+        Optional<User> userOpt = userRepository.findByUsername(command.username());
+        if (userOpt.isEmpty()) {
+            LOGGER.warn("User not found for sign-out: {}", command.username());
+            return;
+        }
+
+        User user = userOpt.get();
+        revokeAllUserTokens(user.getId());
+
+        LOGGER.info("Sign-out completed for user: {}", command.username());
+    }
+
     private void revokeAllUserTokens(Long userId) {
-        var tokens = refreshTokenRepository.findByUserIdAndRevokedAndUsedAndExpiresAtAfter(
-            userId, false, false, Instant.now()
-        );
+        var tokens = refreshTokenRepository.findByUserIdAndRevoked(userId, false);
         tokens.forEach(RefreshToken::revoke);
         refreshTokenRepository.saveAll(tokens);
         LOGGER.info("Revoked {} tokens for user ID: {}", tokens.size(), userId);

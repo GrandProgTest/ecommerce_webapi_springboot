@@ -20,7 +20,9 @@ public class RefreshTokenCleanupService {
         this.refreshTokenRepository = refreshTokenRepository;
     }
 
-    @Scheduled(cron = "0 0 3 * * *")
+    // Reconsider cleanup service
+
+    @Scheduled(cron = "0 0 0 0 * ?")
     @Transactional
     public void cleanupExpiredTokens() {
         LOGGER.info("Starting cleanup of expired refresh tokens");

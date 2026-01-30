@@ -3,6 +3,7 @@ package com.finalproject.ecommerce.ecommerce.iam.interfaces.rest;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.RevokeRefreshTokenCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignOutCommand;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.AuthenticatedUserResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.RefreshTokenResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.SignInResource;
@@ -20,6 +21,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -117,15 +120,24 @@ public class AuthController {
     }
 
 
-    @PostMapping("/logout")
-    @Operation(summary = "Logout", description = "Revoke refresh token (logout from current device)")
+    @PostMapping("/sign-out")
+    @Operation(summary = "Sign-Out", description = "Revoke all refresh tokens for authenticated user (logout)")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Logged out successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid request")
+        @ApiResponse(responseCode = "401", description = "Not authenticated")
     })
-    public ResponseEntity<String> logout(@RequestBody RefreshTokenResource resource) {
-        var revokeCommand = new RevokeRefreshTokenCommand(resource.refreshToken());
-        refreshTokenCommandService.handle(revokeCommand);
+    public ResponseEntity<String> signOut() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() ||
+            authentication.getPrincipal().equals("anonymousUser")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
+        }
+
+        String username = authentication.getName();
+        var signOutCommand = new SignOutCommand(username);
+        refreshTokenCommandService.handle(signOutCommand);
+
         return ResponseEntity.ok("Logged out successfully");
     }
 }
