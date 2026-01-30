@@ -2,7 +2,6 @@ package com.finalproject.ecommerce.ecommerce.iam.interfaces.rest;
 
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
-import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.RevokeRefreshTokenCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignOutCommand;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.AuthenticatedUserResource;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.RefreshTokenResource;
