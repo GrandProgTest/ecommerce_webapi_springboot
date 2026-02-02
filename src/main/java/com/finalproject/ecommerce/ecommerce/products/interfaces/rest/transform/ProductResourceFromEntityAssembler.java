@@ -22,33 +22,4 @@ public class ProductResourceFromEntityAssembler {
             entity.getCreatedByUserId()
         );
     }
-
-    public static CreateProductCommand toCommandFromResource(CreateProductResource resource, Long userId) {
-        return new CreateProductCommand(
-            resource.name(),
-            resource.description(),
-            resource.price(),
-            resource.stock(),
-            resource.categoryIds(),
-            userId
-        );
-    }
-
-    public static UpdateProductCommand toCommandFromResource(Long productId, UpdateProductResource resource) {
-        return new UpdateProductCommand(
-            productId,
-            resource.name(),
-            resource.description(),
-            resource.price(),
-            resource.stock()
-        );
-    }
-
-    public static AddProductImageCommand toCommandFromResource(Long productId, AddProductImageResource resource) {
-        return new AddProductImageCommand(
-            productId,
-            resource.imageUrl(),
-            resource.isPrimary()
-        );
-    }
 }

@@ -15,6 +15,7 @@ import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.transfor
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public class ProductGraphQLController {
     }
 
     @MutationMapping
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public ProductResource createProduct(@Argument CreateProductInput input) {
         var createProductCommand = CreateProductCommandFromInputAssembler.toCommandFromInput(input);
         var productId = productCommandService.handle(createProductCommand);
@@ -46,6 +48,7 @@ public class ProductGraphQLController {
     }
 
     @MutationMapping
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public ProductResource updateProduct(@Argument Long id, @Argument UpdateProductInput input) {
         var updateProductCommand = UpdateProductCommandFromInputAssembler.toCommandFromInput(id, input);
         var updatedProduct = productCommandService.handle(updateProductCommand);
@@ -56,6 +59,7 @@ public class ProductGraphQLController {
     }
 
     @MutationMapping
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public String deleteProduct(@Argument Long id) {
         var deleteProductCommand = new DeleteProductCommand(id);
         productCommandService.handle(deleteProductCommand);
@@ -63,6 +67,7 @@ public class ProductGraphQLController {
     }
 
     @MutationMapping
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
     public ProductResource assignCategoryToProduct(@Argument Long productId, @Argument Long categoryId) {
         var assignCategoryCommand = new AssignCategoryToProductCommand(productId, categoryId);
         var updatedProduct = productCommandService.handle(assignCategoryCommand);
@@ -73,6 +78,7 @@ public class ProductGraphQLController {
     }
 
     @QueryMapping
+    @PreAuthorize("permitAll()")
     public ProductResource getProductById(@Argument Long id) {
         var getProductByIdQuery = new GetProductByIdQuery(id);
         var product = productQueryService.handle(getProductByIdQuery);
@@ -83,6 +89,7 @@ public class ProductGraphQLController {
     }
 
     @QueryMapping
+    @PreAuthorize("permitAll()")
     public List<ProductResource> getAllProducts() {
         var products = productQueryService.handle(new GetAllProductsQuery());
         return products.stream()

@@ -1,11 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform;
 
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateCategoryCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateCategoryCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateCategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateCategoryResource;
 
 public class CategoryResourceFromEntityAssembler {
 
@@ -15,13 +11,5 @@ public class CategoryResourceFromEntityAssembler {
             entity.getName(),
             entity.getCreatedAt()
         );
-    }
-
-    public static CreateCategoryCommand toCommandFromResource(CreateCategoryResource resource) {
-        return new CreateCategoryCommand(resource.name());
-    }
-
-    public static UpdateCategoryCommand toCommandFromResource(Long categoryId, UpdateCategoryResource resource) {
-        return new UpdateCategoryCommand(categoryId, resource.name());
     }
 }

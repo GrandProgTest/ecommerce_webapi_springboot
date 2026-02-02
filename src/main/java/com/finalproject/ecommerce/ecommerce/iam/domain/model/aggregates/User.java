@@ -5,6 +5,7 @@ import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.Audit
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,21 +17,22 @@ import lombok.Setter;
 public class User extends AuditableAbstractAggregateRoot<User> {
 
     @NotBlank
-    @Size(max = 50)
-    @Column(unique = true, nullable = false)
+    @Size(min = 3, max = 50)
+    @Column(unique = true, nullable = false, length = 50)
     private String username;
 
     @NotBlank
     @Email
     @Size(max = 100)
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, nullable = false, length = 100)
     private String email;
 
     @NotBlank
-    @Size(max = 120)
-    @Column(nullable = false)
+    @Size(min = 8, max = 120)
+    @Column(nullable = false, length = 120)
     private String password;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;

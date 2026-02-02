@@ -22,7 +22,7 @@ public class RefreshTokenCleanupService {
 
     // Reconsider cleanup service
 
-    @Scheduled(cron = "0 0 0 0 * ?")
+    @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void cleanupExpiredTokens() {
         LOGGER.info("Starting cleanup of expired refresh tokens");

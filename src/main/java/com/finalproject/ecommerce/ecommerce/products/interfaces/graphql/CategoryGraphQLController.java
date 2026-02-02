@@ -44,6 +44,7 @@ public class CategoryGraphQLController {
     }
 
     @QueryMapping
+    @PreAuthorize("permitAll()")
     public CategoryResource getCategoryById(@Argument Long id) {
         var category = categoryQueryService.findById(id);
         if (category.isEmpty()) {
@@ -53,6 +54,7 @@ public class CategoryGraphQLController {
     }
 
     @QueryMapping
+    @PreAuthorize("permitAll()")
     public List<CategoryResource> getAllCategories() {
         var categories = categoryQueryService.handle(new GetAllCategoriesQuery());
         return categories.stream()

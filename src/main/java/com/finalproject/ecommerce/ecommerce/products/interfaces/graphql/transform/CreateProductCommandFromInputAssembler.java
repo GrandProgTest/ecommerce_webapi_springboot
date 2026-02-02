@@ -11,8 +11,7 @@ public class CreateProductCommandFromInputAssembler {
             input.description(),
             input.price(),
             input.stock(),
-            input.categoryIds(),
-            input.createdByUserId()
+            input.categoryIds()
         );
     }
 }

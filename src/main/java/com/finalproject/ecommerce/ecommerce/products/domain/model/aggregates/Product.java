@@ -7,6 +7,8 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.I
 import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.Money;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,19 +21,27 @@ import java.util.List;
 @Entity
 public class Product extends AuditableAbstractAggregateRoot<Product> {
 
-    @Column(nullable = false)
+    @NotBlank
+    @Size(min = 2, max = 200)
+    @Column(nullable = false, length = 200)
     private String name;
 
+    @Size(max = 2000)
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @NotNull
+    @Valid
     @Embedded
     @AttributeOverride(name = "amount", column = @Column(name = "price", nullable = false, precision = 10, scale = 2))
     private Money price;
 
+    @NotNull
+    @Min(value = 0)
     @Column(name = "stock", nullable = false)
     private Integer stock;
 
+    @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 
@@ -39,6 +49,8 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @JoinColumn(name = "product_id")
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
+    @NotNull
+    @Positive
     @Column(name = "created_by_user_id", nullable = false)
     private Long createdByUserId;
 
@@ -49,11 +61,11 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     public Product() {
     }
 
-    public Product(CreateProductCommand command) {
+    public Product(CreateProductCommand command, Long createdByUserId) {
         this.name = command.name();
         this.description = command.description();
         this.price = new Money(command.price());
-        this.createdByUserId = command.createdByUserId();
+        this.createdByUserId = createdByUserId;
         this.stock = command.stock();
         this.isActive = true;
     }

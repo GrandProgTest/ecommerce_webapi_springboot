@@ -1,6 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import java.time.LocalDateTime;
 
@@ -12,7 +14,9 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @NotBlank
+    @Size(min = 2, max = 100)
+    @Column(nullable = false, unique = true, length = 100)
     private String name;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -25,6 +29,9 @@ public class Category {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Category name cannot be empty");
         }
+        if (name.length() < 2 || name.length() > 100) {
+            throw new IllegalArgumentException("Category name must be between 2 and 100 characters");
+        }
         this.name = name;
         this.createdAt = LocalDateTime.now();
     }
@@ -32,6 +39,9 @@ public class Category {
     public void updateName(String newName) {
         if (newName == null || newName.isBlank()) {
             throw new IllegalArgumentException("Category name cannot be empty");
+        }
+        if (newName.length() < 2 || newName.length() > 100) {
+            throw new IllegalArgumentException("Category name must be between 2 and 100 characters");
         }
         this.name = newName;
     }

@@ -11,8 +11,7 @@ public class CreateProductCommandFromResourceAssembler {
             resource.description(),
             resource.price(),
             resource.stock(),
-            resource.categoryIds(),
-            resource.createdByUserId()
+            resource.categoryIds()
         );
     }
 }

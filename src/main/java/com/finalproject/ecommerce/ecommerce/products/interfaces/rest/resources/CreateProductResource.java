@@ -8,6 +8,5 @@ public record CreateProductResource(
     String description,
     BigDecimal price,
     Integer stock,
-    List<Long> categoryIds,
-    Long createdByUserId
+    List<Long> categoryIds
 ) {}

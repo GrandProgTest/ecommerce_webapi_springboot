@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.commandservices;
 
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.CategoryNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.DuplicateCategoryAssignmentException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
@@ -23,16 +24,22 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ProductCategoryRepository productCategoryRepository;
+    private final IamContextFacade iamContextFacade;
 
-    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository) {
+    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository, IamContextFacade iamContextFacade) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.productCategoryRepository = productCategoryRepository;
+        this.iamContextFacade = iamContextFacade;
     }
 
     @Override
     public Long handle(CreateProductCommand command) {
-        var product = new Product(command);
+        var userId = iamContextFacade.getCurrentUserId()
+            .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+
+        var product = new Product(command, userId);
+
         try {
             productRepository.save(product);
         } catch (Exception e) {

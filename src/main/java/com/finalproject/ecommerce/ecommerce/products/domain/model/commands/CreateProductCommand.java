@@ -8,6 +8,5 @@ public record CreateProductCommand(
     String description,
     BigDecimal price,
     Integer stock,
-    List<Long> categoryIds,
-    Long createdByUserId) {
+    List<Long> categoryIds) {
 }

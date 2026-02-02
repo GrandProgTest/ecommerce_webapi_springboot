@@ -2,6 +2,7 @@ package com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates;
 
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 
 import java.time.Instant;
@@ -14,18 +15,25 @@ import java.time.Instant;
 @Getter
 public class RefreshToken extends AuditableAbstractAggregateRoot<RefreshToken> {
 
+    @NotBlank
     @Column(nullable = false, unique = true, length = 255)
     private String tokenHash;
 
+    @NotNull
+    @Positive
     @Column(nullable = false)
     private Long userId;
 
+    @NotNull
+    @Future
     @Column(nullable = false)
     private Instant expiresAt;
 
+    @NotNull
     @Column(nullable = false)
     private boolean revoked;
 
+    @NotNull
     @Column(nullable = false)
     private boolean used;
 
