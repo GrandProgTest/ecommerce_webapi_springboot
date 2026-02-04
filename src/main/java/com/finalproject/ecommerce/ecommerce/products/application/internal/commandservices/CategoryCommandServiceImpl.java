@@ -23,8 +23,7 @@ public class CategoryCommandServiceImpl implements CategoryCommandService {
 
     @Override
     public Long handle(CreateCategoryCommand command) {
-        if (categoryRepository.existsByName(command.name()))
-            throw new DuplicateCategoryException(command.name());
+        if (categoryRepository.existsByName(command.name())) throw new DuplicateCategoryException(command.name());
         var category = new Category(command.name());
         try {
             categoryRepository.save(category);
@@ -37,11 +36,9 @@ public class CategoryCommandServiceImpl implements CategoryCommandService {
     @Override
     public Optional<Category> handle(UpdateCategoryCommand command) {
         var result = categoryRepository.findById(command.categoryId());
-        if (result.isEmpty())
-            throw new CategoryNotFoundException(command.categoryId());
+        if (result.isEmpty()) throw new CategoryNotFoundException(command.categoryId());
 
-        if (categoryRepository.existsByName(command.name()))
-            throw new DuplicateCategoryException(command.name());
+        if (categoryRepository.existsByName(command.name())) throw new DuplicateCategoryException(command.name());
 
         var categoryToUpdate = result.get();
         try {

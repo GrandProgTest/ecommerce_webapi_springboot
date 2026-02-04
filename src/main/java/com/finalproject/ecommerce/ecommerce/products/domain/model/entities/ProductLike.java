@@ -2,6 +2,7 @@ package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
 import jakarta.persistence.*;
 import lombok.Getter;
+
 import java.io.Serializable;
 
 @Getter
@@ -36,7 +37,8 @@ public class ProductLike {
         private Long userId;
         private Long productId;
 
-        public ProductLikeId() {}
+        public ProductLikeId() {
+        }
 
         public ProductLikeId(Long userId, Long productId) {
             this.userId = userId;

@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface CategoryCommandService {
     Long handle(CreateCategoryCommand command);
+
     Optional<Category> handle(UpdateCategoryCommand command);
 }

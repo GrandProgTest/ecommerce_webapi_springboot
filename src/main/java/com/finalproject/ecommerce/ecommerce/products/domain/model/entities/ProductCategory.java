@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Getter
 @Entity
 @Table(name = "product_categories",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "category_id"}))
+        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "category_id"}))
 public class ProductCategory {
 
     @Id

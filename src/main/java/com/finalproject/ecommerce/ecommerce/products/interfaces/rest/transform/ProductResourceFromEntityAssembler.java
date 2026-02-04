@@ -2,10 +2,7 @@ package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.*;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.AddProductImageResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.*;
 
 public class ProductResourceFromEntityAssembler {

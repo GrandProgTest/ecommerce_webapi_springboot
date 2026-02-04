@@ -9,8 +9,11 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Updat
 import java.util.Optional;
 
 public interface ProductCommandService {
-    Long handle (CreateProductCommand command);
-    Optional<Product> handle (UpdateProductCommand command);
+    Long handle(CreateProductCommand command);
+
+    Optional<Product> handle(UpdateProductCommand command);
+
     void handle(DeleteProductCommand command);
+
     Optional<Product> handle(AssignCategoryToProductCommand command);
 }

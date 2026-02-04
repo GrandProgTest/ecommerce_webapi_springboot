@@ -32,9 +32,7 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt
-            .map(product -> product.getStock() >= quantity)
-            .orElse(false);
+        return productOpt.map(product -> product.getStock() >= quantity).orElse(false);
     }
 
     @Override
@@ -42,9 +40,7 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt
-            .map(product -> product.getStock())
-            .orElse(0);
+        return productOpt.map(product -> product.getStock()).orElse(0);
     }
 
     @Override
@@ -52,9 +48,7 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt
-            .map(product -> product.getIsActive())
-            .orElse(false);
+        return productOpt.map(product -> product.getIsActive()).orElse(false);
     }
 
     @Override
@@ -62,9 +56,7 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt
-            .map(product -> product.getPriceAmount())
-            .orElse(null);
+        return productOpt.map(product -> product.getPriceAmount()).orElse(null);
     }
 
     @Override
@@ -72,9 +64,7 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt
-            .map(product -> product.getName())
-            .orElse("");
+        return productOpt.map(product -> product.getName()).orElse("");
     }
 
     @Override
@@ -86,11 +76,6 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt
-            .map(product ->
-                product.getIsActive() &&
-                product.getStock() >= quantity
-            )
-            .orElse(false);
+        return productOpt.map(product -> product.getIsActive() && product.getStock() >= quantity).orElse(false);
     }
 }

@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface ProductQueryService {
     Optional<Product> handle(GetProductByIdQuery query);
+
     List<Product> handle(GetAllProductsQuery query);
+
     List<Product> handle(GetActiveProductsQuery query);
 }

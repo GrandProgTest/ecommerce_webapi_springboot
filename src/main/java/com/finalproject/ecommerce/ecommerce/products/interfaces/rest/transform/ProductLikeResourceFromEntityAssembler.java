@@ -6,9 +6,6 @@ import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.P
 public class ProductLikeResourceFromEntityAssembler {
 
     public static ProductLikeResource toResourceFromEntity(ProductLike entity) {
-        return new ProductLikeResource(
-            entity.getUserId(),
-            entity.getProductId()
-        );
+        return new ProductLikeResource(entity.getUserId(), entity.getProductId());
     }
 }

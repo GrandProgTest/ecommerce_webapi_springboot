@@ -6,12 +6,6 @@ import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.U
 public class UpdateProductCommandFromResourceAssembler {
 
     public static UpdateProductCommand toCommandFromResource(Long productId, UpdateProductResource resource) {
-        return new UpdateProductCommand(
-            productId,
-            resource.name(),
-            resource.description(),
-            resource.price(),
-            resource.stock()
-        );
+        return new UpdateProductCommand(productId, resource.name(), resource.description(), resource.price(), resource.stock());
     }
 }

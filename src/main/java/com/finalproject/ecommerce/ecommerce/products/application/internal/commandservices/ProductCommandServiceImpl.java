@@ -35,8 +35,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
     @Override
     public Long handle(CreateProductCommand command) {
-        var userId = iamContextFacade.getCurrentUserId()
-            .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+        var userId = iamContextFacade.getCurrentUserId().orElseThrow(() -> new IllegalStateException("User not authenticated"));
 
         var product = new Product(command, userId);
 
@@ -51,16 +50,10 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     @Override
     public Optional<Product> handle(UpdateProductCommand command) {
         var result = productRepository.findById(command.productId());
-        if (result.isEmpty())
-            throw new ProductNotFoundException(command.productId());
+        if (result.isEmpty()) throw new ProductNotFoundException(command.productId());
         var productToUpdate = result.get();
         try {
-            productToUpdate.updateProductInfo(
-                command.name(),
-                command.description(),
-                command.price(),
-                command.stock()
-            );
+            productToUpdate.updateProductInfo(command.name(), command.description(), command.price(), command.stock());
             var updatedProduct = productRepository.save(productToUpdate);
             return Optional.of(updatedProduct);
         } catch (Exception e) {
@@ -107,8 +100,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
     public Optional<Product> decreaseProductStock(Long productId, Integer quantity) {
         var result = productRepository.findById(productId);
-        if (result.isEmpty())
-            throw new ProductNotFoundException(productId);
+        if (result.isEmpty()) throw new ProductNotFoundException(productId);
         var product = result.get();
         if (product.getStock() < quantity) {
             throw new IllegalArgumentException("Insufficient stock for product with id %d".formatted(productId));

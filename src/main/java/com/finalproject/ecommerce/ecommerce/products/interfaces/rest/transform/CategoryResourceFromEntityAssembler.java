@@ -6,10 +6,6 @@ import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.C
 public class CategoryResourceFromEntityAssembler {
 
     public static CategoryResource toResourceFromEntity(Category entity) {
-        return new CategoryResource(
-            entity.getId(),
-            entity.getName(),
-            entity.getCreatedAt()
-        );
+        return new CategoryResource(entity.getId(), entity.getName(), entity.getCreatedAt());
     }
 }

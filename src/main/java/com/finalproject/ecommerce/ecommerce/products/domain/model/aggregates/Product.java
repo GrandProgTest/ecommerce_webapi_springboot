@@ -116,9 +116,9 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     public void setPrimaryImage(Long imageId) {
         images.forEach(ProductImage::unsetAsPrimary);
         images.stream()
-            .filter(img -> img.getId().equals(imageId))
-            .findFirst()
-            .ifPresent(ProductImage::setAsPrimary);
+                .filter(img -> img.getId().equals(imageId))
+                .findFirst()
+                .ifPresent(ProductImage::setAsPrimary);
     }
 
     public boolean isActive() {
@@ -131,7 +131,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
 
     public List<Long> getCategoryIds() {
         return productCategories.stream()
-            .map(ProductCategory::getCategoryId)
-            .toList();
+                .map(ProductCategory::getCategoryId)
+                .toList();
     }
 }
