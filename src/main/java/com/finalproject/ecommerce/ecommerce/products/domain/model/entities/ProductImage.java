@@ -34,7 +34,7 @@ public class ProductImage {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    protected ProductImage() {
+    public ProductImage() {
     }
 
     public ProductImage(Long productId, ImageUrl imageUrl, Boolean isPrimary) {

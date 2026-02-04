@@ -8,8 +8,7 @@ public class ProductLikeResourceFromEntityAssembler {
     public static ProductLikeResource toResourceFromEntity(ProductLike entity) {
         return new ProductLikeResource(
             entity.getUserId(),
-            entity.getProductId(),
-            entity.getLikedAt()
+            entity.getProductId()
         );
     }
 }

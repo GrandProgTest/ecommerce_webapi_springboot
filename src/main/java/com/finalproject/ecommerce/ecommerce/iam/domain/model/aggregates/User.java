@@ -37,7 +37,7 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     @JoinColumn(name = "role_id", nullable = false)
     private Role role;
 
-    protected User() {}
+    public User() {}
 
     public User(String username, String email, String password, Role role) {
         this.username = username;

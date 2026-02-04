@@ -11,7 +11,9 @@ public interface CartCommandService {
 
     Cart handle(AddProductToCartCommand command);
     Cart handle(UpdateCartItemQuantityCommand command);
+    Cart handle(UpdateCartItemQuantityByCartItemIdCommand command);
     Cart handle(RemoveProductFromCartCommand command);
+    Cart handle(RemoveCartItemCommand command);
     Cart handle(ClearCartCommand command);
     Cart handle(CheckoutCartCommand command);
     void handle(SeedCartStatusCommand command);

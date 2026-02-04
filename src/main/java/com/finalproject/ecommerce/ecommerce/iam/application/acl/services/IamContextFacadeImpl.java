@@ -6,6 +6,7 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserQueryService
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -59,5 +60,35 @@ public class IamContextFacadeImpl implements IamContextFacade {
         }
 
         return Optional.of(userId);
+    }
+
+    @Override
+    public boolean currentUserHasRole(String roleName) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(authority -> authority != null && authority.equals(roleName));
+    }
+
+    @Override
+    public void validateUserCanAccessResource(Long resourceUserId) {
+        var currentUserId = getCurrentUserId();
+
+        if (currentUserId.isEmpty()) {
+            throw new org.springframework.security.access.AccessDeniedException("User not authenticated");
+        }
+
+        if (currentUserHasRole("ROLE_MANAGER")) {
+            return;
+        }
+
+        if (!currentUserId.get().equals(resourceUserId)) {
+            throw new org.springframework.security.access.AccessDeniedException("You don't have permission to access this resource");
+        }
     }
 }

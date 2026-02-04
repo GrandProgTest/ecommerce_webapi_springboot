@@ -9,36 +9,50 @@ import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.Cart
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.UpdateCartItemQuantityResource;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.transform.AddProductToCartCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.transform.CartResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.transform.UpdateCartItemQuantityCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+
 @RestController
-@RequestMapping("/api/v1/carts")
+@RequestMapping(value = "/api/v1/cart", produces = APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
-@Tag(name = "Carts", description = "Cart Management Endpoints")
+@Tag(name = "Cart", description = "Cart Management Endpoints")
 public class CartsController {
 
     private final CartCommandService cartCommandService;
     private final CartQueryService cartQueryService;
 
-
-    @GetMapping("/user/{userId}")
-    @Operation(summary = "Get user's active cart", description = "Returns the active cart for a specific user")
+    @GetMapping("/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get user's cart", description = "Returns the active cart for the specified user. Managers can view any cart, clients can only view their own cart")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cart found or empty cart returned"),
+            @ApiResponse(responseCode = "401", description = "User not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Access denied - user can only access their own cart")})
     public ResponseEntity<CartResource> getCartByUserId(@PathVariable Long userId) {
         var query = new GetCartByUserIdQuery(userId);
         var cart = cartQueryService.handle(query);
 
         return cart.map(c -> ResponseEntity.ok(CartResourceFromEntityAssembler.toResourceFromEntity(c)))
-                   .orElseGet(() -> ResponseEntity.notFound().build());
+                   .orElseGet(() -> ResponseEntity.ok(null));
     }
 
-    @PostMapping("/user/{userId}/items")
-    @Operation(summary = "Add product to cart", description = "Adds a product to the user's cart or increases quantity if already exists")
+    @PostMapping("/{userId}/items")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Add item to cart", description = "Adds a product to the specified user's cart or increases quantity if already exists. Managers can add to any cart, clients can only add to their own cart")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Product added to cart"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or product not available"),
+            @ApiResponse(responseCode = "401", description = "User not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Access denied - user can only modify their own cart")})
     public ResponseEntity<CartResource> addProductToCart(
             @PathVariable Long userId,
             @RequestBody AddProductToCartResource resource) {
@@ -50,49 +64,40 @@ public class CartsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(cartResource);
     }
 
-    @PutMapping("/user/{userId}/items/{productId}")
-    @Operation(summary = "Update cart item quantity", description = "Updates the quantity of a specific product in the cart")
+    @PutMapping("/{userId}/items/{cartItemId}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Update cart item quantity", description = "Updates the quantity of a specific cart item. Managers can update any cart, clients can only update their own cart")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cart item quantity updated"),
+            @ApiResponse(responseCode = "400", description = "Invalid quantity or insufficient stock"),
+            @ApiResponse(responseCode = "401", description = "User not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Access denied - user can only modify their own cart"),
+            @ApiResponse(responseCode = "404", description = "Cart item not found")})
     public ResponseEntity<CartResource> updateCartItemQuantity(
             @PathVariable Long userId,
-            @PathVariable Long productId,
+            @PathVariable Long cartItemId,
             @RequestBody UpdateCartItemQuantityResource resource) {
 
-        var command = UpdateCartItemQuantityCommandFromResourceAssembler.toCommandFromResource(userId, productId, resource);
+        var command = new UpdateCartItemQuantityByCartItemIdCommand(userId, cartItemId, resource.quantity());
         var cart = cartCommandService.handle(command);
         var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
 
         return ResponseEntity.ok(cartResource);
     }
 
-
-    @DeleteMapping("/user/{userId}/items/{productId}")
-    @Operation(summary = "Remove product from cart", description = "Removes a specific product from the cart")
-    public ResponseEntity<CartResource> removeProductFromCart(
+    @DeleteMapping("/{userId}/items/{cartItemId}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Remove item from cart", description = "Removes a specific cart item from the cart. Managers can remove from any cart, clients can only remove from their own cart")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cart item removed"),
+            @ApiResponse(responseCode = "401", description = "User not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Access denied - user can only modify their own cart"),
+            @ApiResponse(responseCode = "404", description = "Cart item not found")})
+    public ResponseEntity<CartResource> removeCartItem(
             @PathVariable Long userId,
-            @PathVariable Long productId) {
+            @PathVariable Long cartItemId) {
 
-        var command = new RemoveProductFromCartCommand(userId, productId);
-        var cart = cartCommandService.handle(command);
-        var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
-
-        return ResponseEntity.ok(cartResource);
-    }
-
-
-    @DeleteMapping("/user/{userId}/items")
-    @Operation(summary = "Clear cart", description = "Removes all items from the cart")
-    public ResponseEntity<CartResource> clearCart(@PathVariable Long userId) {
-        var command = new ClearCartCommand(userId);
-        var cart = cartCommandService.handle(command);
-        var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
-
-        return ResponseEntity.ok(cartResource);
-    }
-
-    @PostMapping("/user/{userId}/checkout")
-    @Operation(summary = "Checkout cart", description = "Marks the cart as checked out")
-    public ResponseEntity<CartResource> checkoutCart(@PathVariable Long userId) {
-        var command = new CheckoutCartCommand(userId);
+        var command = new RemoveCartItemCommand(userId, cartItemId);
         var cart = cartCommandService.handle(command);
         var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
 

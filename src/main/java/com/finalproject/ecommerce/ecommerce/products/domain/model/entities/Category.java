@@ -25,7 +25,7 @@ public class Category {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    protected Category() {
+    public Category() {
     }
 
     public Category(String name) {

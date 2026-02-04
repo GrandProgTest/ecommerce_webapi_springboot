@@ -81,12 +81,34 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
         item.updateQuantity(newQuantity);
     }
 
+    public void updateCartItemQuantity(Long cartItemId, Integer newQuantity) {
+        validateActiveStatus();
+
+        if (newQuantity == null || newQuantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
+
+        CartItem item = findItemById(cartItemId)
+            .orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
+
+        item.updateQuantity(newQuantity);
+    }
+
 
     public void removeProduct(Long productId) {
         validateActiveStatus();
 
         CartItem item = findItemByProductId(productId)
             .orElseThrow(() -> new InvalidCartOperationException("Product not found in cart"));
+
+        this.items.remove(item);
+    }
+
+    public void removeCartItem(Long cartItemId) {
+        validateActiveStatus();
+
+        CartItem item = findItemById(cartItemId)
+            .orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
 
         this.items.remove(item);
     }
@@ -117,6 +139,12 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     private Optional<CartItem> findItemByProductId(Long productId) {
         return this.items.stream()
             .filter(item -> item.isForProduct(productId))
+            .findFirst();
+    }
+
+    private Optional<CartItem> findItemById(Long cartItemId) {
+        return this.items.stream()
+            .filter(item -> item.getId().equals(cartItemId))
             .findFirst();
     }
 

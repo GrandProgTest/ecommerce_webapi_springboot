@@ -82,7 +82,7 @@ public class WebSecurityConfiguration {
                                 "/api/v1/auth/sign-in",
                                 "/api/v1/auth/sign-up",
                                 "/api/v1/auth/refresh",
-                                "/graphql",
+                                "/graphql/**",
                                 "/graphiql/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",

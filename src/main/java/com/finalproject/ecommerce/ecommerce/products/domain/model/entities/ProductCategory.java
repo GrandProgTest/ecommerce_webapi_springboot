@@ -28,7 +28,7 @@ public class ProductCategory {
     @Column(name = "assigned_at", nullable = false, updatable = false)
     private LocalDateTime assignedAt;
 
-    protected ProductCategory() {
+    public ProductCategory() {
     }
 
     public ProductCategory(Long productId, Long categoryId) {

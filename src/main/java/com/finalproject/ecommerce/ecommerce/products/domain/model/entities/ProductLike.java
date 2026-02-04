@@ -3,7 +3,6 @@ package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -19,10 +18,7 @@ public class ProductLike {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @Column(name = "liked_at", nullable = false, updatable = false)
-    private LocalDateTime likedAt;
-
-    protected ProductLike() {
+    public ProductLike() {
     }
 
     public ProductLike(Long userId, Long productId) {
@@ -34,7 +30,6 @@ public class ProductLike {
         }
         this.userId = userId;
         this.productId = productId;
-        this.likedAt = LocalDateTime.now();
     }
 
     public static class ProductLikeId implements Serializable {
