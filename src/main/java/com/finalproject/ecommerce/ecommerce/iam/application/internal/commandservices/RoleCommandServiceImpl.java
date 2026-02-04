@@ -6,6 +6,7 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.valueobjects.Roles;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RoleCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import org.springframework.stereotype.Service;
+
 import java.util.Arrays;
 
 
@@ -21,9 +22,9 @@ public class RoleCommandServiceImpl implements RoleCommandService {
     @Override
     public void handle(SeedRolesCommand command) {
         Arrays.stream(Roles.values()).forEach(role -> {
-            if(!roleRepository.existsByName(role)) {
+            if (!roleRepository.existsByName(role)) {
                 roleRepository.save(new Role(Roles.valueOf(role.name())));
             }
-        } );
+        });
     }
 }

@@ -8,10 +8,7 @@ import lombok.Getter;
 import java.time.Instant;
 
 @Entity
-@Table(name = "refresh_tokens", indexes = {
-    @Index(name = "idx_token_hash", columnList = "tokenHash"),
-    @Index(name = "idx_user_id", columnList = "userId")
-})
+@Table(name = "refresh_tokens", indexes = {@Index(name = "idx_token_hash", columnList = "tokenHash"), @Index(name = "idx_user_id", columnList = "userId")})
 @Getter
 public class RefreshToken extends AuditableAbstractAggregateRoot<RefreshToken> {
 
@@ -40,7 +37,8 @@ public class RefreshToken extends AuditableAbstractAggregateRoot<RefreshToken> {
     @Column
     private Instant usedAt;
 
-    public RefreshToken() {}
+    public RefreshToken() {
+    }
 
     public RefreshToken(String tokenHash, Long userId, Instant expiresAt) {
         validateInvariants(tokenHash, userId, expiresAt);

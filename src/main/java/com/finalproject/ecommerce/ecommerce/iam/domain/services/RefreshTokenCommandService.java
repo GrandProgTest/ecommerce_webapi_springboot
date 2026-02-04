@@ -12,10 +12,13 @@ import java.util.Optional;
 
 public interface RefreshTokenCommandService {
 
-
     String createRefreshToken(User user);
+
     Optional<ImmutablePair<ImmutablePair<User, String>, String>> handle(RefreshTokenCommand command);
+
     void handle(RevokeRefreshTokenCommand command);
+
     void handle(RevokeAllUserRefreshTokensCommand command);
+
     void handle(SignOutCommand command);
 }

@@ -71,27 +71,10 @@ public class WebSecurityConfiguration {
             cors.setAllowedHeaders(List.of("*"));
             return cors;
         }));
-        http.csrf(csrfConfigurer -> csrfConfigurer.disable())
-                .exceptionHandling(exceptionHandling -> {
-                    exceptionHandling.authenticationEntryPoint(unauthorizedRequestHandler);
-                    exceptionHandling.accessDeniedHandler(forbiddenRequestHandler);
-                })
-                .sessionManagement( customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(authorizeRequests -> authorizeRequests
-                        .requestMatchers(
-                                "/api/v1/auth/sign-in",
-                                "/api/v1/auth/sign-up",
-                                "/api/v1/auth/refresh",
-                                "/graphql/**",
-                                "/graphiql/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/swagger-resources/**",
-                                "/webjars/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll()
-                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories/**").permitAll()
-                        .anyRequest().authenticated());
+        http.csrf(csrfConfigurer -> csrfConfigurer.disable()).exceptionHandling(exceptionHandling -> {
+            exceptionHandling.authenticationEntryPoint(unauthorizedRequestHandler);
+            exceptionHandling.accessDeniedHandler(forbiddenRequestHandler);
+        }).sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(authorizeRequests -> authorizeRequests.requestMatchers("/api/v1/auth/sign-in", "/api/v1/auth/sign-up", "/api/v1/auth/refresh", "/graphql/**", "/graphiql/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**", "/swagger-resources/**", "/webjars/**").permitAll().requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll().requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories/**").permitAll().anyRequest().authenticated());
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authorizationRequestFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -99,12 +82,7 @@ public class WebSecurityConfiguration {
     }
 
 
-    public WebSecurityConfiguration(
-            @Qualifier("defaultUserDetailsService") UserDetailsService userDetailsService,
-            BearerTokenService tokenService,
-            BCryptHashingService hashingService,
-            AuthenticationEntryPoint authenticationEntryPoint,
-            AccessDeniedHandler accessDeniedHandler) {
+    public WebSecurityConfiguration(@Qualifier("defaultUserDetailsService") UserDetailsService userDetailsService, BearerTokenService tokenService, BCryptHashingService hashingService, AuthenticationEntryPoint authenticationEntryPoint, AccessDeniedHandler accessDeniedHandler) {
         this.userDetailsService = userDetailsService;
         this.tokenService = tokenService;
         this.hashingService = hashingService;

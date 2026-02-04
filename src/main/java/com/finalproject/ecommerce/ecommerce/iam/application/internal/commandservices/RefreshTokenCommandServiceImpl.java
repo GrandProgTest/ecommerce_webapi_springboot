@@ -42,10 +42,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     @Value("${authorization.jwt.refresh-token.expiration.days}")
     private int refreshTokenExpirationDays;
 
-    public RefreshTokenCommandServiceImpl(
-            RefreshTokenRepository refreshTokenRepository,
-            UserRepository userRepository,
-            TokenService tokenService) {
+    public RefreshTokenCommandServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, TokenService tokenService) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
@@ -65,11 +62,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
 
         Instant expiresAt = Instant.now().plus(refreshTokenExpirationDays, ChronoUnit.DAYS);
 
-        RefreshToken refreshToken = new RefreshToken(
-            tokenHash,
-            user.getId(),
-            expiresAt
-        );
+        RefreshToken refreshToken = new RefreshToken(tokenHash, user.getId(), expiresAt);
 
         refreshTokenRepository.save(refreshToken);
 
@@ -100,8 +93,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
         }
 
         if (!refreshToken.isValid()) {
-            LOGGER.warn("Invalid refresh token - revoked: {}, expired: {}",
-                refreshToken.isRevoked(), refreshToken.isExpired());
+            LOGGER.warn("Invalid refresh token - revoked: {}, expired: {}", refreshToken.isRevoked(), refreshToken.isExpired());
             return Optional.empty();
         }
 
@@ -122,12 +114,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
 
         LOGGER.info("Token refresh successful for user: {}", user.getUsername());
 
-        return Optional.of(
-            ImmutablePair.of(
-                ImmutablePair.of(user, newAccessToken),
-                newRefreshToken
-            )
-        );
+        return Optional.of(ImmutablePair.of(ImmutablePair.of(user, newAccessToken), newRefreshToken));
     }
 
     @Override

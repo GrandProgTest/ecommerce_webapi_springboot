@@ -36,10 +36,7 @@ public class UserDetailsImpl implements UserDetails {
 
     public static UserDetailsImpl build(User user) {
         var authority = new SimpleGrantedAuthority(user.getRole().getStringName());
-        return new UserDetailsImpl(
-                user.getUsername(),
-                user.getPassword(),
-                List.of(authority));
+        return new UserDetailsImpl(user.getUsername(), user.getPassword(), List.of(authority));
     }
 
 }

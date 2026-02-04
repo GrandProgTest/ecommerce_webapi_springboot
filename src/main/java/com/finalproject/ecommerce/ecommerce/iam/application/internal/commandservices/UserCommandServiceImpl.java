@@ -25,12 +25,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final RoleRepository roleRepository;
     private final RefreshTokenCommandService refreshTokenCommandService;
 
-    public UserCommandServiceImpl(
-            UserRepository userRepository,
-            HashingService hashingService,
-            TokenService tokenService,
-            RoleRepository roleRepository,
-            RefreshTokenCommandService refreshTokenCommandService) {
+    public UserCommandServiceImpl(UserRepository userRepository, HashingService hashingService, TokenService tokenService, RoleRepository roleRepository, RefreshTokenCommandService refreshTokenCommandService) {
         this.userRepository = userRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
@@ -42,8 +37,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     @Override
     public Optional<ImmutablePair<ImmutablePair<User, String>, String>> handle(SignInCommand command) {
         var user = userRepository.findByUsername(command.username());
-        if (user.isEmpty())
-            throw new RuntimeException("User not found");
+        if (user.isEmpty()) throw new RuntimeException("User not found");
         if (!hashingService.matches(command.password(), user.get().getPassword()))
             throw new RuntimeException("Invalid password");
 
@@ -51,42 +45,27 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         var refreshToken = refreshTokenCommandService.createRefreshToken(user.get());
 
-        return Optional.of(
-            ImmutablePair.of(
-                ImmutablePair.of(user.get(), accessToken),
-                refreshToken
-            )
-        );
+        return Optional.of(ImmutablePair.of(ImmutablePair.of(user.get(), accessToken), refreshToken));
     }
 
 
     @Override
     public Optional<User> handle(SignUpCommand command) {
-        if (userRepository.existsByUsername(command.username()))
-            throw new RuntimeException("Username already exists");
+        if (userRepository.existsByUsername(command.username())) throw new RuntimeException("Username already exists");
 
-        if (userRepository.existsByEmail(command.email()))
-            throw new RuntimeException("Email already exists");
+        if (userRepository.existsByEmail(command.email())) throw new RuntimeException("Email already exists");
 
-        var role = roleRepository.findByName(command.role().getName())
-                .orElseThrow(() -> new RuntimeException("Role name not found"));
+        var role = roleRepository.findByName(command.role().getName()).orElseThrow(() -> new RuntimeException("Role name not found"));
 
-        var user = new User(
-            command.username(),
-            command.email(),
-            hashingService.encode(command.password()),
-            role
-        );
+        var user = new User(command.username(), command.email(), hashingService.encode(command.password()), role);
 
         userRepository.save(user);
         return userRepository.findByUsername(command.username());
     }
+
     @Override
     public Optional<User> handle(UpdateUserCommand command) {
-        var user = userRepository.findById(command.userId())
-                .orElseThrow(() ->
-                        new RuntimeException("User with id %s not found".formatted(command.userId()))
-                );
+        var user = userRepository.findById(command.userId()).orElseThrow(() -> new RuntimeException("User with id %s not found".formatted(command.userId())));
 
         if (userRepository.existsByUsernameAndIdIsNot(command.username(), command.userId()))
             throw new RuntimeException("User with username %s already exists".formatted(command.username()));
@@ -95,10 +74,7 @@ public class UserCommandServiceImpl implements UserCommandService {
             throw new RuntimeException("User with email %s already exists".formatted(command.email()));
 
         var roleName = command.role().getName();
-        var role = roleRepository.findByName(roleName)
-                .orElseThrow(() ->
-                        new RuntimeException("Role with name %s not found".formatted(roleName))
-                );
+        var role = roleRepository.findByName(roleName).orElseThrow(() -> new RuntimeException("Role with name %s not found".formatted(roleName)));
 
         user.setUsername(command.username());
         user.setEmail(command.email());
@@ -111,7 +87,6 @@ public class UserCommandServiceImpl implements UserCommandService {
             throw new RuntimeException("Error while updating user: %s".formatted(e.getMessage()));
         }
     }
-
 
 
     @Override

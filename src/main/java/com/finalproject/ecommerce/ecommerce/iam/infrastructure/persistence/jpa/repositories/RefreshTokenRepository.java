@@ -14,22 +14,20 @@ import java.util.Optional;
 @Repository
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 
-
     Optional<RefreshToken> findByTokenHash(String tokenHash);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<RefreshToken> findWithLockByTokenHash(String tokenHash);
+
     List<RefreshToken> findByUserId(Long userId);
 
-    List<RefreshToken> findByUserIdAndRevokedAndUsedAndExpiresAtAfter(
-            Long userId,
-            boolean revoked,
-            boolean used,
-            Instant expiresAt
-    );
+    List<RefreshToken> findByUserIdAndRevokedAndUsedAndExpiresAtAfter(Long userId, boolean revoked, boolean used, Instant expiresAt);
 
     List<RefreshToken> findByUserIdAndRevoked(Long userId, boolean revoked);
 
     int deleteByExpiresAtBefore(Instant expiresAt);
+
     void deleteByUserId(Long userId);
+
     boolean existsByTokenHash(String tokenHash);
 }

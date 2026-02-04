@@ -48,7 +48,7 @@ public class IamContextFacadeImpl implements IamContextFacade {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated() ||
-            "anonymousUser".equals(authentication.getPrincipal())) {
+                "anonymousUser".equals(authentication.getPrincipal())) {
             return Optional.empty();
         }
 

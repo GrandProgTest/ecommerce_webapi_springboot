@@ -3,5 +3,6 @@ package com.finalproject.ecommerce.ecommerce.iam.application.internal.outboundse
 public interface HashingService {
 
     String encode(CharSequence rawPassword);
+
     boolean matches(CharSequence rawPassword, String encodedPassword);
 }

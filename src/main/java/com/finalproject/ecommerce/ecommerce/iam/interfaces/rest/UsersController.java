@@ -33,7 +33,6 @@ public class UsersController {
     }
 
 
-
     @GetMapping
     @Operation(summary = "Get all users", description = "Get all the users available in the system")
     @ApiResponses(value = {

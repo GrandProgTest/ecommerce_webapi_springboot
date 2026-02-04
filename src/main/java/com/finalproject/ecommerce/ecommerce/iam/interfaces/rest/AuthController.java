@@ -46,9 +46,9 @@ public class AuthController {
     @PostMapping("/sign-in")
     @Operation(summary = "Sign in", description = "Authenticate user and return access + refresh tokens")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Successfully authenticated"),
-        @ApiResponse(responseCode = "404", description = "User not found"),
-        @ApiResponse(responseCode = "401", description = "Invalid credentials")
+            @ApiResponse(responseCode = "200", description = "Successfully authenticated"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
     })
     public ResponseEntity<AuthenticatedUserResource> signIn(@RequestBody SignInResource resource) {
         var signInCommand = SignInCommandFromResourceAssembler.toCommandFromResource(resource);
@@ -64,7 +64,7 @@ public class AuthController {
         var refreshToken = result.get().getRight();
 
         var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler
-            .toResourceFromEntity(user, accessToken, refreshToken);
+                .toResourceFromEntity(user, accessToken, refreshToken);
 
         return ResponseEntity.ok(authenticatedUserResource);
     }
@@ -72,8 +72,8 @@ public class AuthController {
     @PostMapping("/sign-up")
     @Operation(summary = "Sign up", description = "Register a new user")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", description = "User created successfully"),
-        @ApiResponse(responseCode = "400", description = "Invalid input or user already exists")
+            @ApiResponse(responseCode = "201", description = "User created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or user already exists")
     })
     public ResponseEntity<UserResource> signUp(@RequestBody SignUpResource resource) {
         var signUpCommand = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
@@ -90,9 +90,9 @@ public class AuthController {
     @PostMapping("/refresh")
     @Operation(summary = "Refresh token", description = "Get new access token using refresh token (with rotation)")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
-        @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token"),
-        @ApiResponse(responseCode = "403", description = "Token reuse detected - security breach")
+            @ApiResponse(responseCode = "200", description = "Token refreshed successfully"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired refresh token"),
+            @ApiResponse(responseCode = "403", description = "Token reuse detected - security breach")
     })
     public ResponseEntity<AuthenticatedUserResource> refresh(@RequestBody RefreshTokenResource resource) {
         try {
@@ -109,7 +109,7 @@ public class AuthController {
             var newRefreshToken = result.get().getRight();
 
             var authenticatedUserResource = AuthenticatedUserResourceFromEntityAssembler
-                .toResourceFromEntity(user, newAccessToken, newRefreshToken);
+                    .toResourceFromEntity(user, newAccessToken, newRefreshToken);
 
             return ResponseEntity.ok(authenticatedUserResource);
 
@@ -122,14 +122,14 @@ public class AuthController {
     @PostMapping("/sign-out")
     @Operation(summary = "Sign-Out", description = "Revoke all refresh tokens for authenticated user (logout)")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", description = "Logged out successfully"),
-        @ApiResponse(responseCode = "401", description = "Not authenticated")
+            @ApiResponse(responseCode = "200", description = "Logged out successfully"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
     })
     public ResponseEntity<String> signOut() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !authentication.isAuthenticated() ||
-            authentication.getPrincipal().equals("anonymousUser")) {
+                authentication.getPrincipal().equals("anonymousUser")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Not authenticated");
         }
 

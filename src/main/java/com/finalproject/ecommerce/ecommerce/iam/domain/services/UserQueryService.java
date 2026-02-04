@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface UserQueryService {
     Optional<User> handle(GetUserByIdQuery query);
+
     Optional<User> handle(GetUserByUsernameQuery query);
+
     List<User> handle(GetAllUsersQuery query);
 }

@@ -11,7 +11,10 @@ import java.util.Optional;
 
 public interface UserCommandService {
     Optional<User> handle(SignUpCommand command);
+
     Optional<ImmutablePair<ImmutablePair<User, String>, String>> handle(SignInCommand command);
+
     Optional<User> handle(UpdateUserCommand command);
+
     void handle(DeleteUserCommand command);
 }

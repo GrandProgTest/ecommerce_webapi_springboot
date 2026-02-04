@@ -41,6 +41,7 @@ public class TokenServiceImpl implements BearerTokenService {
 
     /**
      * This method generates a JWT token from an authentication object
+     *
      * @param authentication the authentication object
      * @return String the JWT token
      * @see Authentication
@@ -52,6 +53,7 @@ public class TokenServiceImpl implements BearerTokenService {
 
     /**
      * This method generates a JWT token from a username
+     *
      * @param username the username
      * @return String the JWT token
      */
@@ -62,6 +64,7 @@ public class TokenServiceImpl implements BearerTokenService {
     /**
      * This method generates a JWT token from a username and a secret.
      * It uses the default expiration minutes from the application.properties file.
+     *
      * @param username the username
      * @return String the JWT token
      */
@@ -69,16 +72,12 @@ public class TokenServiceImpl implements BearerTokenService {
         var issuedAt = new Date();
         var expiration = DateUtils.addMinutes(issuedAt, expirationMinutes);
         var key = getSigningKey();
-        return Jwts.builder()
-                .subject(username)
-                .issuedAt(issuedAt)
-                .expiration(expiration)
-                .signWith(key)
-                .compact();
+        return Jwts.builder().subject(username).issuedAt(issuedAt).expiration(expiration).signWith(key).compact();
     }
 
     /**
      * This method extracts the username from a JWT token
+     *
      * @param token the token
      * @return String the username
      */
@@ -89,6 +88,7 @@ public class TokenServiceImpl implements BearerTokenService {
 
     /**
      * This method validates a JWT token
+     *
      * @param token the token
      * @return boolean true if the token is valid, false otherwise
      */
@@ -98,7 +98,7 @@ public class TokenServiceImpl implements BearerTokenService {
             Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
             LOGGER.info("Token is valid");
             return true;
-        }  catch (SignatureException e) {
+        } catch (SignatureException e) {
             LOGGER.error("Invalid JSON Web Token Signature: {}", e.getMessage());
         } catch (MalformedJwtException e) {
             LOGGER.error("Invalid JSON Web Token: {}", e.getMessage());
@@ -114,9 +114,10 @@ public class TokenServiceImpl implements BearerTokenService {
 
     /**
      * Extract a claim from a token
-     * @param token the token
+     *
+     * @param token           the token
      * @param claimsResolvers the claims resolver
-     * @param <T> the type of the claim
+     * @param <T>             the type of the claim
      * @return T the claim
      */
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolvers) {
@@ -126,6 +127,7 @@ public class TokenServiceImpl implements BearerTokenService {
 
     /**
      * Extract all claims from a token
+     *
      * @param token the token
      * @return Claims the claims
      */
@@ -135,6 +137,7 @@ public class TokenServiceImpl implements BearerTokenService {
 
     /**
      * Get the signing key
+     *
      * @return SecretKey the signing key
      */
     private SecretKey getSigningKey() {
