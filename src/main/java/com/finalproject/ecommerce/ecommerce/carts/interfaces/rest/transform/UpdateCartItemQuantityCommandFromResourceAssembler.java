@@ -6,10 +6,6 @@ import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.Upda
 public class UpdateCartItemQuantityCommandFromResourceAssembler {
 
     public static UpdateCartItemQuantityCommand toCommandFromResource(Long userId, Long productId, UpdateCartItemQuantityResource resource) {
-        return new UpdateCartItemQuantityCommand(
-            userId,
-            productId,
-            resource.quantity()
-        );
+        return new UpdateCartItemQuantityCommand(userId, productId, resource.quantity());
     }
 }

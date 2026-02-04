@@ -1,10 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.carts.domain.model.commands;
 
-public record UpdateCartItemQuantityByCartItemIdCommand(
-    Long userId,
-    Long cartItemId,
-    Integer quantity
-) {
+public record UpdateCartItemQuantityByCartItemIdCommand(Long userId, Long cartItemId, Integer quantity) {
     public UpdateCartItemQuantityByCartItemIdCommand {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null");
