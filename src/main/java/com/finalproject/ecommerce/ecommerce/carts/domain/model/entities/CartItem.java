@@ -11,18 +11,15 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "cart_item", uniqueConstraints = {
-    @UniqueConstraint(name = "uq_cart_product", columnNames = {"cart_id", "product_id"})
-})
-public class CartItem extends AuditableModel{
+@Table(name = "cart_item", uniqueConstraints = {@UniqueConstraint(name = "uq_cart_product", columnNames = {"cart_id", "product_id"})})
+public class CartItem extends AuditableModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cart_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_cart_item_cart"))
+    @JoinColumn(name = "cart_id", nullable = false, foreignKey = @ForeignKey(name = "fk_cart_item_cart"))
     private Cart cart;
 
     @NotNull

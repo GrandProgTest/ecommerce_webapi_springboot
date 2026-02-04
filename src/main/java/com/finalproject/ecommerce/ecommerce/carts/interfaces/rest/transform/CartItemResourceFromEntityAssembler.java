@@ -6,10 +6,6 @@ import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.Cart
 public class CartItemResourceFromEntityAssembler {
 
     public static CartItemResource toResourceFromEntity(CartItem entity) {
-        return new CartItemResource(
-            entity.getId(),
-            entity.getProductId(),
-            entity.getQuantity()
-        );
+        return new CartItemResource(entity.getId(), entity.getProductId(), entity.getQuantity());
     }
 }

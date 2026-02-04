@@ -35,7 +35,7 @@ public class CartQueryServiceImpl implements CartQueryService {
     @Override
     public Optional<Cart> handle(GetCurrentUserCartQuery query) {
         var userId = iamContextFacade.getCurrentUserId()
-            .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+                .orElseThrow(() -> new IllegalStateException("User not authenticated"));
         return cartRepository.findByUserIdAndStatus(userId, CartStatuses.ACTIVE);
     }
 }

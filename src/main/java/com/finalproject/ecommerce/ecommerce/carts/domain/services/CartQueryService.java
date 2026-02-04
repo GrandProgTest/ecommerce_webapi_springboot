@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface CartQueryService {
 
     Optional<Cart> handle(GetCartByIdQuery query);
+
     Optional<Cart> handle(GetCartByUserIdQuery query);
+
     Optional<Cart> handle(GetCurrentUserCartQuery query);
 }

@@ -1,10 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.carts.domain.model.commands;
 
-public record AddProductToCartCommand(
-    Long userId,
-    Long productId,
-    Integer quantity
-) {
+public record AddProductToCartCommand(Long userId, Long productId, Integer quantity) {
     public AddProductToCartCommand {
         if (userId == null) {
             throw new IllegalArgumentException("User ID cannot be null");

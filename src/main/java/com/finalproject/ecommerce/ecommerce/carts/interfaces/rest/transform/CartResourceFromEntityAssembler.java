@@ -8,16 +8,6 @@ import java.util.stream.Collectors;
 public class CartResourceFromEntityAssembler {
 
     public static CartResource toResourceFromEntity(Cart entity) {
-        return new CartResource(
-            entity.getId(),
-            entity.getUserId(),
-            entity.getStatus().name(),
-            entity.getItems().stream()
-                .map(CartItemResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList()),
-            entity.getTotalItems(),
-            entity.getCreatedAt(),
-            entity.getCheckedOutAt()
-        );
+        return new CartResource(entity.getId(), entity.getUserId(), entity.getStatus().name(), entity.getItems().stream().map(CartItemResourceFromEntityAssembler::toResourceFromEntity).collect(Collectors.toList()), entity.getTotalItems(), entity.getCreatedAt(), entity.getCheckedOutAt());
     }
 }

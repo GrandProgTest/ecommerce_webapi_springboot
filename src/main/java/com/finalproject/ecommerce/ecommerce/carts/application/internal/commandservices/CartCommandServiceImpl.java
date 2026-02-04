@@ -39,10 +39,10 @@ public class CartCommandServiceImpl implements CartCommandService {
         }
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE)
-            .orElseGet(() -> {
-                Cart newCart = new Cart(command.userId());
-                return cartRepository.save(newCart);
-            });
+                .orElseGet(() -> {
+                    Cart newCart = new Cart(command.userId());
+                    return cartRepository.save(newCart);
+                });
 
         cart.addProduct(command.productId(), command.quantity());
 
@@ -54,7 +54,7 @@ public class CartCommandServiceImpl implements CartCommandService {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE)
-            .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+                .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         if (!productContextFacade.hasAvailableStock(command.productId(), command.quantity())) {
             throw new InvalidCartOperationException("Product with ID " + command.productId() + " does not have enough stock");
@@ -70,12 +70,12 @@ public class CartCommandServiceImpl implements CartCommandService {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE)
-            .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+                .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         var cartItem = cart.getItems().stream()
-            .filter(item -> item.getId().equals(command.cartItemId()))
-            .findFirst()
-            .orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
+                .filter(item -> item.getId().equals(command.cartItemId()))
+                .findFirst()
+                .orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
 
         if (!productContextFacade.hasAvailableStock(cartItem.getProductId(), command.quantity())) {
             throw new InvalidCartOperationException("Product does not have enough stock");
@@ -91,7 +91,7 @@ public class CartCommandServiceImpl implements CartCommandService {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE)
-            .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+                .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         cart.removeProduct(command.productId());
 
@@ -103,7 +103,7 @@ public class CartCommandServiceImpl implements CartCommandService {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE)
-            .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+                .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         cart.removeCartItem(command.cartItemId());
 
@@ -115,7 +115,7 @@ public class CartCommandServiceImpl implements CartCommandService {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE)
-            .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+                .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         cart.clear();
 
@@ -128,7 +128,7 @@ public class CartCommandServiceImpl implements CartCommandService {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE)
-            .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+                .orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         cart.checkout();
 

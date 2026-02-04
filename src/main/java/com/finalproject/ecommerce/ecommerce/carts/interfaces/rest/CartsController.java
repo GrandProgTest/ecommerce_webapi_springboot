@@ -42,7 +42,7 @@ public class CartsController {
         var cart = cartQueryService.handle(query);
 
         return cart.map(c -> ResponseEntity.ok(CartResourceFromEntityAssembler.toResourceFromEntity(c)))
-                   .orElseGet(() -> ResponseEntity.ok(null));
+                .orElseGet(() -> ResponseEntity.ok(null));
     }
 
     @PostMapping("/{userId}/items")

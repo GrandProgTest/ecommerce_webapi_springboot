@@ -6,10 +6,6 @@ import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.AddP
 public class AddProductToCartCommandFromResourceAssembler {
 
     public static AddProductToCartCommand toCommandFromResource(Long userId, AddProductToCartResource resource) {
-        return new AddProductToCartCommand(
-            userId,
-            resource.productId(),
-            resource.quantity()
-        );
+        return new AddProductToCartCommand(userId, resource.productId(), resource.quantity());
     }
 }

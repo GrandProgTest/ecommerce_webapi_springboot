@@ -75,8 +75,7 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
-        CartItem item = findItemByProductId(productId)
-            .orElseThrow(() -> new InvalidCartOperationException("Product not found in cart"));
+        CartItem item = findItemByProductId(productId).orElseThrow(() -> new InvalidCartOperationException("Product not found in cart"));
 
         item.updateQuantity(newQuantity);
     }
@@ -88,8 +87,7 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
-        CartItem item = findItemById(cartItemId)
-            .orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
+        CartItem item = findItemById(cartItemId).orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
 
         item.updateQuantity(newQuantity);
     }
@@ -98,8 +96,7 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     public void removeProduct(Long productId) {
         validateActiveStatus();
 
-        CartItem item = findItemByProductId(productId)
-            .orElseThrow(() -> new InvalidCartOperationException("Product not found in cart"));
+        CartItem item = findItemByProductId(productId).orElseThrow(() -> new InvalidCartOperationException("Product not found in cart"));
 
         this.items.remove(item);
     }
@@ -107,8 +104,7 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     public void removeCartItem(Long cartItemId) {
         validateActiveStatus();
 
-        CartItem item = findItemById(cartItemId)
-            .orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
+        CartItem item = findItemById(cartItemId).orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
 
         this.items.remove(item);
     }
@@ -137,15 +133,11 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
 
 
     private Optional<CartItem> findItemByProductId(Long productId) {
-        return this.items.stream()
-            .filter(item -> item.isForProduct(productId))
-            .findFirst();
+        return this.items.stream().filter(item -> item.isForProduct(productId)).findFirst();
     }
 
     private Optional<CartItem> findItemById(Long cartItemId) {
-        return this.items.stream()
-            .filter(item -> item.getId().equals(cartItemId))
-            .findFirst();
+        return this.items.stream().filter(item -> item.getId().equals(cartItemId)).findFirst();
     }
 
     public boolean containsProduct(Long productId) {
@@ -153,15 +145,11 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     }
 
     public Integer getProductQuantity(Long productId) {
-        return findItemByProductId(productId)
-            .map(CartItem::getQuantity)
-            .orElse(0);
+        return findItemByProductId(productId).map(CartItem::getQuantity).orElse(0);
     }
 
     public int getTotalItems() {
-        return items.stream()
-            .mapToInt(CartItem::getQuantity)
-            .sum();
+        return items.stream().mapToInt(CartItem::getQuantity).sum();
     }
 
     public boolean isEmpty() {
@@ -174,9 +162,7 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
 
     private void validateActiveStatus() {
         if (!isActive()) {
-            throw new InvalidCartOperationException(
-                "Cannot modify cart with status: " + this.status
-            );
+            throw new InvalidCartOperationException("Cannot modify cart with status: " + this.status);
         }
     }
 }
