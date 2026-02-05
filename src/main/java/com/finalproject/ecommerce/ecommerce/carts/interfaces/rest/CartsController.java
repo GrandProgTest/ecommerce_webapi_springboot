@@ -4,17 +4,14 @@ import com.finalproject.ecommerce.ecommerce.carts.domain.model.commands.*;
 import com.finalproject.ecommerce.ecommerce.carts.domain.model.queries.GetCartByUserIdQuery;
 import com.finalproject.ecommerce.ecommerce.carts.domain.services.CartCommandService;
 import com.finalproject.ecommerce.ecommerce.carts.domain.services.CartQueryService;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.AddProductToCartResource;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.CartResource;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.UpdateCartItemQuantityResource;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.transform.AddProductToCartCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.transform.CartResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -45,24 +42,6 @@ public class CartsController {
                 .orElseGet(() -> ResponseEntity.ok(null));
     }
 
-    @PostMapping("/{userId}/items")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Add item to cart", description = "Adds a product to the specified user's cart or increases quantity if already exists. Managers can add to any cart, clients can only add to their own cart")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Product added to cart"),
-            @ApiResponse(responseCode = "400", description = "Invalid input or product not available"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied - user can only modify their own cart")})
-    public ResponseEntity<CartResource> addProductToCart(
-            @PathVariable Long userId,
-            @RequestBody AddProductToCartResource resource) {
-
-        var command = AddProductToCartCommandFromResourceAssembler.toCommandFromResource(userId, resource);
-        var cart = cartCommandService.handle(command);
-        var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(cartResource);
-    }
 
     @PutMapping("/{userId}/items/{cartItemId}")
     @PreAuthorize("isAuthenticated()")

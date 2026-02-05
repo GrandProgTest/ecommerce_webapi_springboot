@@ -8,4 +8,6 @@ public interface CartContextFacade {
     Optional<CartDto> getCartById(Long cartId);
 
     Optional<CartDto> getActiveCartByUserId(Long userId);
+
+    void checkoutCart(Long userId, Long cartId);
 }

@@ -11,14 +11,12 @@ import com.finalproject.ecommerce.ecommerce.carts.infrastructure.persistence.jpa
 import com.finalproject.ecommerce.ecommerce.carts.infrastructure.persistence.jpa.repositories.CartStatusRepository;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.acl.ProductContextFacade;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 
 @Service
-@RequiredArgsConstructor
 public class CartCommandServiceImpl implements CartCommandService {
 
     private final CartRepository cartRepository;
@@ -26,21 +24,34 @@ public class CartCommandServiceImpl implements CartCommandService {
     private final IamContextFacade iamContextFacade;
     private final ProductContextFacade productContextFacade;
 
+    public CartCommandServiceImpl (CartRepository cartRepository, CartStatusRepository cartStatusRepository, IamContextFacade iamContextFacade, ProductContextFacade productContextFacade) {
+        this.cartRepository = cartRepository;
+        this.cartStatusRepository = cartStatusRepository;
+        this.iamContextFacade = iamContextFacade;
+        this.productContextFacade = productContextFacade;
+    }
 
     @Override
     public Cart handle(AddProductToCartCommand command) {
-        iamContextFacade.validateUserCanAccessResource(command.userId());
+        final Long userId;
+        if (command.userId() == null) {
+            userId = iamContextFacade.getCurrentUserId()
+                    .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+        } else {
+            iamContextFacade.validateUserCanAccessResource(command.userId());
+            userId = command.userId();
+        }
 
-        if (!iamContextFacade.userExists(command.userId())) {
-            throw new InvalidCartOperationException("User with ID " + command.userId() + " does not exist");
+        if (!iamContextFacade.userExists(userId)) {
+            throw new InvalidCartOperationException("User with ID " + userId + " does not exist");
         }
 
         if (!productContextFacade.isProductAvailableForPurchase(command.productId(), command.quantity())) {
             throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available or does not have enough stock");
         }
 
-        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE).orElseGet(() -> {
-            Cart newCart = new Cart(command.userId());
+        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatuses.ACTIVE).orElseGet(() -> {
+            Cart newCart = new Cart(userId);
             return cartRepository.save(newCart);
         });
 

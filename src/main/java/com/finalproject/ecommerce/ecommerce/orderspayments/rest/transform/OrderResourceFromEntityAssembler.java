@@ -1,0 +1,42 @@
+package com.finalproject.ecommerce.ecommerce.orderspayments.rest.transform;
+
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderItem;
+import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.OrderItemResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.OrderResource;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.stream.Collectors;
+
+public class OrderResourceFromEntityAssembler {
+
+    public static OrderResource toResourceFromEntity(Order order) {
+        return new OrderResource(
+                order.getId(),
+                order.getUserId(),
+                order.getCartId(),
+                order.getAddressId(),
+                order.getDiscount() != null ? order.getDiscount().getCode() : null,
+                order.getStatus().name(),
+                order.getTotalAmount(),
+                order.getDiscountAmount(),
+                order.getItems().stream()
+                        .map(OrderResourceFromEntityAssembler::toItemResource)
+                        .collect(Collectors.toList()),
+                order.getCreatedAt() != null ?
+                    LocalDateTime.ofInstant(order.getCreatedAt().toInstant(), ZoneId.systemDefault()) :
+                    null
+        );
+    }
+
+    private static OrderItemResource toItemResource(OrderItem item) {
+        return new OrderItemResource(
+                item.getId(),
+                item.getProductId(),
+                item.getPriceAtPurchase(),
+                item.getQuantity(),
+                item.getSubtotal()
+        );
+    }
+}
