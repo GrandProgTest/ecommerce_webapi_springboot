@@ -1,58 +1,5 @@
 type Query {
-    getProductById(id: ID!): Product
-    getAllProducts: [Product!]!
-
-    getCategoryById(id: ID!): Category
-    getAllCategories: [Category!]!
 }
 
 type Mutation {
-    createProduct(input: CreateProductInput!): Product!
-    updateProduct(id: ID!, input: UpdateProductInput!): Product!
-    deleteProduct(id: ID!): String!
-    assignCategoryToProduct(productId: ID!, categoryId: ID!): Product!
-
-    createCategory(input: CreateCategoryInput!): Category!
-    updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
-}
-
-type Product {
-    id: ID!
-    name: String!
-    description: String
-    price: Float!
-    stock: Int!
-    isActive: Boolean!
-    categoryIds: [ID!]!
-    createdByUserId: ID!
-}
-
-type Category {
-    id: ID!
-    name: String!
-    createdAt: String!
-}
-
-input CreateProductInput {
-    name: String!
-    description: String
-    price: Float!
-    stock: Int!
-    categoryIds: [ID!]
-    createdByUserId: ID!
-}
-
-input UpdateProductInput {
-    name: String
-    description: String
-    price: Float
-    stock: Int
-}
-
-input CreateCategoryInput {
-    name: String!
-}
-
-input UpdateCategoryInput {
-    name: String!
 }
