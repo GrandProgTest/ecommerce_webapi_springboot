@@ -18,10 +18,6 @@ public class ProductCategory {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id", nullable = false, insertable = false, updatable = false)
-    private Category category;
-
     @Column(name = "category_id", nullable = false)
     private Long categoryId;
 
