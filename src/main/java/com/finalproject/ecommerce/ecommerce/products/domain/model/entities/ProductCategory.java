@@ -3,7 +3,7 @@ package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Getter
 @Entity
@@ -20,7 +20,8 @@ public class ProductCategory {
     private Long categoryId;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime assignedAt;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date assignedAt;
 
     public ProductCategory() {
     }
@@ -34,6 +35,6 @@ public class ProductCategory {
         }
         this.productId = productId;
         this.categoryId = categoryId;
-        this.assignedAt = LocalDateTime.now();
+        this.assignedAt = new Date();
     }
 }

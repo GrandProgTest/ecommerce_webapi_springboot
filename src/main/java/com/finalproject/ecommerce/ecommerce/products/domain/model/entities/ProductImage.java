@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Getter
 @Entity
@@ -32,7 +32,8 @@ public class ProductImage {
     private Boolean isPrimary;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt;
 
     public ProductImage() {
     }
@@ -47,7 +48,7 @@ public class ProductImage {
         this.productId = productId;
         this.imageUrl = imageUrl;
         this.isPrimary = isPrimary != null ? isPrimary : false;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = new Date();
     }
 
     public void setAsPrimary() {

@@ -4,7 +4,7 @@ import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.Audit
 import jakarta.persistence.*;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Getter
@@ -17,10 +17,12 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     private Integer percentage;
 
     @Column(nullable = false)
-    private LocalDateTime startDate;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date startDate;
 
     @Column(nullable = false)
-    private LocalDateTime endDate;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date endDate;
 
     @Column(nullable = false)
     private Boolean isActive;
@@ -28,7 +30,7 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     protected Discount() {
     }
 
-    public Discount(String code, Integer percentage, LocalDateTime startDate, LocalDateTime endDate) {
+    public Discount(String code, Integer percentage, Date startDate, Date endDate) {
         this.code = code;
         this.percentage = percentage;
         this.startDate = startDate;
@@ -47,14 +49,14 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
         if (startDate == null || endDate == null) {
             throw new IllegalArgumentException("Start and end dates cannot be null");
         }
-        if (endDate.isBefore(startDate)) {
+        if (endDate.before(startDate)) {
             throw new IllegalArgumentException("End date must be after start date");
         }
     }
 
     public boolean isValid() {
-        LocalDateTime now = LocalDateTime.now();
-        return isActive && !now.isBefore(startDate) && !now.isAfter(endDate);
+        Date now = new Date();
+        return isActive && !now.before(startDate) && !now.after(endDate);
     }
 
     public void deactivate() {

@@ -1,7 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 public record OrderResource(
@@ -14,6 +14,6 @@ public record OrderResource(
         BigDecimal totalAmount,
         BigDecimal discountAmount,
         List<OrderItemResource> items,
-        LocalDateTime createdAt
+        Date createdAt
 ) {
 }

@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -25,7 +25,8 @@ public class Category {
     private String name;
 
     @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt;
 
     @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoryId", referencedColumnName = "id")
@@ -42,7 +43,7 @@ public class Category {
             throw new IllegalArgumentException("Category name must be between 2 and 100 characters");
         }
         this.name = name;
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = new Date();
     }
 
     public void updateName(String newName) {

@@ -5,8 +5,6 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities
 import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.OrderItemResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.OrderResource;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.stream.Collectors;
 
 public class OrderResourceFromEntityAssembler {
@@ -24,9 +22,7 @@ public class OrderResourceFromEntityAssembler {
                 order.getItems().stream()
                         .map(OrderResourceFromEntityAssembler::toItemResource)
                         .collect(Collectors.toList()),
-                order.getCreatedAt() != null ?
-                    LocalDateTime.ofInstant(order.getCreatedAt().toInstant(), ZoneId.systemDefault()) :
-                    null
+                order.getCreatedAt()
         );
     }
 
