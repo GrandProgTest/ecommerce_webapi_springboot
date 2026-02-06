@@ -71,7 +71,9 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             throw new InvalidOrderOperationException("Order already exists for this cart");
         }
 
-        Order order = new Order(command.userId(), command.cartId(), command.addressId());
+        OrderStatus pendingStatus = orderStatusRepository.findByName(OrderStatuses.PENDING.name()).orElseThrow(() -> new IllegalStateException("Pending order status not found"));
+
+        Order order = new Order(command.userId(), command.cartId(), command.addressId(), pendingStatus);
 
         cartDto.items().forEach(cartItem -> {
             BigDecimal price = productContextFacade.getProductPrice(cartItem.productId());
@@ -97,7 +99,9 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         iamContextFacade.validateUserCanAccessResource(order.getUserId());
 
-        order.cancel();
+        OrderStatus cancelledStatus = orderStatusRepository.findByName(OrderStatuses.CANCELLED.name()).orElseThrow(() -> new IllegalStateException("Cancelled order status not found"));
+
+        order.cancel(cancelledStatus);
         return orderRepository.save(order);
     }
 
@@ -111,7 +115,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                     case PAID -> "Order has been paid";
                     case CANCELLED -> "Order has been cancelled";
                 };
-                orderStatusRepository.save(new OrderStatus(status.name(), description));
+                orderStatusRepository.save(new OrderStatus(status, description));
             }
         });
     }

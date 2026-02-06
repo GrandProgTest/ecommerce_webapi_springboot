@@ -33,29 +33,29 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @NotNull
     @Valid
     @Embedded
-    @AttributeOverride(name = "amount", column = @Column(name = "price", nullable = false, precision = 10, scale = 2))
+    @AttributeOverride(name = "amount", column = @Column(nullable = false, precision = 10, scale = 2))
     private Money price;
 
     @NotNull
     @Min(value = 0)
-    @Column(name = "stock", nullable = false)
+    @Column(nullable = false)
     private Integer stock;
 
     @NotNull
-    @Column(name = "is_active", nullable = false)
+    @Column(nullable = false)
     private Boolean isActive;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @OneToMany(fetch = FetchType.LAZY)
+    @JoinColumn(name = "productId", referencedColumnName = "id")
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
     @NotNull
     @Positive
-    @Column(name = "created_by_user_id", nullable = false)
+    @Column(nullable = false)
     private Long createdByUserId;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @JoinColumn
     private final List<ProductImage> images = new ArrayList<>();
 
     public Product() {

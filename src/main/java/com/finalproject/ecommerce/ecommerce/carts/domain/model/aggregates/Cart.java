@@ -2,7 +2,7 @@ package com.finalproject.ecommerce.ecommerce.carts.domain.model.aggregates;
 
 import com.finalproject.ecommerce.ecommerce.carts.domain.exceptions.InvalidCartOperationException;
 import com.finalproject.ecommerce.ecommerce.carts.domain.model.entities.CartItem;
-import com.finalproject.ecommerce.ecommerce.carts.domain.model.valueobjects.CartStatuses;
+import com.finalproject.ecommerce.ecommerce.carts.domain.model.entities.CartStatus;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -19,19 +19,18 @@ import java.util.Optional;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "cart")
 public class Cart extends AuditableAbstractAggregateRoot<Cart> {
 
     @NotNull
-    @Column(name = "user_id", nullable = false, unique = true)
+    @Column(nullable = false, unique = true)
     private Long userId;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "VARCHAR(20)")
-    private CartStatuses status;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(nullable = false)
+    private CartStatus status;
 
-    @Column(name = "checked_out_at")
+    @Column
     @Temporal(TemporalType.TIMESTAMP)
     private Date checkedOutAt;
 
@@ -43,7 +42,15 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
             throw new IllegalArgumentException("User ID cannot be null");
         }
         this.userId = userId;
-        this.status = CartStatuses.ACTIVE;
+        this.items = new ArrayList<>();
+    }
+
+    public Cart(Long userId, CartStatus status) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+        this.userId = userId;
+        this.status = status;
         this.items = new ArrayList<>();
     }
 
@@ -115,20 +122,20 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     }
 
 
-    public void checkout() {
+    public void checkout(CartStatus checkedOutStatus) {
         validateActiveStatus();
 
         if (this.items.isEmpty()) {
             throw new InvalidCartOperationException("Cannot checkout an empty cart");
         }
 
-        this.status = CartStatuses.CHECKED_OUT;
+        this.status = checkedOutStatus;
         this.checkedOutAt = new Date();
     }
 
-    public void markAsAbandoned() {
+    public void markAsAbandoned(CartStatus abandonedStatus) {
         validateActiveStatus();
-        this.status = CartStatuses.ABANDONED;
+        this.status = abandonedStatus;
     }
 
 
@@ -157,12 +164,12 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     }
 
     public boolean isActive() {
-        return this.status == CartStatuses.ACTIVE;
+        return this.status.isActive();
     }
 
     private void validateActiveStatus() {
         if (!isActive()) {
-            throw new InvalidCartOperationException("Cannot modify cart with status: " + this.status);
+            throw new InvalidCartOperationException("Cannot modify cart with status: " + this.status.getStringName());
         }
     }
 }

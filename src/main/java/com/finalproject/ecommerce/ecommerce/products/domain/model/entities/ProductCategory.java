@@ -7,21 +7,19 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "product_categories",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"product_id", "category_id"}))
 public class ProductCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "product_id", nullable = false)
+    @Column(nullable = false)
     private Long productId;
 
-    @Column(name = "category_id", nullable = false)
+    @Column(nullable = false)
     private Long categoryId;
 
-    @Column(name = "assigned_at", nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime assignedAt;
 
     public ProductCategory() {

@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "product_image")
 public class ProductImage {
 
     @Id
@@ -20,19 +19,19 @@ public class ProductImage {
 
     @NotNull
     @Positive
-    @Column(name = "product_id", nullable = false)
+    @Column(nullable = false)
     private Long productId;
 
     @NotNull
     @Embedded
-    @AttributeOverride(name = "url", column = @Column(name = "image_url", nullable = false, columnDefinition = "TEXT"))
+    @AttributeOverride(name = "url", column = @Column(nullable = false, columnDefinition = "TEXT"))
     private ImageUrl imageUrl;
 
     @NotNull
-    @Column(name = "is_primary", nullable = false)
+    @Column(nullable = false)
     private Boolean isPrimary;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public ProductImage() {

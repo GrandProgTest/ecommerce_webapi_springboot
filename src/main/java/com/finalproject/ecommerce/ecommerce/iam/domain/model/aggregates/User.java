@@ -11,7 +11,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "users")
 @Getter
 @Setter
 public class User extends AuditableAbstractAggregateRoot<User> {
@@ -34,7 +33,7 @@ public class User extends AuditableAbstractAggregateRoot<User> {
 
     @NotNull
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "role_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Role role;
 
     public User() {}

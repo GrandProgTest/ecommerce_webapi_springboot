@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 @Entity
-@Table(name = "cart_item", uniqueConstraints = {@UniqueConstraint(name = "uq_cart_product", columnNames = {"cart_id", "product_id"})})
 public class CartItem extends AuditableModel {
 
     @Id
@@ -19,11 +18,11 @@ public class CartItem extends AuditableModel {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cart_id", nullable = false, foreignKey = @ForeignKey(name = "fk_cart_item_cart"))
+    @JoinColumn(nullable = false)
     private Cart cart;
 
     @NotNull
-    @Column(name = "product_id", nullable = false)
+    @Column(nullable = false)
     private Long productId;
 
     @NotNull

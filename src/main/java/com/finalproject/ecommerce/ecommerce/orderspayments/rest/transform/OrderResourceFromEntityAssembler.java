@@ -18,7 +18,7 @@ public class OrderResourceFromEntityAssembler {
                 order.getCartId(),
                 order.getAddressId(),
                 order.getDiscount() != null ? order.getDiscount().getCode() : null,
-                order.getStatus().name(),
+                order.getStatus().getName(),
                 order.getTotalAmount(),
                 order.getDiscountAmount(),
                 order.getItems().stream()

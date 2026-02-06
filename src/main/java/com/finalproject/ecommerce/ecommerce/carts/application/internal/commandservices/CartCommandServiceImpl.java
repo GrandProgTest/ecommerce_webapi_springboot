@@ -24,7 +24,7 @@ public class CartCommandServiceImpl implements CartCommandService {
     private final IamContextFacade iamContextFacade;
     private final ProductContextFacade productContextFacade;
 
-    public CartCommandServiceImpl (CartRepository cartRepository, CartStatusRepository cartStatusRepository, IamContextFacade iamContextFacade, ProductContextFacade productContextFacade) {
+    public CartCommandServiceImpl(CartRepository cartRepository, CartStatusRepository cartStatusRepository, IamContextFacade iamContextFacade, ProductContextFacade productContextFacade) {
         this.cartRepository = cartRepository;
         this.cartStatusRepository = cartStatusRepository;
         this.iamContextFacade = iamContextFacade;
@@ -35,8 +35,7 @@ public class CartCommandServiceImpl implements CartCommandService {
     public Cart handle(AddProductToCartCommand command) {
         final Long userId;
         if (command.userId() == null) {
-            userId = iamContextFacade.getCurrentUserId()
-                    .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+            userId = iamContextFacade.getCurrentUserId().orElseThrow(() -> new IllegalStateException("User not authenticated"));
         } else {
             iamContextFacade.validateUserCanAccessResource(command.userId());
             userId = command.userId();
@@ -50,8 +49,10 @@ public class CartCommandServiceImpl implements CartCommandService {
             throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available or does not have enough stock");
         }
 
-        Cart cart = cartRepository.findByUserIdAndStatus(userId, CartStatuses.ACTIVE).orElseGet(() -> {
-            Cart newCart = new Cart(userId);
+        CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
+
+        Cart cart = cartRepository.findByUserIdAndStatus(userId, activeStatus).orElseGet(() -> {
+            Cart newCart = new Cart(userId, activeStatus);
             return cartRepository.save(newCart);
         });
 
@@ -64,7 +65,9 @@ public class CartCommandServiceImpl implements CartCommandService {
     public Cart handle(UpdateCartItemQuantityCommand command) {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
-        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+        CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
+
+        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         if (!productContextFacade.hasAvailableStock(command.productId(), command.quantity())) {
             throw new InvalidCartOperationException("Product with ID " + command.productId() + " does not have enough stock");
@@ -79,7 +82,9 @@ public class CartCommandServiceImpl implements CartCommandService {
     public Cart handle(UpdateCartItemQuantityByCartItemIdCommand command) {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
-        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+        CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
+
+        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         var cartItem = cart.getItems().stream().filter(item -> item.getId().equals(command.cartItemId())).findFirst().orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
 
@@ -96,7 +101,9 @@ public class CartCommandServiceImpl implements CartCommandService {
     public Cart handle(RemoveProductFromCartCommand command) {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
-        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+        CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
+
+        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         cart.removeProduct(command.productId());
 
@@ -107,7 +114,9 @@ public class CartCommandServiceImpl implements CartCommandService {
     public Cart handle(RemoveCartItemCommand command) {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
-        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+        CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
+
+        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         cart.removeCartItem(command.cartItemId());
 
@@ -118,7 +127,9 @@ public class CartCommandServiceImpl implements CartCommandService {
     public Cart handle(ClearCartCommand command) {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
-        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+        CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
+
+        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         cart.clear();
 
@@ -130,9 +141,13 @@ public class CartCommandServiceImpl implements CartCommandService {
     public Cart handle(CheckoutCartCommand command) {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
-        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), CartStatuses.ACTIVE).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+        CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
 
-        cart.checkout();
+        Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
+
+        CartStatus checkedOutStatus = cartStatusRepository.findByName(CartStatuses.CHECKED_OUT.name()).orElseThrow(() -> new IllegalStateException("Checked out cart status not found"));
+
+        cart.checkout(checkedOutStatus);
 
         return cartRepository.save(cart);
     }
@@ -147,7 +162,7 @@ public class CartCommandServiceImpl implements CartCommandService {
                     case CHECKED_OUT -> "Cart has been checked out and converted to an order";
                     case ABANDONED -> "Cart has been abandoned by the user";
                 };
-                cartStatusRepository.save(new CartStatus(status.name(), description));
+                cartStatusRepository.save(new CartStatus(status, description));
             }
         });
     }

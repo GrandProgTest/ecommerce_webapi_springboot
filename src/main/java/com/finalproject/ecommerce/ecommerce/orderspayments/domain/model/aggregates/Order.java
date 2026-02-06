@@ -2,9 +2,11 @@ package com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggrega
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderItem;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.OrderStatuses;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -13,43 +15,44 @@ import java.util.List;
 
 @Entity
 @Getter
-@Table(name = "\"order\"")
 public class Order extends AuditableAbstractAggregateRoot<Order> {
 
-    @Column(nullable = false, name = "user_id")
+    @Column(nullable = false)
     private Long userId;
 
-    @Column(unique = true, name = "cart_id")
+    @Column(unique = true)
     private Long cartId;
 
-    @Column(nullable = false, name = "address_id")
+    @Column(nullable = false)
     private Long addressId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "discount_id")
+    @JoinColumn
     private Discount discount;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private OrderStatuses status;
+    @NotNull
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(nullable = false)
+    private OrderStatus status;
 
-    @Column(nullable = false, name = "total_amount", precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(nullable = false, name = "discount_amount", precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal discountAmount;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
+
     protected Order() {
     }
 
-    public Order(Long userId, Long cartId, Long addressId) {
+    public Order(Long userId, Long cartId, Long addressId, OrderStatus status) {
         this.userId = userId;
         this.cartId = cartId;
         this.addressId = addressId;
-        this.status = OrderStatuses.PENDING;
+        this.status = status;
         this.totalAmount = BigDecimal.ZERO;
         this.discountAmount = BigDecimal.ZERO;
     }
@@ -87,29 +90,29 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         this.totalAmount = subtotal.subtract(this.discountAmount);
     }
 
-    public void markAsPaid() {
-        if (this.status != OrderStatuses.PENDING) {
+    public void markAsPaid(OrderStatus paidStatus) {
+        if (!this.status.isPending()) {
             throw new IllegalStateException("Only pending orders can be marked as paid");
         }
-        this.status = OrderStatuses.PAID;
+        this.status = paidStatus;
     }
 
-    public void cancel() {
-        if (this.status == OrderStatuses.PAID) {
+    public void cancel(OrderStatus cancelledStatus) {
+        if (this.status.isPaid()) {
             throw new IllegalStateException("Paid orders cannot be cancelled");
         }
-        this.status = OrderStatuses.CANCELLED;
+        this.status = cancelledStatus;
     }
 
     public boolean isPending() {
-        return this.status == OrderStatuses.PENDING;
+        return this.status.isPending();
     }
 
     public boolean isPaid() {
-        return this.status == OrderStatuses.PAID;
+        return this.status.isPaid();
     }
 
     public boolean isCancelled() {
-        return this.status == OrderStatuses.CANCELLED;
+        return this.status.isCancelled();
     }
 }

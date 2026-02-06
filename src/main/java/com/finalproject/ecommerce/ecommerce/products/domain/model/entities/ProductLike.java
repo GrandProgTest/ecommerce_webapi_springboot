@@ -7,16 +7,15 @@ import java.io.Serializable;
 
 @Getter
 @Entity
-@Table(name = "product_like")
 @IdClass(ProductLike.ProductLikeId.class)
 public class ProductLike {
 
     @Id
-    @Column(name = "user_id", nullable = false)
+    @Column(nullable = false)
     private Long userId;
 
     @Id
-    @Column(name = "product_id", nullable = false)
+    @Column(nullable = false)
     private Long productId;
 
     public ProductLike() {

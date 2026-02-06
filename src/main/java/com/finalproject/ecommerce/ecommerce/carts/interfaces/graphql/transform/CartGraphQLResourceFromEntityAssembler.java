@@ -13,7 +13,7 @@ public class CartGraphQLResourceFromEntityAssembler {
     public static CartGraphQLResource toResourceFromEntity(Cart cart) {
         List<CartItemGraphQLResource> items = cart.getItems().stream().map(CartItemGraphQLResourceFromEntityAssembler::toResourceFromEntity).collect(Collectors.toList());
 
-        return new CartGraphQLResource(cart.getId(), cart.getUserId(), cart.getStatus().name(), items, cart.getTotalItems(), formatDateTime(cart.getCreatedAt()), formatDateTime(cart.getUpdatedAt()), formatDateTime(cart.getCheckedOutAt()));
+        return new CartGraphQLResource(cart.getId(), cart.getUserId(), cart.getStatus().getName(), items, cart.getTotalItems(), formatDateTime(cart.getCreatedAt()), formatDateTime(cart.getUpdatedAt()), formatDateTime(cart.getCheckedOutAt()));
     }
 
     private static String formatDateTime(java.util.Date date) {

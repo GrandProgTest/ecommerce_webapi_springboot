@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 
 @Entity
 @Getter
-@Table(name = "order_item")
 public class OrderItem {
 
     @Id
@@ -16,13 +15,13 @@ public class OrderItem {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(nullable = false)
     private Order order;
 
-    @Column(nullable = false, name = "product_id")
+    @Column(nullable = false)
     private Long productId;
 
-    @Column(nullable = false, name = "price_at_purchase", precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal priceAtPurchase;
 
     @Column(nullable = false)

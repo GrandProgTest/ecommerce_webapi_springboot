@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "discount")
 public class Discount extends AuditableAbstractAggregateRoot<Discount> {
 
     @Column(nullable = false, unique = true, length = 50)
@@ -17,13 +16,13 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     @Column(nullable = false)
     private Integer percentage;
 
-    @Column(nullable = false, name = "start_date")
+    @Column(nullable = false)
     private LocalDateTime startDate;
 
-    @Column(nullable = false, name = "end_date")
+    @Column(nullable = false)
     private LocalDateTime endDate;
 
-    @Column(nullable = false, name = "is_active")
+    @Column(nullable = false)
     private Boolean isActive;
 
     protected Discount() {
