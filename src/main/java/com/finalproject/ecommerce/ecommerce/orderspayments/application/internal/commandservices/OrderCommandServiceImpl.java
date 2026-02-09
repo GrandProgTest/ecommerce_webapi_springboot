@@ -13,11 +13,10 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.OrderStatuses;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.repositories.DiscountRepository;
-import com.finalproject.ecommerce.ecommerce.orderspayments.repositories.OrderRepository;
-import com.finalproject.ecommerce.ecommerce.orderspayments.repositories.OrderStatusRepository;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.DiscountRepository;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderRepository;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderStatusRepository;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.acl.ProductContextFacade;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

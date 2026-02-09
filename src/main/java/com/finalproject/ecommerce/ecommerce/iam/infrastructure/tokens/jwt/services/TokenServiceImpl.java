@@ -3,11 +3,9 @@ package com.finalproject.ecommerce.ecommerce.iam.infrastructure.tokens.jwt.servi
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.tokens.jwt.BearerTokenService;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -23,9 +21,9 @@ import java.util.function.Function;
  * This class is responsible for generating and validating JWT tokens.
  * It uses the secret and expiration days from the application.properties file.
  */
+@Slf4j
 @Service
 public class TokenServiceImpl implements BearerTokenService {
-    private final Logger LOGGER = LoggerFactory.getLogger(TokenServiceImpl.class);
 
     private static final String AUTHORIZATION_PARAMETER_NAME = "Authorization";
     private static final String BEARER_TOKEN_PREFIX = "Bearer ";
@@ -96,20 +94,12 @@ public class TokenServiceImpl implements BearerTokenService {
     public boolean validateToken(String token) {
         try {
             Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
-            LOGGER.info("Token is valid");
+            log.info("Token is valid");
             return true;
-        } catch (SignatureException e) {
-            LOGGER.error("Invalid JSON Web Token Signature: {}", e.getMessage());
-        } catch (MalformedJwtException e) {
-            LOGGER.error("Invalid JSON Web Token: {}", e.getMessage());
-        } catch (ExpiredJwtException e) {
-            LOGGER.error("JSON Web Token is expired: {}", e.getMessage());
-        } catch (UnsupportedJwtException e) {
-            LOGGER.error("JSON Web Token is unsupported: {}", e.getMessage());
-        } catch (IllegalArgumentException e) {
-            LOGGER.error("JSON Web Token claims string is empty: {}", e.getMessage());
+        } catch (JwtException | IllegalArgumentException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+            return false;
         }
-        return false;
     }
 
     /**

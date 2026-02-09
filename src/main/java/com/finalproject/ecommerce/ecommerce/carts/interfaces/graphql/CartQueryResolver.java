@@ -4,16 +4,18 @@ import com.finalproject.ecommerce.ecommerce.carts.domain.model.queries.GetCurren
 import com.finalproject.ecommerce.ecommerce.carts.domain.services.CartQueryService;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.graphql.resources.CartGraphQLResource;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.graphql.transform.CartGraphQLResourceFromEntityAssembler;
-import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 @Controller
-@RequiredArgsConstructor
 public class CartQueryResolver {
 
     private final CartQueryService cartQueryService;
+
+    public CartQueryResolver(CartQueryService cartQueryService) {
+        this.cartQueryService = cartQueryService;
+    }
 
     @QueryMapping
     @PreAuthorize("isAuthenticated()")

@@ -10,9 +10,8 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignOutCom
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RefreshTokenRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +27,10 @@ import java.util.Optional;
 
 
 //Later implementation HttpOnlY Cookie
+@Slf4j
 @Service
 public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandService {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RefreshTokenCommandServiceImpl.class);
     private static final int TOKEN_LENGTH = 64;
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -51,7 +50,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     @Override
     @Transactional
     public String createRefreshToken(User user) {
-        LOGGER.info("Creating refresh token for user: {}", user.getUsername());
+        log.info("Creating refresh token for user: {}", user.getUsername());
 
         // Currently this has been added so that only one refresh token is valid at a time
         // In the future, we might want to allow multiple tokens per user (e.g. for multiple devices)
@@ -66,7 +65,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
 
         refreshTokenRepository.save(refreshToken);
 
-        LOGGER.info("Refresh token created successfully for user: {}", user.getUsername());
+        log.info("Refresh token created successfully for user: {}", user.getUsername());
 
         return plainToken;
     }
@@ -74,14 +73,14 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     @Override
     @Transactional
     public Optional<ImmutablePair<ImmutablePair<User, String>, String>> handle(RefreshTokenCommand command) {
-        LOGGER.info("Processing refresh token request");
+        log.info("Processing refresh token request");
 
         String tokenHash = hashToken(command.refreshToken());
 
         Optional<RefreshToken> refreshTokenOpt = refreshTokenRepository.findWithLockByTokenHash(tokenHash);
 
         if (refreshTokenOpt.isEmpty()) {
-            LOGGER.warn("Refresh token not found - possible attack or invalid token");
+            log.warn("Refresh token not found - possible attack or invalid token");
             return Optional.empty();
         }
 
@@ -93,13 +92,13 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
         }
 
         if (!refreshToken.isValid()) {
-            LOGGER.warn("Invalid refresh token - revoked: {}, expired: {}", refreshToken.isRevoked(), refreshToken.isExpired());
+            log.warn("Invalid refresh token - revoked: {}, expired: {}", refreshToken.isRevoked(), refreshToken.isExpired());
             return Optional.empty();
         }
 
         Optional<User> userOpt = userRepository.findById(refreshToken.getUserId());
         if (userOpt.isEmpty()) {
-            LOGGER.error("User not found for refresh token - user ID: {}", refreshToken.getUserId());
+            log.error("User not found for refresh token - user ID: {}", refreshToken.getUserId());
             return Optional.empty();
         }
 
@@ -112,7 +111,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
 
         String newRefreshToken = createRefreshToken(user);
 
-        LOGGER.info("Token refresh successful for user: {}", user.getUsername());
+        log.info("Token refresh successful for user: {}", user.getUsername());
 
         return Optional.of(ImmutablePair.of(ImmutablePair.of(user, newAccessToken), newRefreshToken));
     }
@@ -120,13 +119,13 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     @Override
     @Transactional
     public void handle(RevokeRefreshTokenCommand command) {
-        LOGGER.info("Revoking refresh token");
+        log.info("Revoking refresh token");
 
         String tokenHash = hashToken(command.refreshToken());
         Optional<RefreshToken> refreshTokenOpt = refreshTokenRepository.findByTokenHash(tokenHash);
 
         if (refreshTokenOpt.isEmpty()) {
-            LOGGER.warn("Refresh token not found for revocation");
+            log.warn("Refresh token not found for revocation");
             return;
         }
 
@@ -134,38 +133,38 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
         refreshToken.revoke();
         refreshTokenRepository.save(refreshToken);
 
-        LOGGER.info("Refresh token revoked successfully");
+        log.info("Refresh token revoked successfully");
     }
 
     @Override
     @Transactional
     public void handle(RevokeAllUserRefreshTokensCommand command) {
-        LOGGER.info("Revoking all refresh tokens for user ID: {}", command.userId());
+        log.info("Revoking all refresh tokens for user ID: {}", command.userId());
         revokeAllUserTokens(command.userId());
     }
 
     @Override
     @Transactional
     public void handle(SignOutCommand command) {
-        LOGGER.info("Sign-out requested for user: {}", command.username());
+        log.info("Sign-out requested for user: {}", command.username());
 
         Optional<User> userOpt = userRepository.findByUsername(command.username());
         if (userOpt.isEmpty()) {
-            LOGGER.warn("User not found for sign-out: {}", command.username());
+            log.warn("User not found for sign-out: {}", command.username());
             return;
         }
 
         User user = userOpt.get();
         revokeAllUserTokens(user.getId());
 
-        LOGGER.info("Sign-out completed for user: {}", command.username());
+        log.info("Sign-out completed for user: {}", command.username());
     }
 
     private void revokeAllUserTokens(Long userId) {
         var tokens = refreshTokenRepository.findByUserIdAndRevoked(userId, false);
         tokens.forEach(RefreshToken::revoke);
         refreshTokenRepository.saveAll(tokens);
-        LOGGER.info("Revoked {} tokens for user ID: {}", tokens.size(), userId);
+        log.info("Revoked {} tokens for user ID: {}", tokens.size(), userId);
     }
 
     private String generateSecureToken() {

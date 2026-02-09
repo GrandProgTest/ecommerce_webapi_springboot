@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +19,16 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(value = "/api/v1/cart", produces = APPLICATION_JSON_VALUE)
-@RequiredArgsConstructor
 @Tag(name = "Cart", description = "Cart Management Endpoints")
 public class CartsController {
 
     private final CartCommandService cartCommandService;
     private final CartQueryService cartQueryService;
+
+    public CartsController(CartCommandService cartCommandService, CartQueryService cartQueryService) {
+        this.cartCommandService = cartCommandService;
+        this.cartQueryService = cartQueryService;
+    }
 
     @GetMapping("/{userId}")
     @PreAuthorize("isAuthenticated()")

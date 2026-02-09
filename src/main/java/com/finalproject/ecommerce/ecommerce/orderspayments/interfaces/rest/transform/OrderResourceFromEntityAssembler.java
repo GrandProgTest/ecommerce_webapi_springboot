@@ -1,9 +1,9 @@
-package com.finalproject.ecommerce.ecommerce.orderspayments.rest.transform;
+package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderItem;
-import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.OrderItemResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.OrderResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderItemResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderResource;
 
 import java.util.stream.Collectors;
 

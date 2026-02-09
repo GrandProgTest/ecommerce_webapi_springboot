@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.orderspayments.rest;
+package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest;
 
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.CartContextFacade;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
@@ -6,15 +6,14 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.CreateOrderResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.OrderResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.rest.transform.CreateOrderCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.orderspayments.rest.transform.OrderResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.CreateOrderResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.CreateOrderCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.OrderResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,7 +26,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping(value = "/api/v1/orders", produces = APPLICATION_JSON_VALUE)
-@RequiredArgsConstructor
 @Tag(name = "Orders", description = "Order Management Endpoints")
 public class OrdersController {
 
@@ -35,6 +33,13 @@ public class OrdersController {
     private final OrderQueryService orderQueryService;
     private final IamContextFacade iamContextFacade;
     private final CartContextFacade cartContextFacade;
+
+    public OrdersController(OrderCommandService orderCommandService, OrderQueryService orderQueryService, IamContextFacade iamContextFacade, CartContextFacade cartContextFacade) {
+        this.orderCommandService = orderCommandService;
+        this.orderQueryService = orderQueryService;
+        this.iamContextFacade = iamContextFacade;
+        this.cartContextFacade = cartContextFacade;
+    }
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")

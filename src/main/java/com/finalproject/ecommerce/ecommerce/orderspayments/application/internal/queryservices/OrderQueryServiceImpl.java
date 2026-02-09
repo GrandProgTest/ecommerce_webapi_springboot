@@ -6,8 +6,7 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrderByIdQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.repositories.OrderRepository;
-import lombok.RequiredArgsConstructor;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,7 +1,7 @@
-package com.finalproject.ecommerce.ecommerce.orderspayments.rest.transform;
+package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CreateOrderFromCartCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources.CreateOrderResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.CreateOrderResource;
 
 public class CreateOrderCommandFromResourceAssembler {
 

@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.orderspayments.rest.resources;
+package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources;
 
 import java.math.BigDecimal;
 import java.util.Date;

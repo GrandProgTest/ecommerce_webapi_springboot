@@ -10,7 +10,6 @@ import com.finalproject.ecommerce.ecommerce.carts.domain.services.CartQueryServi
 import com.finalproject.ecommerce.ecommerce.carts.infrastructure.persistence.jpa.repositories.CartRepository;
 import com.finalproject.ecommerce.ecommerce.carts.infrastructure.persistence.jpa.repositories.CartStatusRepository;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;

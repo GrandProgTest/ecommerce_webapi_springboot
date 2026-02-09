@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.orderspayments.repositories;
+package com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
