@@ -20,7 +20,6 @@ public class ProductCategory {
     private Long categoryId;
 
     @Column(nullable = false, updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private Date assignedAt;
 
     public ProductCategory() {

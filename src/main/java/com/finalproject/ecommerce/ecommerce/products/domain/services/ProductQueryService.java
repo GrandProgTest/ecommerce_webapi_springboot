@@ -1,10 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.services;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetActiveProductsQuery;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetAllProductsQuery;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByIdsQuery;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,4 +15,8 @@ public interface ProductQueryService {
     List<Product> handle(GetActiveProductsQuery query);
 
     List<Product> handle(GetProductsByIdsQuery query);
+
+    Page<Product> handle(GetProductsWithPaginationQuery query);
+
+    Page<Product> handle(GetProductsByCategoryWithPaginationQuery query);
 }

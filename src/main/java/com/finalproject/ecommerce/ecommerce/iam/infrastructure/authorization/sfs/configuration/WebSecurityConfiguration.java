@@ -80,7 +80,8 @@ public class WebSecurityConfiguration {
                 "/api/v1/auth/refresh",
                 "/graphiql/**",
                 "/v3/api-docs/**",
-                "/swagger-ui.html",
+                "/v3/api-docs",
+                "/swagger-ui/index.html",
                 "/swagger-ui/**",
                 "/swagger-resources/**",
                 "/webjars/**").permitAll().

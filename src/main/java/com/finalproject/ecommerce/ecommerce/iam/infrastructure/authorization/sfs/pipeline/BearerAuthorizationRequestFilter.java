@@ -7,7 +7,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,9 +18,6 @@ import java.io.IOException;
 public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
 
     private final BearerTokenService tokenService;
-
-
-    @Qualifier("defaultUserDetailsService")
     private final UserDetailsService userDetailsService;
 
     public BearerAuthorizationRequestFilter(BearerTokenService tokenService, UserDetailsService userDetailsService) {
@@ -31,20 +27,42 @@ public class BearerAuthorizationRequestFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
+
+        String path = request.getRequestURI();
+
+        if (path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") || path.startsWith("/swagger-resources") || path.startsWith("/webjars")) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String token = tokenService.getBearerTokenFrom(request);
+
+        if (token == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
-            String token = tokenService.getBearerTokenFrom(request);
-            log.info("Token: {}", token);
-            if (token != null && tokenService.validateToken(token)) {
+            if (tokenService.validateToken(token)) {
+
                 String username = tokenService.getUsernameFromToken(token);
                 var userDetails = userDetailsService.loadUserByUsername(username);
-                SecurityContextHolder.getContext().setAuthentication(UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request));
+
+                var authentication = UsernamePasswordAuthenticationTokenBuilder.build(userDetails, request);
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                log.debug("User '{}' authenticated successfully", username);
+
             } else {
-                log.info("Token is not valid");
+                log.warn("Invalid JWT token received");
             }
 
-        } catch (Exception e) {
-            log.error("Cannot set user authentication: {}", e.getMessage());
+        } catch (Exception ex) {
+            log.error("JWT authentication failed: {}", ex.getMessage());
         }
+
         filterChain.doFilter(request, response);
     }
 }

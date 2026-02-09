@@ -17,11 +17,9 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     private Integer percentage;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private Date startDate;
 
     @Column(nullable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private Date endDate;
 
     @Column(nullable = false)

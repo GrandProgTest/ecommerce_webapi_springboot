@@ -32,7 +32,6 @@ public class ProductImage {
     private Boolean isPrimary;
 
     @Column(nullable = false, updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
     public ProductImage() {

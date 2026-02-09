@@ -1,6 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.exceptions;
 
-public class CategoryNotFoundException extends RuntimeException {
+import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.ResourceNotFoundException;
+
+public class CategoryNotFoundException extends ResourceNotFoundException {
     public CategoryNotFoundException(Long categoryId) {
         super("Category with ID " + categoryId + " not found");
     }

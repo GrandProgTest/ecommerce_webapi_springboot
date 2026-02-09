@@ -165,7 +165,6 @@ public class StripePaymentServiceImpl implements StripeService {
                     log.info("Order ID (metadata): {}", session.getMetadata().get("order_id"));
                     log.info("========================");
 
-                    // TODO: Trigger domain event or call command service to mark order as paid
                 } else {
                     log.error("Expected Session object but got: {}",
                             stripeObject != null ? stripeObject.getClass().getName() : "null");

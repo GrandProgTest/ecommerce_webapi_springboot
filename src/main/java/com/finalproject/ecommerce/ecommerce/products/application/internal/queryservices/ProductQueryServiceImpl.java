@@ -4,6 +4,10 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Pro
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,5 +43,25 @@ public class ProductQueryServiceImpl implements ProductQueryService {
             return List.of();
         }
         return productRepository.findAllById(query.productIds());
+    }
+
+    @Override
+    public Page<Product> handle(GetProductsWithPaginationQuery query) {
+        Sort sort = query.sortDirection().equalsIgnoreCase("desc")
+                ? Sort.by(query.sortBy()).descending()
+                : Sort.by(query.sortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
+        return productRepository.findAll(pageable);
+    }
+
+    @Override
+    public Page<Product> handle(GetProductsByCategoryWithPaginationQuery query) {
+        Sort sort = query.sortDirection().equalsIgnoreCase("desc")
+                ? Sort.by(query.sortBy()).descending()
+                : Sort.by(query.sortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
+        return productRepository.findByProductCategoriesCategoryId(query.categoryId(), pageable);
     }
 }

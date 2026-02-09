@@ -1,6 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.carts.domain.exceptions;
 
-public class CartNotFoundException extends RuntimeException {
+import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.ResourceNotFoundException;
+
+public class CartNotFoundException extends ResourceNotFoundException {
     public CartNotFoundException(String message) {
         super(message);
     }

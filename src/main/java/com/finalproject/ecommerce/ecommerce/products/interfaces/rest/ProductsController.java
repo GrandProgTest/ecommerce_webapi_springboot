@@ -2,17 +2,22 @@ package com.finalproject.ecommerce.ecommerce.products.interfaces.rest;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetAllProductsQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByCategoryWithPaginationQuery;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.PaginatedProductResponse;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.CreateProductCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.ProductResourceFromEntityAssembler;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.UpdateProductCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
+import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.resources.PageMetadata;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,8 +25,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -125,14 +128,45 @@ public class ProductsController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all products", description = "Get all products. Public endpoint - No authentication required.")
+    @Operation(summary = "Get all products with pagination and filtering",
+            description = "Get paginated list of products with sorting options and optional category filter. Public endpoint - No authentication required.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Products retrieved successfully (may be empty list)")})
-    public ResponseEntity<List<ProductResource>> getAllProducts() {
-        var products = productQueryService.handle(new GetAllProductsQuery());
-        var productResources = products.stream()
+            @ApiResponse(responseCode = "200", description = "Products retrieved successfully with pagination metadata (may be empty list if no products or category has no products)"),
+            @ApiResponse(responseCode = "400", description = "Invalid page size - Allowed values are: 20, 50, 100")})
+    public ResponseEntity<PaginatedProductResponse> getAllProducts(
+            @Parameter(description = "Category ID for filtering (optional)", example = "1")
+            @RequestParam(required = false) Long categoryId,
+            @Parameter(description = "Page number (0-indexed)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of products per page (allowed: 20, 50, 100)", example = "20")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Field to sort by (name, price, createdAt)", example = "name")
+            @RequestParam(defaultValue = "id") String sortBy,
+            @Parameter(description = "Sort direction (asc or desc)", example = "asc")
+            @RequestParam(defaultValue = "asc") String sortDirection) {
+
+        if (size != 20 && size != 50 && size != 100) {
+            throw new InvalidPageSizeException(size);
+        }
+
+        var productPage = categoryId != null
+                ? productQueryService.handle(new GetProductsByCategoryWithPaginationQuery(categoryId, page, size, sortBy, sortDirection))
+                : productQueryService.handle(new GetProductsWithPaginationQuery(page, size, sortBy, sortDirection));
+
+        var productResources = productPage.getContent().stream()
                 .map(ProductResourceFromEntityAssembler::toResourceFromEntity)
                 .toList();
-        return ResponseEntity.ok(productResources);
+
+        var pageMetadata = new PageMetadata(
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.hasNext(),
+                productPage.hasPrevious()
+        );
+
+        var response = new PaginatedProductResponse(productResources, pageMetadata);
+        return ResponseEntity.ok(response);
     }
 }
