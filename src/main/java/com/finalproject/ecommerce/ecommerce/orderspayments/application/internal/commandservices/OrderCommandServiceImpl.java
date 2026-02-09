@@ -3,6 +3,8 @@ package com.finalproject.ecommerce.ecommerce.orderspayments.application.internal
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.CartContextFacade;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.dto.CartDto;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
+import com.finalproject.ecommerce.ecommerce.orderspayments.application.internal.outboundservices.payment.StripeService;
+import com.finalproject.ecommerce.ecommerce.orderspayments.application.internal.outboundservices.payment.dto.StripeResponse;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.InvalidOrderOperationException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.OrderNotFoundException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
@@ -17,12 +19,14 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persis
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderRepository;
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderStatusRepository;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.acl.ProductContextFacade;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 
+@Slf4j
 @Service
 public class OrderCommandServiceImpl implements OrderCommandService {
 
@@ -32,15 +36,17 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     private final CartContextFacade cartContextFacade;
     private final ProductContextFacade productContextFacade;
     private final IamContextFacade iamContextFacade;
+    private final StripeService stripeService;
 
 
-    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DiscountRepository discountRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade) {
+    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DiscountRepository discountRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade, StripeService stripeService) {
         this.orderRepository = orderRepository;
         this.orderStatusRepository = orderStatusRepository;
         this.discountRepository = discountRepository;
         this.cartContextFacade = cartContextFacade;
         this.productContextFacade = productContextFacade;
         this.iamContextFacade = iamContextFacade;
+        this.stripeService = stripeService;
     }
 
     @Override
@@ -52,25 +58,21 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             throw new InvalidOrderOperationException("User with ID " + command.userId() + " does not exist");
         }
 
-        CartDto cartDto = cartContextFacade.getCartById(command.cartId()).orElseThrow(() -> new InvalidOrderOperationException("Cart with ID " + command.cartId() + " not found"));
+        CartDto cartDto = cartContextFacade.getCartById(command.cartId())
+                .orElseThrow(() -> new InvalidOrderOperationException("Cart with ID " + command.cartId() + " not found"));
 
-        if (!cartDto.userId().equals(command.userId())) {
-            throw new InvalidOrderOperationException("Cart does not belong to the user");
+        boolean cartBelongsToDifferentUser = !cartDto.userId().equals(command.userId());
+        if (cartBelongsToDifferentUser || cartDto.items().isEmpty() ||
+            !cartDto.isActive() || orderRepository.findByCartId(command.cartId()).isPresent()) {
+            throw new InvalidOrderOperationException(
+                cartBelongsToDifferentUser ? "Cart does not belong to the user" :
+                cartDto.items().isEmpty() ? "Cannot create order from empty cart" :
+                !cartDto.isActive() ? "Cart is not active" : "Order already exists for this cart"
+            );
         }
 
-        if (cartDto.items().isEmpty()) {
-            throw new InvalidOrderOperationException("Cannot create order from empty cart");
-        }
-
-        if (!cartDto.isActive()) {
-            throw new InvalidOrderOperationException("Cart is not active");
-        }
-
-        if (orderRepository.findByCartId(command.cartId()).isPresent()) {
-            throw new InvalidOrderOperationException("Order already exists for this cart");
-        }
-
-        OrderStatus pendingStatus = orderStatusRepository.findByName(OrderStatuses.PENDING.name()).orElseThrow(() -> new IllegalStateException("Pending order status not found"));
+        OrderStatus pendingStatus = orderStatusRepository.findByName(OrderStatuses.PENDING.name())
+                .orElseThrow(() -> new IllegalStateException("Pending order status not found"));
 
         Order order = new Order(command.userId(), command.cartId(), command.addressId(), pendingStatus);
 
@@ -85,6 +87,10 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         }
 
         Order savedOrder = orderRepository.save(order);
+
+        StripeResponse stripeResponse = stripeService.createCheckoutSession(savedOrder);
+        savedOrder.setStripeCheckoutInfo(stripeResponse.getSessionId(), stripeResponse.getCheckoutUrl());
+        savedOrder = orderRepository.save(savedOrder);
 
         cartContextFacade.checkoutCart(command.userId(), command.cartId());
 
@@ -101,6 +107,16 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         OrderStatus cancelledStatus = orderStatusRepository.findByName(OrderStatuses.CANCELLED.name()).orElseThrow(() -> new IllegalStateException("Cancelled order status not found"));
 
         order.cancel(cancelledStatus);
+
+        if (order.getStripeSessionId() != null && !order.getStripeSessionId().isEmpty()) {
+            try {
+                stripeService.cancelPaymentSession(order.getStripeSessionId());
+            } catch (RuntimeException e) {
+                log.error("Failed to cancel Stripe session {} for order {}: {}",
+                        order.getStripeSessionId(), order.getId(), e.getMessage());
+            }
+        }
+
         return orderRepository.save(order);
     }
 

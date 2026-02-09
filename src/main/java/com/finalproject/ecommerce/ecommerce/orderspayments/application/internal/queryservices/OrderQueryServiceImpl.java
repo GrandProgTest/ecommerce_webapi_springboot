@@ -27,9 +27,6 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     @Override
     @Transactional(readOnly = true)
     public List<Order> handle(GetAllOrdersQuery query) {
-        if (!iamContextFacade.currentUserHasRole("ROLE_MANAGER")) {
-            throw new org.springframework.security.access.AccessDeniedException("Only managers can view all orders");
-        }
         return orderRepository.findAll();
     }
 

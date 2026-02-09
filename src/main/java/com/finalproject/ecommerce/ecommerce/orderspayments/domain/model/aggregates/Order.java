@@ -41,6 +41,12 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal discountAmount;
 
+    @Column(length = 500)
+    private String stripeSessionId;
+
+    @Column(length = 1000)
+    private String checkoutUrl;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -95,6 +101,11 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
             throw new IllegalStateException("Only pending orders can be marked as paid");
         }
         this.status = paidStatus;
+    }
+
+    public void setStripeCheckoutInfo(String sessionId, String checkoutUrl) {
+        this.stripeSessionId = sessionId;
+        this.checkoutUrl = checkoutUrl;
     }
 
     public void cancel(OrderStatus cancelledStatus) {

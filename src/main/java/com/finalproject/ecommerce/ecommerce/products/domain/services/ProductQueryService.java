@@ -4,6 +4,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Pro
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetActiveProductsQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetAllProductsQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByIdsQuery;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,4 +15,6 @@ public interface ProductQueryService {
     List<Product> handle(GetAllProductsQuery query);
 
     List<Product> handle(GetActiveProductsQuery query);
+
+    List<Product> handle(GetProductsByIdsQuery query);
 }

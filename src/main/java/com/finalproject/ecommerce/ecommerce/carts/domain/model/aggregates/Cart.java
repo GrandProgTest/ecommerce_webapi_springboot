@@ -31,7 +31,6 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     private CartStatus status;
 
     @Column
-    @Temporal(TemporalType.TIMESTAMP)
     private Date checkedOutAt;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

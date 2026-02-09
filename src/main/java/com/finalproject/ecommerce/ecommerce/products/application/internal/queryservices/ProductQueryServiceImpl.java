@@ -32,4 +32,12 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     public List<Product> handle(GetActiveProductsQuery query) {
         return productRepository.findByIsActive(true);
     }
+
+    @Override
+    public List<Product> handle(GetProductsByIdsQuery query) {
+        if (query.productIds() == null || query.productIds().isEmpty()) {
+            return List.of();
+        }
+        return productRepository.findAllById(query.productIds());
+    }
 }
