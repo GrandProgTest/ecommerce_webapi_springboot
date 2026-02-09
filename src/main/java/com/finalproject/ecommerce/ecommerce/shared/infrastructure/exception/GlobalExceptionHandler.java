@@ -38,27 +38,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request);
     }
 
-
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ApiError> handleBadRequest(RuntimeException ex, HttpServletRequest request) {
         log.warn("Bad request at {}: {}", request.getRequestURI(), ex.getMessage());
 
-        String message = ex instanceof MethodArgumentTypeMismatchException mismatch
-                ? String.format("Parameter '%s' should be of type %s",
-                        mismatch.getName(),
-                        mismatch.getRequiredType() != null ? mismatch.getRequiredType().getSimpleName() : "unknown")
-                : ex.getMessage() != null ? ex.getMessage() : "Invalid request parameters";
+        String message = ex instanceof MethodArgumentTypeMismatchException mismatch ? String.format("Parameter '%s' should be of type %s", mismatch.getName(), mismatch.getRequiredType() != null ? mismatch.getRequiredType().getSimpleName() : "unknown") : ex.getMessage() != null ? ex.getMessage() : "Invalid request parameters";
 
         return buildResponse(message, HttpStatus.BAD_REQUEST, request);
     }
-
 
     @ExceptionHandler(BusinessRuleException.class)
     public ResponseEntity<ApiError> handleBusinessRuleViolation(BusinessRuleException ex, HttpServletRequest request) {
         log.warn("Business rule violation at {}: {}", request.getRequestURI(), ex.getMessage());
         return buildResponse(ex.getMessage(), HttpStatus.CONFLICT, request);
     }
-
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGlobalException(Exception ex, HttpServletRequest request) {
@@ -106,13 +99,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 
     private ResponseEntity<ApiError> buildResponse(String message, HttpStatus status, HttpServletRequest request) {
-        ApiError apiError = new ApiError(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, request.getRequestURI());
-        return ResponseEntity.status(status).body(apiError);
+        return buildResponse(message, status, request.getRequestURI());
     }
 
-
     private ResponseEntity<Object> buildObjectResponse(String message, HttpStatus status, WebRequest request) {
-        ApiError apiError = new ApiError(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, request.getDescription(false).replace("uri=", ""));
-        return ResponseEntity.status(status).body(apiError);
+        String path = extractPathFromWebRequest(request);
+        return ResponseEntity.status(status).body(buildApiError(message, status, path));
+    }
+
+    private ResponseEntity<ApiError> buildResponse(String message, HttpStatus status, String path) {
+        return ResponseEntity.status(status).body(buildApiError(message, status, path));
+    }
+
+    private ApiError buildApiError(String message, HttpStatus status, String path) {
+        return new ApiError(LocalDateTime.now(), status.value(), status.getReasonPhrase(), message, path);
+    }
+
+    private String extractPathFromWebRequest(WebRequest request) {
+        String description = request.getDescription(false);
+        return description.startsWith("uri=") ? description.substring(4) : description;
     }
 }

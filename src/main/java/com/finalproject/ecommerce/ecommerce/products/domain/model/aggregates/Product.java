@@ -1,13 +1,12 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.model.annotations.ValidPrice;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductCategory;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductImage;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.ImageUrl;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.Money;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -31,10 +30,9 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     private String description;
 
     @NotNull
-    @Valid
-    @Embedded
-    @AttributeOverride(name = "amount", column = @Column(nullable = false, precision = 10, scale = 2))
-    private Money price;
+    @ValidPrice
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
     @NotNull
     @Min(value = 0)
@@ -64,7 +62,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     public Product(CreateProductCommand command, Long createdByUserId) {
         this.name = command.name();
         this.description = command.description();
-        this.price = new Money(command.price());
+        this.price = command.price();
         this.createdByUserId = createdByUserId;
         this.stock = command.stock();
         this.isActive = true;
@@ -77,8 +75,8 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         if (description != null) {
             this.description = description;
         }
-        if (price != null) {
-            this.price = new Money(price);
+        if (price != null && price.compareTo(BigDecimal.ONE) >= 0) {
+            this.price = price;
         }
         if (stock != null && stock >= 0) {
             this.stock = stock;
@@ -123,10 +121,6 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
 
     public boolean isActive() {
         return this.isActive;
-    }
-
-    public BigDecimal getPriceAmount() {
-        return this.price.amount();
     }
 
     public List<Long> getCategoryIds() {

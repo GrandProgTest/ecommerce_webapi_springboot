@@ -12,7 +12,7 @@ public class ProductResourceFromEntityAssembler {
             entity.getId(),
             entity.getName(),
             entity.getDescription(),
-            entity.getPriceAmount(),
+            entity.getPrice(),
             entity.getStock(),
             entity.getIsActive(),
             entity.getCategoryIds(),

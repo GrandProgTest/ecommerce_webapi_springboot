@@ -62,7 +62,7 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt.map(Product::getPriceAmount).orElse(null);
+        return productOpt.map(Product::getPrice).orElse(null);
     }
 
     @Override
