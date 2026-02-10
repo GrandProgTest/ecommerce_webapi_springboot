@@ -1,60 +1,40 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import jakarta.persistence.*;
 import lombok.Getter;
 
-import java.io.Serializable;
-
 @Getter
 @Entity
-@IdClass(ProductLike.ProductLikeId.class)
+@Table(uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "product_id"})
+})
 public class ProductLike {
 
     @Id
-    @Column(nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private Long userId;
 
-    @Id
-    @Column(nullable = false)
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Product product;
 
     public ProductLike() {
     }
 
-    public ProductLike(Long userId, Long productId) {
+    public ProductLike(Long userId, Product product) {
         if (userId == null || userId <= 0) {
             throw new IllegalArgumentException("User ID must be positive");
         }
-        if (productId == null || productId <= 0) {
-            throw new IllegalArgumentException("Product ID must be positive");
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null");
         }
         this.userId = userId;
-        this.productId = productId;
+        this.product = product;
     }
 
-    public static class ProductLikeId implements Serializable {
-        private Long userId;
-        private Long productId;
-
-        public ProductLikeId() {
-        }
-
-        public ProductLikeId(Long userId, Long productId) {
-            this.userId = userId;
-            this.productId = productId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            ProductLikeId that = (ProductLikeId) o;
-            return userId.equals(that.userId) && productId.equals(that.productId);
-        }
-
-        @Override
-        public int hashCode() {
-            return 31 * userId.hashCode() + productId.hashCode();
-        }
+    public Long getProductId() {
+        return product != null ? product.getId() : null;
     }
 }

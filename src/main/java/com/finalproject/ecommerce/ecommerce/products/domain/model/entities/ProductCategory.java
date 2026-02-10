@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -13,11 +14,11 @@ public class ProductCategory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Product product;
 
-    @Column(nullable = false)
-    private Long categoryId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Category category;
 
     @Column(nullable = false, updatable = false)
     private Date assignedAt;
@@ -25,15 +26,23 @@ public class ProductCategory {
     public ProductCategory() {
     }
 
-    public ProductCategory(Long productId, Long categoryId) {
-        if (productId == null) {
-            throw new IllegalArgumentException("Product ID cannot be null");
+    public ProductCategory(Product product, Category category) {
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null");
         }
-        if (categoryId == null) {
-            throw new IllegalArgumentException("Category ID cannot be null");
+        if (category == null) {
+            throw new IllegalArgumentException("Category cannot be null");
         }
-        this.productId = productId;
-        this.categoryId = categoryId;
+        this.product = product;
+        this.category = category;
         this.assignedAt = new Date();
+    }
+
+    public Long getProductId() {
+        return product != null ? product.getId() : null;
+    }
+
+    public Long getCategoryId() {
+        return category != null ? category.getId() : null;
     }
 }

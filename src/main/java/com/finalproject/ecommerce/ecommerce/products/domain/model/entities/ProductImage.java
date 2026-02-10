@@ -1,10 +1,9 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.ImageUrl;
 import jakarta.persistence.*;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 
 import java.util.Date;
@@ -17,10 +16,8 @@ public class ProductImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Positive
-    @Column(nullable = false)
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    private Product product;
 
     @NotNull
     @Embedded
@@ -37,17 +34,21 @@ public class ProductImage {
     public ProductImage() {
     }
 
-    public ProductImage(Long productId, ImageUrl imageUrl, Boolean isPrimary) {
-        if (productId == null || productId <= 0) {
-            throw new IllegalArgumentException("Product ID must be positive");
+    public ProductImage(Product product, ImageUrl imageUrl, Boolean isPrimary) {
+        if (product == null) {
+            throw new IllegalArgumentException("Product cannot be null");
         }
         if (imageUrl == null) {
             throw new IllegalArgumentException("Image URL cannot be null");
         }
-        this.productId = productId;
+        this.product = product;
         this.imageUrl = imageUrl;
         this.isPrimary = isPrimary != null ? isPrimary : false;
         this.createdAt = new Date();
+    }
+
+    public Long getProductId() {
+        return product != null ? product.getId() : null;
     }
 
     public void setAsPrimary() {

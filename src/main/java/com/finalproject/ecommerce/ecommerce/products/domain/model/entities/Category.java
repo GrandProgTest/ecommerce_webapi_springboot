@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -25,9 +24,7 @@ public class Category extends AuditableModel {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "categoryId", referencedColumnName = "id")
+    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
     public Category() {

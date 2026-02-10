@@ -2,8 +2,10 @@ package com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.annotations.ValidPrice;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductCategory;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductImage;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductLike;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.ImageUrl;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
@@ -43,17 +45,18 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @Column(nullable = false)
     private Boolean isActive;
 
-    @OneToMany(fetch = FetchType.LAZY)
-    @JoinColumn(name = "productId", referencedColumnName = "id")
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    private final List<ProductLike> likes = new ArrayList<>();
 
     @NotNull
     @Positive
     @Column(nullable = false)
     private Long createdByUserId;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JoinColumn
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private final List<ProductImage> images = new ArrayList<>();
 
     public Product() {
@@ -83,8 +86,8 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         }
     }
 
-    public void assignCategory(Long categoryId) {
-        var productCategory = new ProductCategory(this.getId(), categoryId);
+    public void assignCategory(Category category) {
+        var productCategory = new ProductCategory(this, category);
         this.productCategories.add(productCategory);
     }
 
@@ -107,7 +110,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         if (isPrimary != null && isPrimary) {
             images.forEach(ProductImage::unsetAsPrimary);
         }
-        var image = new ProductImage(this.getId(), imageUrl, isPrimary);
+        var image = new ProductImage(this, imageUrl, isPrimary);
         this.images.add(image);
     }
 
@@ -126,6 +129,16 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     public List<Long> getCategoryIds() {
         return productCategories.stream()
                 .map(ProductCategory::getCategoryId)
+                .toList();
+    }
+
+    public int getLikesCount() {
+        return likes.size();
+    }
+
+    public List<Long> getLikedByUserIds() {
+        return likes.stream()
+                .map(ProductLike::getUserId)
                 .toList();
     }
 }

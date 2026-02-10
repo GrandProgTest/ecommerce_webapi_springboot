@@ -79,9 +79,8 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             throw new ProductNotFoundException(command.productId());
         }
 
-        if (!categoryRepository.existsById(command.categoryId())) {
-            throw new CategoryNotFoundException(command.categoryId());
-        }
+        var category = categoryRepository.findById(command.categoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(command.categoryId()));
 
         if (productCategoryRepository.existsByProductIdAndCategoryId(command.productId(), command.categoryId())) {
             throw new DuplicateCategoryAssignmentException(command.productId(), command.categoryId());
@@ -89,7 +88,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
         try {
             return productRepository.findById(command.productId()).map(product -> {
-                product.assignCategory(command.categoryId());
+                product.assignCategory(category);
                 productRepository.save(product);
                 return product;
             });

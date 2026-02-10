@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductLike;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -8,15 +9,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductLikeRepository extends JpaRepository<ProductLike, ProductLike.ProductLikeId> {
+public interface ProductLikeRepository extends JpaRepository<ProductLike, Long> {
 
-    List<ProductLike> findByProductId(Long productId);
+    List<ProductLike> findByProduct(Product product);
 
     List<ProductLike> findByUserId(Long userId);
 
-    Optional<ProductLike> findByUserIdAndProductId(Long userId, Long productId);
+    Optional<ProductLike> findByUserIdAndProduct(Long userId, Product product);
 
-    boolean existsByUserIdAndProductId(Long userId, Long productId);
+    boolean existsByUserIdAndProduct(Long userId, Product product);
 
-    long countByProductId(Long productId);
+    long countByProduct(Product product);
 }
