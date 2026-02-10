@@ -4,6 +4,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Pro
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
 
 import java.util.Optional;
@@ -16,4 +17,6 @@ public interface ProductCommandService {
     void handle(DeleteProductCommand command);
 
     Optional<Product> handle(AssignCategoryToProductCommand command);
+
+    boolean handle(ToggleProductLikeCommand command);
 }

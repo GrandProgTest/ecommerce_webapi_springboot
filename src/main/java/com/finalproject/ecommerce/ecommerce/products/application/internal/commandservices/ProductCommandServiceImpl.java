@@ -8,6 +8,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Pro
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.CategoryRepository;
@@ -94,6 +95,23 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             });
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while assigning category to product: %s".formatted(e.getMessage()));
+        }
+    }
+
+    @Override
+    public boolean handle(ToggleProductLikeCommand command) {
+        var userId = iamContextFacade.getCurrentUserId()
+                .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+
+        var product = productRepository.findById(command.productId())
+                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+
+        try {
+            boolean isLiked = product.toggleLike(userId);
+            productRepository.save(product);
+            return isLiked;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error while toggling product like: %s".formatted(e.getMessage()));
         }
     }
 

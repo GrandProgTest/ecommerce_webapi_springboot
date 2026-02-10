@@ -2,6 +2,7 @@ package com.finalproject.ecommerce.ecommerce.products.interfaces.rest;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByCategoryWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
@@ -10,6 +11,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQuer
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.PaginatedProductResponse;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ToggleProductLikeResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.CreateProductCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.ProductResourceFromEntityAssembler;
@@ -125,6 +127,32 @@ public class ProductsController {
         var productEntity = product.get();
         var productResource = ProductResourceFromEntityAssembler.toResourceFromEntity(productEntity);
         return ResponseEntity.ok(productResource);
+    }
+
+    @PostMapping("/{productId}/like")
+    @PreAuthorize("hasAuthority('ROLE_CLIENT')")
+    @Operation(summary = "Toggle like on a product",
+               description = "Like or unlike a product. If the user hasn't liked the product, it will add a like. If the user has already liked it, it will remove the like. Only users with ROLE_CLIENT can like products.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Like toggled successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_CLIENT"),
+            @ApiResponse(responseCode = "404", description = "Product not found")})
+    public ResponseEntity<ToggleProductLikeResource> toggleProductLike(@PathVariable Long productId) {
+        var toggleCommand = new ToggleProductLikeCommand(productId);
+        boolean isLiked = productCommandService.handle(toggleCommand);
+
+        var product = productQueryService.handle(new GetProductByIdQuery(productId))
+                .orElseThrow(() -> new IllegalStateException("Product not found after toggle"));
+
+        String message = isLiked ? "Product liked successfully" : "Product like removed successfully";
+        var response = new ToggleProductLikeResource(
+                productId,
+                isLiked,
+                product.getLikesCount(),
+                message
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping

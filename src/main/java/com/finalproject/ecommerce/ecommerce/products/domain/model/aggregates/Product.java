@@ -1,5 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductAlreadyLikedException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotLikedException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.annotations.ValidPrice;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
@@ -140,5 +142,39 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         return likes.stream()
                 .map(ProductLike::getUserId)
                 .toList();
+    }
+
+    public boolean isLikedByUser(Long userId) {
+        return likes.stream()
+                .anyMatch(like -> like.getUserId().equals(userId));
+    }
+
+    public void addLike(Long userId) {
+        if (isLikedByUser(userId)) {
+            throw new ProductAlreadyLikedException(
+                    userId, this.getId()
+            );
+        }
+        var like = new ProductLike(userId, this);
+        this.likes.add(like);
+    }
+
+    public void removeLike(Long userId) {
+        boolean removed = this.likes.removeIf(like -> like.getUserId().equals(userId));
+        if (!removed) {
+            throw new ProductNotLikedException(
+                    userId, this.getId()
+            );
+        }
+    }
+
+    public boolean toggleLike(Long userId) {
+        if (isLikedByUser(userId)) {
+            removeLike(userId);
+            return false;
+        } else {
+            addLike(userId);
+            return true;
+        }
     }
 }
