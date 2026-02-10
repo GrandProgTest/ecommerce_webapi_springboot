@@ -129,16 +129,18 @@ public class ProductsController {
         return ResponseEntity.ok(productResource);
     }
 
-    @PostMapping("/{productId}/like")
+    @PostMapping("/users/{userId}/products/{productId}/like")
     @PreAuthorize("hasAuthority('ROLE_CLIENT')")
     @Operation(summary = "Toggle like on a product",
-               description = "Like or unlike a product. If the user hasn't liked the product, it will add a like. If the user has already liked it, it will remove the like. Only users with ROLE_CLIENT can like products.")
+            description = "Like or unlike a product. If the user hasn't liked the product, it will add a like. If the user has already liked it, it will remove the like. Only users with ROLE_CLIENT can like products. Users can only like products for themselves.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Like toggled successfully"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_CLIENT"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_CLIENT or user can only like for themselves"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
-    public ResponseEntity<ToggleProductLikeResource> toggleProductLike(@PathVariable Long productId) {
-        var toggleCommand = new ToggleProductLikeCommand(productId);
+    public ResponseEntity<ToggleProductLikeResource> toggleProductLike(
+            @PathVariable Long userId,
+            @PathVariable Long productId) {
+        var toggleCommand = new ToggleProductLikeCommand(userId, productId);
         boolean isLiked = productCommandService.handle(toggleCommand);
 
         var product = productQueryService.handle(new GetProductByIdQuery(productId))

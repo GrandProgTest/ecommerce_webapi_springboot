@@ -100,8 +100,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
     @Override
     public boolean handle(ToggleProductLikeCommand command) {
-        var userId = iamContextFacade.getCurrentUserId()
-                .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+        final Long userId;
+        if (command.userId() == null) {
+            userId = iamContextFacade.getCurrentUserId()
+                    .orElseThrow(() -> new IllegalStateException("User not authenticated"));
+        } else {
+            iamContextFacade.validateUserCanAccessResource(command.userId());
+            userId = command.userId();
+        }
 
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));

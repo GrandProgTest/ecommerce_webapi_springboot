@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.iam.application.internal.services;
+package com.finalproject.ecommerce.ecommerce.iam.application.internal.validatorservices;
 
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Address;
