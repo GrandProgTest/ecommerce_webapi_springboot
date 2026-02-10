@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.iam.application.internal.validatorservices;
 
+import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.AddressNotFoundException;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Address;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.PermissionValidationService;
@@ -59,7 +60,7 @@ public class PermissionValidationServiceImpl implements PermissionValidationServ
         Optional<Address> addressOpt = addressRepository.findById(addressId);
 
         if (addressOpt.isEmpty()) {
-            throw new AccessDeniedException("Address with ID " + addressId + " not found");
+            throw new AddressNotFoundException(addressId);
         }
 
         Address address = addressOpt.get();

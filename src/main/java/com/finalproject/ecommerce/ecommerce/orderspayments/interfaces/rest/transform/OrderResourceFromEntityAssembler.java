@@ -21,7 +21,8 @@ public class OrderResourceFromEntityAssembler {
                 order.getItems().stream()
                         .map(OrderResourceFromEntityAssembler::toItemResource)
                         .collect(Collectors.toList()),
-                order.getCreatedAt()
+                order.getCreatedAt(),
+                order.getPaidAt()
         );
     }
 

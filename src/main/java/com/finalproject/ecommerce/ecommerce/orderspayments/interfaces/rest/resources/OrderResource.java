@@ -13,6 +13,7 @@ public record OrderResource(
         String status,
         BigDecimal totalAmount,
         List<OrderItemResource> items,
-        Date createdAt
+        Date createdAt,
+        Date paidAt
 ) {
 }

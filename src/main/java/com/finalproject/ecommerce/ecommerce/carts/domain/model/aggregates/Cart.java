@@ -22,7 +22,7 @@ import java.util.Optional;
 public class Cart extends AuditableAbstractAggregateRoot<Cart> {
 
     @NotNull
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private Long userId;
 
     @NotNull

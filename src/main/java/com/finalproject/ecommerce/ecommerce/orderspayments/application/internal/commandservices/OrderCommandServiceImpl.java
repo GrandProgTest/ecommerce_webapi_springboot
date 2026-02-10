@@ -3,13 +3,14 @@ package com.finalproject.ecommerce.ecommerce.orderspayments.application.internal
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.CartContextFacade;
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.dto.CartDto;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
-import com.finalproject.ecommerce.ecommerce.orderspayments.application.internal.outboundservices.payment.StripeService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.application.internal.outboundservices.payment.dto.StripeResponse;
+import com.finalproject.ecommerce.ecommerce.orderspayments.application.dtos.PaymentSessionDto;
+import com.finalproject.ecommerce.ecommerce.orderspayments.application.ports.out.PaymentProvider;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.InvalidOrderOperationException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.OrderNotFoundException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CancelOrderCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CreateOrderFromCartCommand;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.MarkOrderAsPaidCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.SeedOrderStatusCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
@@ -36,17 +37,17 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     private final CartContextFacade cartContextFacade;
     private final ProductContextFacade productContextFacade;
     private final IamContextFacade iamContextFacade;
-    private final StripeService stripeService;
+    private final PaymentProvider paymentProvider;
 
 
-    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DiscountRepository discountRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade, StripeService stripeService) {
+    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DiscountRepository discountRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade, PaymentProvider paymentProvider) {
         this.orderRepository = orderRepository;
         this.orderStatusRepository = orderStatusRepository;
         this.discountRepository = discountRepository;
         this.cartContextFacade = cartContextFacade;
         this.productContextFacade = productContextFacade;
         this.iamContextFacade = iamContextFacade;
-        this.stripeService = stripeService;
+        this.paymentProvider = paymentProvider;
     }
 
     @Override
@@ -97,8 +98,8 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         Order savedOrder = orderRepository.save(order);
 
-        StripeResponse stripeResponse = stripeService.createCheckoutSession(savedOrder);
-        savedOrder.setStripeCheckoutInfo(stripeResponse.getSessionId(), stripeResponse.getCheckoutUrl());
+        PaymentSessionDto paymentSession = paymentProvider.initiatePayment(savedOrder);
+        savedOrder.setStripeCheckoutInfo(paymentSession.sessionId(), paymentSession.checkoutUrl());
         savedOrder = orderRepository.save(savedOrder);
 
         cartContextFacade.checkoutCart(command.userId(), command.cartId());
@@ -119,12 +120,35 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         if (order.getStripeSessionId() != null && !order.getStripeSessionId().isEmpty()) {
             try {
-                stripeService.cancelPaymentSession(order.getStripeSessionId());
+                paymentProvider.cancelPayment(order.getStripeSessionId());
             } catch (RuntimeException e) {
-                log.error("Failed to cancel Stripe session {} for order {}: {}",
+                log.error("Failed to cancel payment session {} for order {}: {}",
                         order.getStripeSessionId(), order.getId(), e.getMessage());
             }
         }
+
+        return orderRepository.save(order);
+    }
+
+    @Override
+    @Transactional
+    public Order handle(MarkOrderAsPaidCommand command) {
+        Order order = orderRepository.findByStripeSessionId(command.stripeSessionId())
+                .orElseThrow(() -> new OrderNotFoundException(
+                        "Order not found with Stripe session ID: " + command.stripeSessionId()));
+
+        if (order.isPaid()) {
+            log.warn("Idempotent webhook: Order {} is already PAID. Stripe session {} - ignoring duplicate event",
+                    order.getId(), command.stripeSessionId());
+            return order;
+        }
+
+        OrderStatus paidStatus = orderStatusRepository.findByName(OrderStatuses.PAID.name())
+                .orElseThrow(() -> new IllegalStateException("Paid order status not found"));
+
+        order.markAsPaid(paidStatus);
+
+        log.info("Order {} marked as paid via Stripe session {}", order.getId(), command.stripeSessionId());
 
         return orderRepository.save(order);
     }
