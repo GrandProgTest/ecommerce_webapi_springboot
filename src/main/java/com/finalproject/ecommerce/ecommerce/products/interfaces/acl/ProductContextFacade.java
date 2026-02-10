@@ -19,12 +19,6 @@ public interface ProductContextFacade {
 
     String getProductName(Long productId);
 
-    /**
-     * Gets product names for multiple product IDs in a single query (to avoid N+1 problem)
-     *
-     * @param productIds List of product IDs
-     * @return Map of productId to product name
-     */
     Map<Long, String> getProductNames(List<Long> productIds);
 
     boolean isProductAvailableForPurchase(Long productId, Integer quantity);
