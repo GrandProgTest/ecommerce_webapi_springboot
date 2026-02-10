@@ -1,7 +1,10 @@
 package com.finalproject.ecommerce.ecommerce.iam.application.acl.services;
 
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Address;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetAddressByIdQuery;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetUserByIdQuery;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetUserByUsernameQuery;
+import com.finalproject.ecommerce.ecommerce.iam.domain.services.AddressQueryService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserQueryService;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import org.apache.logging.log4j.util.Strings;
@@ -15,9 +18,11 @@ import java.util.Optional;
 @Service
 public class IamContextFacadeImpl implements IamContextFacade {
     private final UserQueryService userQueryService;
+    private final AddressQueryService addressQueryService;
 
-    public IamContextFacadeImpl(UserQueryService userQueryService) {
+    public IamContextFacadeImpl(UserQueryService userQueryService, AddressQueryService addressQueryService) {
         this.userQueryService = userQueryService;
+        this.addressQueryService = addressQueryService;
     }
 
     @Override
@@ -89,6 +94,34 @@ public class IamContextFacadeImpl implements IamContextFacade {
 
         if (!currentUserId.get().equals(resourceUserId)) {
             throw new org.springframework.security.access.AccessDeniedException("You don't have permission to access this resource");
+        }
+    }
+
+    @Override
+    public void validateAddressBelongsToUser(Long addressId, Long userId) {
+        if (addressId == null) {
+            throw new IllegalArgumentException("Address ID cannot be null");
+        }
+
+        if (addressId <= 0) {
+            throw new IllegalArgumentException("Address ID must be a positive number");
+        }
+
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+
+        var addressQuery = new GetAddressByIdQuery(addressId);
+        Optional<Address> addressOpt = addressQueryService.handle(addressQuery);
+
+        if (addressOpt.isEmpty()) {
+            throw new org.springframework.security.access.AccessDeniedException("Address with ID " + addressId + " not found");
+        }
+
+        Address address = addressOpt.get();
+
+        if (!address.getUserId().equals(userId)) {
+            throw new org.springframework.security.access.AccessDeniedException("Address with ID " + addressId + " does not belong to user with ID " + userId);
         }
     }
 }

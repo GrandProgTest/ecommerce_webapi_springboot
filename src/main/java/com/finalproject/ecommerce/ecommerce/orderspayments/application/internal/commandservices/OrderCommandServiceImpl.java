@@ -58,17 +58,25 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             throw new InvalidOrderOperationException("User with ID " + command.userId() + " does not exist");
         }
 
+        iamContextFacade.validateAddressBelongsToUser(command.addressId(), command.userId());
+
         CartDto cartDto = cartContextFacade.getCartById(command.cartId())
                 .orElseThrow(() -> new InvalidOrderOperationException("Cart with ID " + command.cartId() + " not found"));
 
-        boolean cartBelongsToDifferentUser = !cartDto.userId().equals(command.userId());
-        if (cartBelongsToDifferentUser || cartDto.items().isEmpty() ||
-            !cartDto.isActive() || orderRepository.findByCartId(command.cartId()).isPresent()) {
-            throw new InvalidOrderOperationException(
-                cartBelongsToDifferentUser ? "Cart does not belong to the user" :
-                cartDto.items().isEmpty() ? "Cannot create order from empty cart" :
-                !cartDto.isActive() ? "Cart is not active" : "Order already exists for this cart"
-            );
+        if (!cartDto.userId().equals(command.userId())) {
+            throw new InvalidOrderOperationException("Cart does not belong to the user");
+        }
+
+        if (cartDto.items().isEmpty()) {
+            throw new InvalidOrderOperationException("Cannot create order from empty cart");
+        }
+
+        if (!cartDto.isActive()) {
+            throw new InvalidOrderOperationException("Cart is not active");
+        }
+
+        if (orderRepository.findByCartId(command.cartId()).isPresent()) {
+            throw new InvalidOrderOperationException("Order already exists for this cart");
         }
 
         OrderStatus pendingStatus = orderStatusRepository.findByName(OrderStatuses.PENDING.name())
@@ -82,7 +90,8 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         });
 
         if (command.discountCode() != null && !command.discountCode().isBlank()) {
-            Discount discount = discountRepository.findByCode(command.discountCode()).orElseThrow(() -> new InvalidOrderOperationException("Discount code not found"));
+            Discount discount = discountRepository.findByCode(command.discountCode())
+                    .orElseThrow(() -> new InvalidOrderOperationException("Discount code not found"));
             order.applyDiscount(discount);
         }
 

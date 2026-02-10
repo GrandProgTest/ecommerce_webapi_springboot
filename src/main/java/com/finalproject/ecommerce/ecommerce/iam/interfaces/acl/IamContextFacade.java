@@ -15,4 +15,6 @@ public interface IamContextFacade {
     boolean currentUserHasRole(String roleName);
 
     void validateUserCanAccessResource(Long resourceUserId);
+
+    void validateAddressBelongsToUser(Long addressId, Long userId);
 }
