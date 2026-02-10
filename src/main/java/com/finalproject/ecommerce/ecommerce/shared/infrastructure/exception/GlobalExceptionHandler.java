@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -52,6 +54,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> handleBusinessRuleViolation(BusinessRuleException ex, HttpServletRequest request) {
         log.warn("Business rule violation at {}: {}", request.getRequestURI(), ex.getMessage());
         return buildResponse(ex.getMessage(), HttpStatus.CONFLICT, request, "business-rule-violation");
+    }
+
+    @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
+    public ResponseEntity<ProblemDetail> handleAccessDenied(RuntimeException ex, HttpServletRequest request) {
+        log.warn("Access denied at {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(
+                "Access denied. You don't have permission to access this resource.",
+                HttpStatus.FORBIDDEN,
+                request,
+                "access-denied"
+        );
     }
 
     @ExceptionHandler(Exception.class)

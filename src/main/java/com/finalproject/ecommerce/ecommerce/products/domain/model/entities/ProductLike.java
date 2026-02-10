@@ -20,6 +20,9 @@ public class ProductLike {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Product product;
 
+    @Column(nullable = false)
+    private Boolean isActive;
+
     public ProductLike() {
     }
 
@@ -32,9 +35,18 @@ public class ProductLike {
         }
         this.userId = userId;
         this.product = product;
+        this.isActive = true;
     }
 
     public Long getProductId() {
         return product != null ? product.getId() : null;
+    }
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
     }
 }

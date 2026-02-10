@@ -50,7 +50,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private final List<ProductLike> likes = new ArrayList<>();
 
     @NotNull
@@ -135,37 +135,47 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     }
 
     public int getLikesCount() {
-        return likes.size();
+        return (int) likes.stream()
+                .filter(ProductLike::getIsActive)
+                .count();
     }
 
     public List<Long> getLikedByUserIds() {
         return likes.stream()
+                .filter(ProductLike::getIsActive)
                 .map(ProductLike::getUserId)
                 .toList();
     }
 
     public boolean isLikedByUser(Long userId) {
         return likes.stream()
-                .anyMatch(like -> like.getUserId().equals(userId));
+                .anyMatch(like -> like.getUserId().equals(userId) && like.getIsActive());
     }
 
     public void addLike(Long userId) {
         if (isLikedByUser(userId)) {
-            throw new ProductAlreadyLikedException(
-                    userId, this.getId()
-            );
+            throw new ProductAlreadyLikedException(userId, this.getId());
         }
-        var like = new ProductLike(userId, this);
-        this.likes.add(like);
+
+        var existingLike = likes.stream()
+                .filter(like -> like.getUserId().equals(userId))
+                .findFirst();
+
+        if (existingLike.isPresent()) {
+            existingLike.get().activate();
+        } else {
+            var like = new ProductLike(userId, this);
+            this.likes.add(like);
+        }
     }
 
     public void removeLike(Long userId) {
-        boolean removed = this.likes.removeIf(like -> like.getUserId().equals(userId));
-        if (!removed) {
-            throw new ProductNotLikedException(
-                    userId, this.getId()
-            );
-        }
+        var like = likes.stream()
+                .filter(l -> l.getUserId().equals(userId) && l.getIsActive())
+                .findFirst()
+                .orElseThrow(() -> new ProductNotLikedException(userId, this.getId()));
+
+        like.deactivate();
     }
 
     public boolean toggleLike(Long userId) {
