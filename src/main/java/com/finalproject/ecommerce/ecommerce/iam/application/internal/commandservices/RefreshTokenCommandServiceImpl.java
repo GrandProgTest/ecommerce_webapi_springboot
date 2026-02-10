@@ -54,14 +54,14 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
 
         // Currently this has been added so that only one refresh token is valid at a time
         // In the future, we might want to allow multiple tokens per user (e.g. for multiple devices)
-        revokeAllUserTokens(user.getId());
+        revokeAllUserTokens(user);
 
         String plainToken = generateSecureToken();
         String tokenHash = hashToken(plainToken);
 
         Instant expiresAt = Instant.now().plus(refreshTokenExpirationDays, ChronoUnit.DAYS);
 
-        RefreshToken refreshToken = new RefreshToken(tokenHash, user.getId(), expiresAt);
+        RefreshToken refreshToken = new RefreshToken(tokenHash, user, expiresAt);
 
         refreshTokenRepository.save(refreshToken);
 
@@ -87,7 +87,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
         RefreshToken refreshToken = refreshTokenOpt.get();
 
         if (refreshToken.isUsed()) {
-            revokeAllUserTokens(refreshToken.getUserId());
+            revokeAllUserTokens(refreshToken.getUser());
             throw new SecurityException("Token reuse detected - all tokens revoked");
         }
 
@@ -96,13 +96,11 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
             return Optional.empty();
         }
 
-        Optional<User> userOpt = userRepository.findById(refreshToken.getUserId());
-        if (userOpt.isEmpty()) {
-            log.error("User not found for refresh token - user ID: {}", refreshToken.getUserId());
+        User user = refreshToken.getUser();
+        if (user == null) {
+            log.error("User not found for refresh token");
             return Optional.empty();
         }
-
-        User user = userOpt.get();
 
         refreshToken.markAsUsed();
         refreshTokenRepository.save(refreshToken);
@@ -140,7 +138,14 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     @Transactional
     public void handle(RevokeAllUserRefreshTokensCommand command) {
         log.info("Revoking all refresh tokens for user ID: {}", command.userId());
-        revokeAllUserTokens(command.userId());
+
+        Optional<User> userOpt = userRepository.findById(command.userId());
+        if (userOpt.isEmpty()) {
+            log.warn("User not found for revoking tokens: {}", command.userId());
+            return;
+        }
+
+        revokeAllUserTokens(userOpt.get());
     }
 
     @Override
@@ -155,16 +160,16 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
         }
 
         User user = userOpt.get();
-        revokeAllUserTokens(user.getId());
+        revokeAllUserTokens(user);
 
         log.info("Sign-out completed for user: {}", command.username());
     }
 
-    private void revokeAllUserTokens(Long userId) {
-        var tokens = refreshTokenRepository.findByUserIdAndRevoked(userId, false);
+    private void revokeAllUserTokens(User user) {
+        var tokens = refreshTokenRepository.findByUserAndRevoked(user, false);
         tokens.forEach(RefreshToken::revoke);
         refreshTokenRepository.saveAll(tokens);
-        log.info("Revoked {} tokens for user ID: {}", tokens.size(), userId);
+        log.info("Revoked {} tokens for user: {}", tokens.size(), user.getUsername());
     }
 
     private String generateSecureToken() {

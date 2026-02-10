@@ -38,9 +38,6 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal discountAmount;
-
     @Column(length = 500)
     private String stripeSessionId;
 
@@ -60,7 +57,6 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         this.addressId = addressId;
         this.status = status;
         this.totalAmount = BigDecimal.ZERO;
-        this.discountAmount = BigDecimal.ZERO;
     }
 
     public void addItem(Long productId, BigDecimal price, Integer quantity) {
@@ -80,20 +76,13 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         recalculateTotal();
     }
 
+    // Will be refactored following products discount codes and discount prices
     private void recalculateTotal() {
         BigDecimal subtotal = items.stream()
                 .map(OrderItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (discount != null && discount.isValid()) {
-            this.discountAmount = subtotal
-                    .multiply(BigDecimal.valueOf(discount.getPercentage()))
-                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-        } else {
-            this.discountAmount = BigDecimal.ZERO;
-        }
-
-        this.totalAmount = subtotal.subtract(this.discountAmount);
+        this.totalAmount = subtotal;
     }
 
     public void markAsPaid(OrderStatus paidStatus) {

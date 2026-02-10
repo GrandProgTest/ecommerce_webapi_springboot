@@ -1,7 +1,5 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest;
 
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.CartContextFacade;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetAllOrdersQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
@@ -31,14 +29,10 @@ public class OrdersController {
 
     private final OrderCommandService orderCommandService;
     private final OrderQueryService orderQueryService;
-    private final IamContextFacade iamContextFacade;
-    private final CartContextFacade cartContextFacade;
 
-    public OrdersController(OrderCommandService orderCommandService, OrderQueryService orderQueryService, IamContextFacade iamContextFacade, CartContextFacade cartContextFacade) {
+    public OrdersController(OrderCommandService orderCommandService, OrderQueryService orderQueryService) {
         this.orderCommandService = orderCommandService;
         this.orderQueryService = orderQueryService;
-        this.iamContextFacade = iamContextFacade;
-        this.cartContextFacade = cartContextFacade;
     }
 
     @PostMapping
@@ -50,17 +44,7 @@ public class OrdersController {
             @ApiResponse(responseCode = "401", description = "User not authenticated"),
             @ApiResponse(responseCode = "403", description = "Access denied")})
     public ResponseEntity<OrderResource> createOrder(@RequestBody CreateOrderResource resource) {
-        var currentUserId = iamContextFacade.getCurrentUserId()
-                .orElseThrow(() -> new IllegalStateException("User not authenticated"));
-
-        var cartDto = cartContextFacade.getActiveCartByUserId(currentUserId)
-                .orElseThrow(() -> new IllegalStateException("No active cart found for user"));
-
-        var command = CreateOrderCommandFromResourceAssembler.toCommandFromResource(
-                currentUserId,
-                cartDto.id(),
-                resource
-        );
+        var command = CreateOrderCommandFromResourceAssembler.toCommandFromResource(resource);
         var order = orderCommandService.handle(command);
         var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(order);
 

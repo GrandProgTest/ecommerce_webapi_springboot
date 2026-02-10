@@ -12,7 +12,6 @@ public record OrderResource(
         String discountCode,
         String status,
         BigDecimal totalAmount,
-        BigDecimal discountAmount,
         List<OrderItemResource> items,
         Date createdAt
 ) {

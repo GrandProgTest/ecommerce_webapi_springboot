@@ -16,9 +16,9 @@ public class RefreshToken extends AuditableAbstractAggregateRoot<RefreshToken> {
     private String tokenHash;
 
     @NotNull
-    @Positive
-    @Column(nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @NotNull
     @Future
@@ -39,23 +39,23 @@ public class RefreshToken extends AuditableAbstractAggregateRoot<RefreshToken> {
     public RefreshToken() {
     }
 
-    public RefreshToken(String tokenHash, Long userId, Instant expiresAt) {
-        validateInvariants(tokenHash, userId, expiresAt);
+    public RefreshToken(String tokenHash, User user, Instant expiresAt) {
+        validateInvariants(tokenHash, user, expiresAt);
 
         this.tokenHash = tokenHash;
-        this.userId = userId;
+        this.user = user;
         this.expiresAt = expiresAt;
         this.revoked = false;
         this.used = false;
     }
 
 
-    private void validateInvariants(String tokenHash, Long userId, Instant expiresAt) {
+    private void validateInvariants(String tokenHash, User user, Instant expiresAt) {
         if (tokenHash == null || tokenHash.isBlank()) {
             throw new IllegalArgumentException("Token hash cannot be null or empty");
         }
-        if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException("User ID must be a positive number");
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
         }
         if (expiresAt == null || expiresAt.isBefore(Instant.now())) {
             throw new IllegalArgumentException("Expiration date must be in the future");
@@ -94,7 +94,11 @@ public class RefreshToken extends AuditableAbstractAggregateRoot<RefreshToken> {
         this.revoked = true;
     }
 
-    public boolean belongsToUser(Long userId) {
-        return this.userId.equals(userId);
+    public boolean belongsToUser(User user) {
+        return this.user.equals(user);
+    }
+
+    public Long getUserId() {
+        return this.user != null ? this.user.getId() : null;
     }
 }
