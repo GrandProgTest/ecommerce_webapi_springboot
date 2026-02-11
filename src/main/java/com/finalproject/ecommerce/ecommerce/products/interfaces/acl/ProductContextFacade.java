@@ -22,4 +22,10 @@ public interface ProductContextFacade {
     Map<Long, String> getProductNames(List<Long> productIds);
 
     boolean isProductAvailableForPurchase(Long productId, Integer quantity);
+
+    void decreaseProductStock(Long productId, Integer quantity);
+
+    void increaseProductStock(Long productId, Integer quantity);
+
+    List<Long> getUsersWhoLikedProduct(Long productId);
 }

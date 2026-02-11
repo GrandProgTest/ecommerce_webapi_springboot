@@ -8,7 +8,8 @@ public enum EmailTemplate {
     ORDER_SHIPPED("order-shipped", "Your Order Has Been Shipped"),
     ORDER_DELIVERED("order-delivered", "Your Order Has Been Delivered"),
     PAYMENT_SUCCESS("payment-success", "Payment Successful"),
-    PAYMENT_FAILED("payment-failed", "Payment Failed");
+    PAYMENT_FAILED("payment-failed", "Payment Failed"),
+    LOW_STOCK_ALERT("low-stock-alert", "Product Low Stock Alert");
 
     private final String templateName;
     private final String defaultSubject;

@@ -61,15 +61,6 @@ public class StripeWebhookValidator {
         try {
             Session session = (Session) event.getData().getObject();
 
-            log.info("=== {} ===", event.getType());
-            log.info("Session ID: {}", session.getId());
-            log.info("Customer email: {}", session.getCustomerEmail());
-            log.info("Payment status: {}", session.getPaymentStatus());
-            log.info("Amount total: {} cents", session.getAmountTotal());
-            log.info("Currency: {}", session.getCurrency());
-            log.info("Order ID (metadata): {}", session.getMetadata().get("order_id"));
-            log.info("========================");
-
             return Optional.of(StripeWebhookEventResponse.builder()
                     .eventType(event.getType())
                     .eventId(event.getId())

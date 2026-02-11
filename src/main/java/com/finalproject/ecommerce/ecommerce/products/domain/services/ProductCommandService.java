@@ -3,7 +3,9 @@ package com.finalproject.ecommerce.ecommerce.products.domain.services;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DecreaseProductStockCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.IncreaseProductStockCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
 
@@ -19,4 +21,8 @@ public interface ProductCommandService {
     Optional<Product> handle(AssignCategoryToProductCommand command);
 
     boolean handle(ToggleProductLikeCommand command);
+
+    Optional<Product> handle(DecreaseProductStockCommand command);
+
+    Optional<Product> handle(IncreaseProductStockCommand command);
 }

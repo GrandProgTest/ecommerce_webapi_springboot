@@ -1,0 +1,34 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Low Stock Alert</title>
+</head>
+<body>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #ff6b6b; color: white; padding: 20px; border-radius: 5px; text-align: center;">
+        <h1 style="margin: 0;">Low Stock Alert</h1>
+    </div>
+    <div style="background-color: #f9f9f9; padding: 30px; margin-top: 20px; border-radius: 5px;">
+        <div style="background-color: #fff3cd; border-left: 4px solid #ff6b6b; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;">Stock Alert for:</p>
+            <p style="font-weight: bold; font-size: 18px; margin: 0 0 10px 0;">{{productName}}</p>
+            <p style="margin: 0;">Current Stock: <strong
+                    style="color: #ff6b6b; font-size: 20px;">{{currentStock}}</strong> units remaining</p>
+        </div>
+        <p>Hello,</p>
+        <p>We wanted to notify you that <strong>{{productName}}</strong>, a product you liked, is running low on stock!
+        </p>
+        <p>Only <strong>{{currentStock}}</strong> units are left. If you're interested, we recommend ordering soon.</p>
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="#"
+               style="display: inline-block; background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px;">Shop
+                Now</a>
+        </div>
+        <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">
+            This is an automated notification. You received this because you liked this product.
+        </p>
+    </div>
+</div>
+</body>
+</html>

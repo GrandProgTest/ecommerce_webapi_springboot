@@ -187,4 +187,25 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
             return true;
         }
     }
+
+    public void decreaseStock(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+        if (this.stock < quantity) {
+            throw new IllegalArgumentException("Insufficient stock. Available: %d, Requested: %d".formatted(this.stock, quantity));
+        }
+        this.stock -= quantity;
+    }
+
+    public void increaseStock(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+        this.stock += quantity;
+    }
+
+    public boolean isLowStock() {
+        return this.stock <= 3;
+    }
 }

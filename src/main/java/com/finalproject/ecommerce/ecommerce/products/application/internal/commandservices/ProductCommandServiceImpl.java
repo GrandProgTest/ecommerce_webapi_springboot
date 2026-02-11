@@ -7,7 +7,9 @@ import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNo
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DecreaseProductStockCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.IncreaseProductStockCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
@@ -121,19 +123,31 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
     }
 
-    public Optional<Product> decreaseProductStock(Long productId, Integer quantity) {
-        var result = productRepository.findById(productId);
-        if (result.isEmpty()) throw new ProductNotFoundException(productId);
-        var product = result.get();
-        if (product.getStock() < quantity) {
-            throw new IllegalArgumentException("Insufficient stock for product with id %d".formatted(productId));
-        }
+    @Override
+    public Optional<Product> handle(DecreaseProductStockCommand command) {
+        var product = productRepository.findById(command.productId())
+                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+
         try {
-            product.setStock(product.getStock() - quantity);
+            product.decreaseStock(command.quantity());
             var updatedProduct = productRepository.save(product);
             return Optional.of(updatedProduct);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while decreasing product stock: %s".formatted(e.getMessage()));
+        }
+    }
+
+    @Override
+    public Optional<Product> handle(IncreaseProductStockCommand command) {
+        var product = productRepository.findById(command.productId())
+                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+
+        try {
+            product.increaseStock(command.quantity());
+            var updatedProduct = productRepository.save(product);
+            return Optional.of(updatedProduct);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error while increasing product stock: %s".formatted(e.getMessage()));
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.notifications.application.acl.services;
 
+import com.finalproject.ecommerce.ecommerce.notifications.application.internal.commandservices.EmailCommandServiceImpl;
 import com.finalproject.ecommerce.ecommerce.notifications.domain.model.commands.SendEmailCommand;
 import com.finalproject.ecommerce.ecommerce.notifications.domain.model.valueobjects.EmailTemplate;
 import com.finalproject.ecommerce.ecommerce.notifications.domain.services.EmailCommandService;
@@ -8,15 +9,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
 public class NotificationContextFacadeImpl implements NotificationContextFacade {
 
     private final EmailCommandService emailCommandService;
+    private final EmailCommandServiceImpl emailCommandServiceImpl;
 
-    public NotificationContextFacadeImpl(EmailCommandService emailCommandService) {
+    public NotificationContextFacadeImpl(EmailCommandService emailCommandService,
+                                         EmailCommandServiceImpl emailCommandServiceImpl) {
         this.emailCommandService = emailCommandService;
+        this.emailCommandServiceImpl = emailCommandServiceImpl;
     }
 
     @Override
@@ -87,6 +93,45 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
         } catch (Exception e) {
             log.error("Failed to send email to {} with template {}: {}", toEmail, template, e.getMessage());
             return false;
+        }
+    }
+
+    @Override
+    public boolean sendLowStockAlert(String toEmail, String productName, int currentStock) {
+        try {
+            Map<String, Object> templateData = Map.of(
+                    "productName", productName,
+                    "currentStock", String.valueOf(currentStock)
+            );
+
+            var command = new SendEmailCommand(toEmail, EmailTemplate.LOW_STOCK_ALERT, templateData);
+            return emailCommandService.handle(command);
+        } catch (Exception e) {
+            log.error("Failed to send low stock alert email to {}: {}", toEmail, e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public CompletableFuture<Void> sendLowStockAlertBatch(Set<String> recipientEmails,
+                                                          String productName,
+                                                          int currentStock) {
+        try {
+            Map<String, Object> templateData = Map.of(
+                    "productName", productName,
+                    "currentStock", String.valueOf(currentStock)
+            );
+
+            return emailCommandServiceImpl.sendBatchEmailAsync(
+                    recipientEmails,
+                    EmailTemplate.LOW_STOCK_ALERT,
+                    EmailTemplate.LOW_STOCK_ALERT.getDefaultSubject(),
+                    templateData
+            );
+
+        } catch (Exception e) {
+            log.error("Failed to queue batch low stock alerts: {}", e.getMessage());
+            return CompletableFuture.completedFuture(null);
         }
     }
 }

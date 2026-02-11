@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.iam.application.acl.services;
 
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetUserByIdQuery;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetUserByUsernameQuery;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.PermissionValidationService;
@@ -11,6 +12,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -86,5 +90,23 @@ public class IamContextFacadeImpl implements IamContextFacade {
     @Override
     public void validateAddressBelongsToUser(Long addressId, Long userId) {
         permissionValidationService.validateAddressBelongsToUser(addressId, userId);
+    }
+
+    @Override
+    public String getUserEmail(Long userId) {
+        var getUserByIdQuery = new GetUserByIdQuery(userId);
+        var result = userQueryService.handle(getUserByIdQuery);
+        return result.map(User::getEmail).orElse(Strings.EMPTY);
+    }
+
+    @Override
+    public Map<Long, String> getUserEmails(List<Long> userIds) {
+        Map<Long, String> emailMap = new HashMap<>();
+        for (Long userId : userIds) {
+            var getUserByIdQuery = new GetUserByIdQuery(userId);
+            var result = userQueryService.handle(getUserByIdQuery);
+            result.ifPresent(user -> emailMap.put(userId, user.getEmail()));
+        }
+        return emailMap;
     }
 }

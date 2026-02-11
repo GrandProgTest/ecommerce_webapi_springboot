@@ -1,8 +1,11 @@
 package com.finalproject.ecommerce.ecommerce.products.application.acl.services;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DecreaseProductStockCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.IncreaseProductStockCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByIdsQuery;
+import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.acl.ProductContextFacade;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
@@ -18,9 +21,11 @@ import java.util.stream.Collectors;
 public class ProductContextFacadeImpl implements ProductContextFacade {
 
     private final ProductQueryService productQueryService;
+    private final ProductCommandService productCommandService;
 
-    public ProductContextFacadeImpl(ProductQueryService productQueryService) {
+    public ProductContextFacadeImpl(ProductQueryService productQueryService, ProductCommandService productCommandService) {
         this.productQueryService = productQueryService;
+        this.productCommandService = productCommandService;
     }
 
     @Override
@@ -99,5 +104,25 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
         var productOpt = productQueryService.handle(query);
 
         return productOpt.map(product -> product.getIsActive() && product.getStock() >= quantity).orElse(false);
+    }
+
+    @Override
+    public void decreaseProductStock(Long productId, Integer quantity) {
+        var command = new DecreaseProductStockCommand(productId, quantity);
+        productCommandService.handle(command);
+    }
+
+    @Override
+    public void increaseProductStock(Long productId, Integer quantity) {
+        var command = new IncreaseProductStockCommand(productId, quantity);
+        productCommandService.handle(command);
+    }
+
+    @Override
+    public List<Long> getUsersWhoLikedProduct(Long productId) {
+        var query = new GetProductByIdQuery(productId);
+        var productOpt = productQueryService.handle(query);
+
+        return productOpt.map(Product::getLikedByUserIds).orElse(List.of());
     }
 }
