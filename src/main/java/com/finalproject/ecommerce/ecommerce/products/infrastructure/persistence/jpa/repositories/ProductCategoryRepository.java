@@ -10,13 +10,13 @@ import java.util.Optional;
 @Repository
 public interface ProductCategoryRepository extends JpaRepository<ProductCategory, Long> {
 
-    boolean existsByProductIdAndCategoryId(Long productId, Long categoryId);
+    boolean existsByProduct_IdAndCategory_Id(Long productId, Long categoryId);
 
-    List<ProductCategory> findByProductId(Long productId);
+    List<ProductCategory> findByProduct_Id(Long productId);
 
-    List<ProductCategory> findByCategoryId(Long categoryId);
+    List<ProductCategory> findByCategory_Id(Long categoryId);
 
-    Optional<ProductCategory> findByProductIdAndCategoryId(Long productId, Long categoryId);
+    Optional<ProductCategory> findByProduct_IdAndCategory_Id(Long productId, Long categoryId);
 
-    void deleteByProductId(Long productId);
+    void deleteByProduct_Id(Long productId);
 }

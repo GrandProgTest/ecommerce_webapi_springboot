@@ -62,6 +62,6 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 : Sort.by(query.sortBy()).ascending();
 
         Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
-        return productRepository.findByProductCategoriesCategoryId(query.categoryId(), pageable);
+        return productRepository.findDistinctByProductCategories_Category_Id(query.categoryId(), pageable);
     }
 }

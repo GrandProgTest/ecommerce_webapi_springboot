@@ -5,9 +5,9 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resou
 
 public class CreateOrderCommandFromResourceAssembler {
 
-    public static CreateOrderFromCartCommand toCommandFromResource(CreateOrderResource resource) {
+    public static CreateOrderFromCartCommand toCommandFromResource(Long userId, CreateOrderResource resource) {
         return new CreateOrderFromCartCommand(
-                resource.userId(),
+                userId,
                 resource.cartId(),
                 resource.addressId(),
                 resource.discountCode()

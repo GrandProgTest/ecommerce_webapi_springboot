@@ -4,5 +4,5 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record CreateProductResource(String name, String description, BigDecimal price, Integer stock,
-                                    List<Long> categoryIds) {
+                                    List<Long> categoryIds, Boolean isActive) {
 }

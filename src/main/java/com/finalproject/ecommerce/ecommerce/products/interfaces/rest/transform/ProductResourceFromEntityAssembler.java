@@ -16,7 +16,8 @@ public class ProductResourceFromEntityAssembler {
             entity.getStock(),
             entity.getIsActive(),
             entity.getCategoryIds(),
-            entity.getCreatedByUserId()
+            entity.getCreatedByUserId(),
+            entity.getPrimaryImageUrl()
         );
     }
 }

@@ -47,7 +47,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @Column(nullable = false)
     private Boolean isActive;
 
-    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -70,7 +70,7 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.price = command.price();
         this.createdByUserId = createdByUserId;
         this.stock = command.stock();
-        this.isActive = true;
+        this.isActive = command.isActive();
     }
 
     public void updateProductInfo(String name, String description, BigDecimal price, Integer stock) {
@@ -207,5 +207,17 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
 
     public boolean isLowStock() {
         return this.stock <= 3;
+    }
+
+    public String getPrimaryImageUrl() {
+        return images.stream()
+                .filter(ProductImage::getIsPrimary)
+                .findFirst()
+                .map(ProductImage::getUrl)
+                .orElse(null);
+    }
+
+    public List<ProductImage> getImages() {
+        return new ArrayList<>(images);
     }
 }

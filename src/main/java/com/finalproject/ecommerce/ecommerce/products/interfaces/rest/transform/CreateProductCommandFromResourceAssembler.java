@@ -6,6 +6,6 @@ import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.C
 public class CreateProductCommandFromResourceAssembler {
 
     public static CreateProductCommand toCommandFromResource(CreateProductResource resource) {
-        return new CreateProductCommand(resource.name(), resource.description(), resource.price(), resource.stock(), resource.categoryIds());
+        return new CreateProductCommand(resource.name(), resource.description(), resource.price(), resource.stock(), resource.categoryIds(), resource.isActive());
     }
 }

@@ -8,7 +8,10 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resou
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.CreateOrderCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.OrderResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,16 +38,17 @@ public class OrdersController {
         this.orderQueryService = orderQueryService;
     }
 
-    @PostMapping
+    @PostMapping("/{userId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create order (checkout)", description = "Creates an order from the user's active cart. This completes the checkout process.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Order created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid request or cart is empty"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied")})
-    public ResponseEntity<OrderResource> createOrder(@RequestBody CreateOrderResource resource) {
-        var command = CreateOrderCommandFromResourceAssembler.toCommandFromResource(resource);
+            @ApiResponse(responseCode = "201", description = "Order created successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request or cart is empty", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+
+    public ResponseEntity<OrderResource> createOrder(@PathVariable Long userId, @RequestBody CreateOrderResource resource) {
+        var command = CreateOrderCommandFromResourceAssembler.toCommandFromResource(userId, resource);
         var order = orderCommandService.handle(command);
         var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(order);
 
@@ -55,9 +59,10 @@ public class OrdersController {
     @PreAuthorize("hasRole('ROLE_MANAGER')")
     @Operation(summary = "List all orders", description = "Returns all orders in the system. Only accessible by managers.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied - manager role required")})
+            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - manager role required", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+
     public ResponseEntity<List<OrderResource>> getAllOrders() {
         var query = new GetAllOrdersQuery();
         var orders = orderQueryService.handle(query);
@@ -68,13 +73,14 @@ public class OrdersController {
         return ResponseEntity.ok(orderResources);
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping("/user/{userId}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get user's orders", description = "Returns all orders for the specified user. Managers can view any user's orders, clients can only view their own.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied - user can only access their own orders")})
+            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - user can only access their own orders", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+
     public ResponseEntity<List<OrderResource>> getOrdersByUserId(@PathVariable Long userId) {
         var query = new GetOrdersByUserIdQuery(userId);
         var orders = orderQueryService.handle(query);

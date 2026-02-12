@@ -17,7 +17,11 @@ public class ProductImage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", referencedColumnName = "id")
     private Product product;
+
+    @Column(name = "product_id", insertable = false, updatable = false)
+    private Long productId;
 
     @NotNull
     @Embedded
@@ -47,9 +51,6 @@ public class ProductImage {
         this.createdAt = new Date();
     }
 
-    public Long getProductId() {
-        return product != null ? product.getId() : null;
-    }
 
     public void setAsPrimary() {
         this.isPrimary = true;

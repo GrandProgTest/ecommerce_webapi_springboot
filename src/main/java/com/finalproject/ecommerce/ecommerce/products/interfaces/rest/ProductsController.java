@@ -1,6 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.products.interfaces.rest;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ActivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeactivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
@@ -10,10 +12,12 @@ import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductComm
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.PaginatedProductResponse;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductDetailResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ToggleProductLikeResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.CreateProductCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.ProductDetailResourceFromEntityAssembler;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.ProductResourceFromEntityAssembler;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.UpdateProductCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
@@ -56,9 +60,11 @@ public class ProductsController {
     public ResponseEntity<ProductResource> createProduct(@RequestBody CreateProductResource resource) {
         var createProductCommand = CreateProductCommandFromResourceAssembler.toCommandFromResource(resource);
         var productId = productCommandService.handle(createProductCommand);
+
         if (productId == null || productId == 0L) return ResponseEntity.badRequest().build();
         var getProductByIdQuery = new GetProductByIdQuery(productId);
         var product = productQueryService.handle(getProductByIdQuery);
+
         if (product.isEmpty()) return ResponseEntity.notFound().build();
         var productEntity = product.get();
         var productResource = ProductResourceFromEntityAssembler.toResourceFromEntity(productEntity);
@@ -116,17 +122,17 @@ public class ProductsController {
     }
 
     @GetMapping("/{productId}")
-    @Operation(summary = "Get product by id", description = "Get product details by id. Public endpoint - No authentication required.")
+    @Operation(summary = "Get product by id", description = "Get product details by id including all images. Public endpoint - No authentication required.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product found"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
-    public ResponseEntity<ProductResource> getProductById(@PathVariable Long productId) {
+    public ResponseEntity<ProductDetailResource> getProductById(@PathVariable Long productId) {
         var getProductByIdQuery = new GetProductByIdQuery(productId);
         var product = productQueryService.handle(getProductByIdQuery);
         if (product.isEmpty()) return ResponseEntity.notFound().build();
         var productEntity = product.get();
-        var productResource = ProductResourceFromEntityAssembler.toResourceFromEntity(productEntity);
-        return ResponseEntity.ok(productResource);
+        var productDetailResource = ProductDetailResourceFromEntityAssembler.toResourceFromEntity(productEntity);
+        return ResponseEntity.ok(productDetailResource);
     }
 
     @PostMapping("/users/{userId}/products/{productId}/like")
@@ -155,6 +161,30 @@ public class ProductsController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{productId}")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Toggle product active status",
+            description = "Toggle a product's active status. If active, it will be deactivated. If inactive, it will be activated. Only ROLE_MANAGER can toggle product status.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Product status toggled successfully"),
+            @ApiResponse(responseCode = "400", description = "Cannot activate product (e.g., product has no stock)"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
+            @ApiResponse(responseCode = "404", description = "Product not found")})
+    public ResponseEntity<ProductResource> toggleProductActiveStatus(@PathVariable Long productId) {
+        var product = productQueryService.handle(new GetProductByIdQuery(productId));
+        if (product.isEmpty()) return ResponseEntity.notFound().build();
+
+        var currentProduct = product.get();
+        var updatedProduct = currentProduct.isActive()
+                ? productCommandService.handle(new DeactivateProductCommand(productId))
+                : productCommandService.handle(new ActivateProductCommand(productId));
+
+        if (updatedProduct.isEmpty()) return ResponseEntity.notFound().build();
+        var updatedProductEntity = updatedProduct.get();
+        var updatedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(updatedProductEntity);
+        return ResponseEntity.ok(updatedProductResource);
     }
 
     @GetMapping

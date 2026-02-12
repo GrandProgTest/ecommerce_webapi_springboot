@@ -12,6 +12,7 @@ public record OrderResource(
         String discountCode,
         String status,
         BigDecimal totalAmount,
+        String checkoutUrl,
         List<OrderItemResource> items,
         Date createdAt,
         Date paidAt

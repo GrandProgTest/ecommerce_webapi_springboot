@@ -1,12 +1,16 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.commandservices;
 
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.acl.OrdersContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.CategoryNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.DuplicateCategoryAssignmentException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductInOrdersException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ActivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeactivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DecreaseProductStockCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.IncreaseProductStockCommand;
@@ -28,19 +32,31 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final CategoryRepository categoryRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final IamContextFacade iamContextFacade;
+    private final OrdersContextFacade ordersContextFacade;
 
-    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository, IamContextFacade iamContextFacade) {
+    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository, IamContextFacade iamContextFacade, OrdersContextFacade ordersContextFacade) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.iamContextFacade = iamContextFacade;
+        this.ordersContextFacade = ordersContextFacade;
     }
 
     @Override
     public Long handle(CreateProductCommand command) {
         var userId = iamContextFacade.getCurrentUserId().orElseThrow(() -> new IllegalStateException("User not authenticated"));
 
+        if (command.categoryIds() == null || command.categoryIds().isEmpty()) {
+            throw new IllegalArgumentException("At least one category is required");
+        }
+
         var product = new Product(command, userId);
+
+        for (Long categoryId : command.categoryIds()) {
+            var category = categoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new CategoryNotFoundException(categoryId));
+            product.assignCategory(category);
+        }
 
         try {
             productRepository.save(product);
@@ -69,6 +85,11 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         if (!productRepository.existsById(command.productId())) {
             throw new ProductNotFoundException(command.productId());
         }
+
+        if (ordersContextFacade.productExistsInOrders(command.productId())) {
+            throw new ProductInOrdersException(command.productId());
+        }
+
         try {
             productRepository.deleteById(command.productId());
         } catch (Exception e) {
@@ -85,7 +106,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         var category = categoryRepository.findById(command.categoryId())
                 .orElseThrow(() -> new CategoryNotFoundException(command.categoryId()));
 
-        if (productCategoryRepository.existsByProductIdAndCategoryId(command.productId(), command.categoryId())) {
+        if (productCategoryRepository.existsByProduct_IdAndCategory_Id(command.productId(), command.categoryId())) {
             throw new DuplicateCategoryAssignmentException(command.productId(), command.categoryId());
         }
 
@@ -148,6 +169,34 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             return Optional.of(updatedProduct);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while increasing product stock: %s".formatted(e.getMessage()));
+        }
+    }
+
+    @Override
+    public Optional<Product> handle(ActivateProductCommand command) {
+        var product = productRepository.findById(command.productId())
+                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+
+        try {
+            product.activate();
+            var updatedProduct = productRepository.save(product);
+            return Optional.of(updatedProduct);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error while activating product: %s".formatted(e.getMessage()));
+        }
+    }
+
+    @Override
+    public Optional<Product> handle(DeactivateProductCommand command) {
+        var product = productRepository.findById(command.productId())
+                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+
+        try {
+            product.deactivate();
+            var updatedProduct = productRepository.save(product);
+            return Optional.of(updatedProduct);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error while deactivating product: %s".formatted(e.getMessage()));
         }
     }
 }

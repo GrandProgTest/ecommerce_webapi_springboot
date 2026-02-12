@@ -18,6 +18,7 @@ public class OrderResourceFromEntityAssembler {
                 order.getDiscount() != null ? order.getDiscount().getCode() : null,
                 order.getStatus().getName(),
                 order.getTotalAmount(),
+                order.getCheckoutUrl(),
                 order.getItems().stream()
                         .map(OrderResourceFromEntityAssembler::toItemResource)
                         .collect(Collectors.toList()),

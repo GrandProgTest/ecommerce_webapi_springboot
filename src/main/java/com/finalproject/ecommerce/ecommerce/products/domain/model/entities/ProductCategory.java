@@ -15,9 +15,11 @@ public class ProductCategory {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "product_id", referencedColumnName = "id", nullable = false)
     private Product product;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", referencedColumnName = "id", nullable = false)
     private Category category;
 
     @Column(nullable = false, updatable = false)

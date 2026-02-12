@@ -4,6 +4,8 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Pro
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,5 +18,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findByIdAndIsActive(Long id, Boolean isActive);
 
-    Page<Product> findByProductCategoriesCategoryId(Long categoryId, Pageable pageable);
+    Page<Product> findDistinctByProductCategories_Category_Id(Long categoryId, Pageable pageable);
 }
