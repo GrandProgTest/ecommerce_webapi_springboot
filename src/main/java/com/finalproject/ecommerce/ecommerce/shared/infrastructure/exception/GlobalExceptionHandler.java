@@ -1,5 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.shared.infrastructure.exception;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.InvalidImageTypeException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.MaximumImagesExceededException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductImageNotFoundException;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.BusinessRuleException;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidOperationException;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.ResourceNotFoundException;
@@ -54,6 +57,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> handleBusinessRuleViolation(BusinessRuleException ex, HttpServletRequest request) {
         log.warn("Business rule violation at {}: {}", request.getRequestURI(), ex.getMessage());
         return buildResponse(ex.getMessage(), HttpStatus.CONFLICT, request, "business-rule-violation");
+    }
+
+    @ExceptionHandler(InvalidImageTypeException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidImageType(InvalidImageTypeException ex, HttpServletRequest request) {
+        log.warn("Invalid image type at {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request, "invalid-image-type");
+    }
+
+    @ExceptionHandler(MaximumImagesExceededException.class)
+    public ResponseEntity<ProblemDetail> handleMaximumImagesExceeded(MaximumImagesExceededException ex, HttpServletRequest request) {
+        log.warn("Maximum images exceeded at {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request, "maximum-images-exceeded");
+    }
+
+    @ExceptionHandler(ProductImageNotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleProductImageNotFound(ProductImageNotFoundException ex, HttpServletRequest request) {
+        log.warn("Product image not found at {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND, request, "product-image-not-found");
     }
 
     @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
