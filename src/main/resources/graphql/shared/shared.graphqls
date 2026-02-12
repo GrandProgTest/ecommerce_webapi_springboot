@@ -1,0 +1,10 @@
+interface AuditableEntity {
+    id: ID!
+    createdAt: String!
+    updatedAt: String!
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
