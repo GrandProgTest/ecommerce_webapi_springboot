@@ -2,7 +2,7 @@ package com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductAlreadyLikedException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotLikedException;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.annotations.ValidPrice;
+import com.finalproject.ecommerce.ecommerce.shared.domain.model.annotations.ValidPrice;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductCategory;
@@ -18,6 +18,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
 
 @Getter
 @Setter

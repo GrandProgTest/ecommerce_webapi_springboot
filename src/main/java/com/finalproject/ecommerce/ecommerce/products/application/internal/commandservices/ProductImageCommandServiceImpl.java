@@ -1,10 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.commandservices;
 
 import com.finalproject.ecommerce.ecommerce.products.application.ports.out.ImageStorageService;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.InvalidImageTypeException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.MaximumImagesExceededException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductImageNotFoundException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductImageCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UploadProductImageCommand;
@@ -23,6 +20,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
 
     private static final int MAX_IMAGES_PER_PRODUCT = 10;
     private static final String[] ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png"};
+    private static final int MAX_IMAGE_SIZE_MB = 5;
 
     private final ProductImageRepository productImageRepository;
     private final ProductRepository productRepository;
@@ -41,6 +39,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
     public ProductImage uploadProductImage(UploadProductImageCommand command) {
         validateImageType(command.imageFile());
         validateMaxImages(command.productId());
+        validateImageSize(command.imageFile());
 
         Product product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
@@ -93,6 +92,20 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
             throw new InvalidImageTypeException(contentType);
         }
     }
+
+    private void validateImageSize(MultipartFile file) {
+        long maxSizeBytes = MAX_IMAGE_SIZE_MB * 1024L * 1024L;
+
+        if (file.getSize() > maxSizeBytes) {
+            log.warn("Image size exceeds limit: {} bytes (max {} bytes)",
+                    file.getSize(), maxSizeBytes);
+
+            throw new InvalidImageSizeException(
+                    "Image size exceeds " + MAX_IMAGE_SIZE_MB + " MB"
+            );
+        }
+    }
+
 
     private void validateMaxImages(Long productId) {
         int currentImageCount = productImageRepository.findByProductId(productId).size();

@@ -187,6 +187,8 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                     case PENDING -> "Order is pending payment";
                     case PAID -> "Order has been paid";
                     case CANCELLED -> "Order has been cancelled";
+                    case SHIPPED -> "Order has been shipped";
+                    case DELIVERED -> "Order has been delivered";
                 };
                 orderStatusRepository.save(new OrderStatus(status, description));
             }

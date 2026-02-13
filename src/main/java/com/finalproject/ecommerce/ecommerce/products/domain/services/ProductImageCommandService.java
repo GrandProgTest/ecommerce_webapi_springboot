@@ -6,5 +6,6 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Produ
 
 public interface ProductImageCommandService {
     ProductImage uploadProductImage(UploadProductImageCommand command);
+
     void deleteProductImage(DeleteProductImageCommand command);
 }

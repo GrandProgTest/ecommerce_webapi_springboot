@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.products.domain.model.annotations;
+package com.finalproject.ecommerce.ecommerce.shared.domain.model.annotations;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
