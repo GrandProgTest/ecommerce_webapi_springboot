@@ -1,7 +1,9 @@
 package com.finalproject.ecommerce.ecommerce.iam.interfaces.rest;
 
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ActivateAccountCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ForgotPasswordCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ResendActivationTokenCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ResetPasswordCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignOutCommand;
@@ -160,6 +162,52 @@ public class AuthController {
 
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Forgot password", description = "Request password reset token via email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset email sent successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found")
+    })
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordResource resource) {
+        try {
+            var command = new ForgotPasswordCommand(resource.email());
+            boolean success = userCommandService.handle(command);
+
+            if (success) {
+                return ResponseEntity.ok("Password reset token sent to your email. Token expires in 15 minutes.");
+            }
+            return ResponseEntity.badRequest().body("Failed to send password reset email");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset password", description = "Reset password using the token received via email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Password reset successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid token or passwords don't match"),
+            @ApiResponse(responseCode = "401", description = "Invalid or expired reset token")
+    })
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordResource resource) {
+        try {
+            var command = new ResetPasswordCommand(
+                    resource.token(),
+                    resource.password(),
+                    resource.passwordConfirmation()
+            );
+            boolean success = userCommandService.handle(command);
+
+            if (success) {
+                return ResponseEntity.ok("Password reset successfully. You can now sign in with your new password.");
+            }
+            return ResponseEntity.badRequest().body("Failed to reset password");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
 

@@ -80,6 +80,8 @@ public class WebSecurityConfiguration {
                 "/api/v1/auth/refresh",
                 "/api/v1/auth/activate",
                 "/api/v1/auth/resend-activation",
+                "/api/v1/auth/forgot-password",
+                "/api/v1/auth/reset-password",
                 "/api/v1/webhooks/stripe",
                 "/graphiql/**",
                 "/v3/api-docs/**",

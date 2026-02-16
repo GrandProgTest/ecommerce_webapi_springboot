@@ -4,18 +4,22 @@ import com.finalproject.ecommerce.ecommerce.iam.application.internal.outboundser
 import com.finalproject.ecommerce.ecommerce.iam.application.internal.outboundservices.tokens.TokenService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.AccountNotActivatedException;
 import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.InvalidActivationTokenException;
+import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.InvalidPasswordResetTokenException;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
-import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.RefreshToken;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ActivateAccountCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.DeleteUserCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ForgotPasswordCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ResendActivationTokenCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ResetPasswordCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignInCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignUpCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.UpdateUserCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Role;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.UserToken;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.validators.RavenEmailValidator;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
+import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.AccountActivationTokenRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RefreshTokenRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
@@ -29,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +48,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final RoleRepository roleRepository;
     private final RefreshTokenCommandService refreshTokenCommandService;
     private final RefreshTokenRepository userTokenRepository;
+    private final AccountActivationTokenRepository accountActivationTokenRepository;
     private final EmailCommandService emailCommandService;
 
     public UserCommandServiceImpl(
@@ -52,6 +58,7 @@ public class UserCommandServiceImpl implements UserCommandService {
             RoleRepository roleRepository,
             RefreshTokenCommandService refreshTokenCommandService,
             RefreshTokenRepository userTokenRepository,
+            AccountActivationTokenRepository accountActivationTokenRepository,
             EmailCommandService emailCommandService) {
         this.userRepository = userRepository;
         this.hashingService = hashingService;
@@ -59,6 +66,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         this.roleRepository = roleRepository;
         this.refreshTokenCommandService = refreshTokenCommandService;
         this.userTokenRepository = userTokenRepository;
+        this.accountActivationTokenRepository = accountActivationTokenRepository;
         this.emailCommandService = emailCommandService;
     }
 
@@ -112,10 +120,10 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         String rawToken = UUID.randomUUID().toString();
         String hashedToken = hashingService.encode(rawToken);
-        Instant expiresAt = Instant.now().plus(24, ChronoUnit.HOURS);
+        Date expiresAt = Date.from(Instant.now().plus(24, ChronoUnit.HOURS));
 
-        var activationToken = new RefreshToken(hashedToken, user, expiresAt);
-        userTokenRepository.save(activationToken);
+        var activationToken = new UserToken(user, hashedToken, expiresAt);
+        accountActivationTokenRepository.save(activationToken);
 
         sendActivationEmail(user.getEmail(), user.getUsername(), rawToken);
 
@@ -186,20 +194,20 @@ public class UserCommandServiceImpl implements UserCommandService {
         try {
             String rawToken = command.activationToken();
 
-            var potentialTokens = userTokenRepository.findAll().stream()
-                    .filter(token -> !token.isUsed() && !token.isExpired())
-                    .filter(token -> hashingService.matches(rawToken, token.getTokenHash()))
+            var potentialToken = accountActivationTokenRepository.findAll().stream()
+                    .filter(token -> !token.getIsUsed() && !token.isExpired())
+                    .filter(token -> hashingService.matches(rawToken, token.getHashedToken()))
                     .findFirst()
                     .orElseThrow(() -> new InvalidActivationTokenException("Token not found or invalid"));
 
-            var user = userRepository.findById(potentialTokens.getUserId())
+            var user = userRepository.findById(potentialToken.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
             user.activate();
             userRepository.save(user);
 
-            potentialTokens.markAsUsed();
-            userTokenRepository.save(potentialTokens);
+            potentialToken.markAsUsed();
+            accountActivationTokenRepository.save(potentialToken);
 
             log.info("Account activated successfully for user: {}", user.getUsername());
 
@@ -222,29 +230,133 @@ public class UserCommandServiceImpl implements UserCommandService {
             throw new RuntimeException("Account is already activated");
         }
 
-        var existingTokens = userTokenRepository.findAll().stream()
-                .filter(token -> token.belongsToUser(user) && !token.isUsed() && !token.isExpired())
+        var existingTokens = accountActivationTokenRepository.findAll().stream()
+                .filter(token -> token.getUserId().equals(user.getId()) && !token.getIsUsed() && !token.isExpired())
                 .toList();
 
         existingTokens.forEach(token -> {
             token.markAsUsed();
-            userTokenRepository.save(token);
+            accountActivationTokenRepository.save(token);
             log.info("Previous activation token invalidated for user: {}", user.getUsername());
         });
 
         String rawToken = UUID.randomUUID().toString();
-
         String hashedToken = hashingService.encode(rawToken);
+        Date expiresAt = Date.from(Instant.now().plus(24, ChronoUnit.HOURS));
 
-        Instant expiresAt = Instant.now().plus(24, ChronoUnit.HOURS);
-
-        var activationToken = new RefreshToken(hashedToken, user, expiresAt);
-        userTokenRepository.save(activationToken);
+        var activationToken = new UserToken(user, hashedToken, expiresAt);
+        accountActivationTokenRepository.save(activationToken);
 
         log.info("New activation token generated for user: {}", user.getUsername());
 
         sendActivationEmail(user.getEmail(), user.getUsername(), rawToken);
 
         return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean handle(ForgotPasswordCommand command) {
+        var user = userRepository.findByEmail(command.email())
+                .orElseThrow(() -> new RuntimeException("User with email not found"));
+
+        var existingTokens = accountActivationTokenRepository.findByUser_IdAndIsUsedFalse(user.getId());
+        existingTokens.ifPresent(token -> {
+            token.markAsUsed();
+            accountActivationTokenRepository.save(token);
+            log.info("Previous password reset token invalidated for user: {}", user.getUsername());
+        });
+
+        String rawToken = UUID.randomUUID().toString();
+
+        String hashedToken = hashingService.encode(rawToken);
+
+        Date expiresAt = Date.from(Instant.now().plus(15, ChronoUnit.MINUTES));
+
+        var resetToken = new UserToken(user, hashedToken, expiresAt);
+        accountActivationTokenRepository.save(resetToken);
+
+        log.info("Password reset token generated for user: {}", user.getUsername());
+
+        sendPasswordResetEmail(user.getEmail(), user.getUsername(), rawToken);
+
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean handle(ResetPasswordCommand command) {
+        if (!command.password().equals(command.passwordConfirmation())) {
+            throw new InvalidPasswordResetTokenException("Passwords do not match");
+        }
+
+        try {
+            String rawToken = command.token();
+
+            var potentialToken = accountActivationTokenRepository.findAll().stream()
+                    .filter(token -> !token.getIsUsed() && !token.isExpired())
+                    .filter(token -> hashingService.matches(rawToken, token.getHashedToken()))
+                    .findFirst()
+                    .orElseThrow(() -> new InvalidPasswordResetTokenException("Invalid or expired reset token"));
+
+            var user = userRepository.findById(potentialToken.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            user.setPassword(hashingService.encode(command.password()));
+            userRepository.save(user);
+
+            potentialToken.markAsUsed();
+            accountActivationTokenRepository.save(potentialToken);
+
+            log.info("Password reset successfully for user: {}", user.getUsername());
+
+            sendPasswordChangedEmail(user.getEmail(), user.getUsername());
+
+            return true;
+        } catch (InvalidPasswordResetTokenException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error resetting password: {}", e.getMessage(), e);
+            throw new InvalidPasswordResetTokenException("Failed to reset password: " + e.getMessage());
+        }
+    }
+
+    private void sendPasswordResetEmail(String email, String username, String rawResetToken) {
+        try {
+            Map<String, Object> templateData = Map.of(
+                    "username", username,
+                    "resetToken", rawResetToken
+            );
+
+            var emailCommand = new SendEmailCommand(
+                    email,
+                    EmailTemplate.PASSWORD_RESET,
+                    templateData,
+                    "Reset Your Password"
+            );
+
+            emailCommandService.handle(emailCommand);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to {}: {}", email, e.getMessage());
+        }
+    }
+
+    private void sendPasswordChangedEmail(String email, String username) {
+        try {
+            Map<String, Object> templateData = Map.of(
+                    "username", username
+            );
+
+            var emailCommand = new SendEmailCommand(
+                    email,
+                    EmailTemplate.PASSWORD_CHANGED,
+                    templateData,
+                    "Password Changed Successfully"
+            );
+
+            emailCommandService.handle(emailCommand);
+        } catch (Exception e) {
+            log.error("Failed to send password changed email to {}: {}", email, e.getMessage());
+        }
     }
 }

@@ -10,7 +10,7 @@ import java.util.Date;
 
 @Entity
 @Getter
-public class AccountActivationToken extends AuditableModel {
+public class UserToken extends AuditableModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,11 +33,11 @@ public class AccountActivationToken extends AuditableModel {
     private Boolean isUsed;
 
 
-    protected AccountActivationToken() {
+    protected UserToken() {
         this.isUsed = false;
     }
 
-    public AccountActivationToken(User user, String hashedToken, Date expiresAt) {
+    public UserToken(User user, String hashedToken, Date expiresAt) {
         this();
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
