@@ -35,7 +35,8 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
             );
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.PASSWORD_RESET, templateData);
-            return emailCommandService.handle(command);
+            emailCommandService.handle(command);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}: {}", toEmail, e.getMessage());
             return false;
@@ -51,7 +52,8 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
             );
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.PASSWORD_CHANGED, templateData);
-            return emailCommandService.handle(command);
+            emailCommandService.handle(command);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send password changed email to {}: {}", toEmail, e.getMessage());
             return false;
@@ -67,7 +69,8 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
             );
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.WELCOME, templateData);
-            return emailCommandService.handle(command);
+            emailCommandService.handle(command);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send welcome email to {}: {}", toEmail, e.getMessage());
             return false;
@@ -78,7 +81,8 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
     public boolean sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData) {
         try {
             var command = new SendEmailCommand(toEmail, EmailTemplate.ORDER_CONFIRMATION, orderData);
-            return emailCommandService.handle(command);
+            emailCommandService.handle(command);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send order confirmation email to {}: {}", toEmail, e.getMessage());
             return false;
@@ -89,7 +93,8 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
     public boolean sendEmail(String toEmail, EmailTemplate template, Map<String, Object> templateData) {
         try {
             var command = new SendEmailCommand(toEmail, template, templateData);
-            return emailCommandService.handle(command);
+            emailCommandService.handle(command);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send email to {} with template {}: {}", toEmail, template, e.getMessage());
             return false;
@@ -105,7 +110,8 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
             );
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.LOW_STOCK_ALERT, templateData);
-            return emailCommandService.handle(command);
+            emailCommandService.handle(command);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send low stock alert email to {}: {}", toEmail, e.getMessage());
             return false;

@@ -20,12 +20,12 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.validators.RavenEma
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.AccountActivationTokenRepository;
-import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RefreshTokenRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
-import com.finalproject.ecommerce.ecommerce.notifications.domain.model.commands.SendEmailCommand;
 import com.finalproject.ecommerce.ecommerce.notifications.domain.model.valueobjects.EmailTemplate;
-import com.finalproject.ecommerce.ecommerce.notifications.domain.services.EmailCommandService;
+import com.finalproject.ecommerce.ecommerce.notifications.interfaces.acl.NotificationContextFacade;
+import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.RateLimitExceededException;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.ratelimit.RateLimiterService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.stereotype.Service;
@@ -47,9 +47,9 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final TokenService tokenService;
     private final RoleRepository roleRepository;
     private final RefreshTokenCommandService refreshTokenCommandService;
-    private final RefreshTokenRepository userTokenRepository;
     private final AccountActivationTokenRepository accountActivationTokenRepository;
-    private final EmailCommandService emailCommandService;
+    private final NotificationContextFacade notificationContextFacade;
+    private final RateLimiterService rateLimiterService;
 
     public UserCommandServiceImpl(
             UserRepository userRepository,
@@ -57,17 +57,17 @@ public class UserCommandServiceImpl implements UserCommandService {
             TokenService tokenService,
             RoleRepository roleRepository,
             RefreshTokenCommandService refreshTokenCommandService,
-            RefreshTokenRepository userTokenRepository,
             AccountActivationTokenRepository accountActivationTokenRepository,
-            EmailCommandService emailCommandService) {
+            NotificationContextFacade notificationContextFacade,
+            RateLimiterService rateLimiterService) {
         this.userRepository = userRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
         this.roleRepository = roleRepository;
         this.refreshTokenCommandService = refreshTokenCommandService;
-        this.userTokenRepository = userTokenRepository;
         this.accountActivationTokenRepository = accountActivationTokenRepository;
-        this.emailCommandService = emailCommandService;
+        this.notificationContextFacade = notificationContextFacade;
+        this.rateLimiterService = rateLimiterService;
     }
 
 
@@ -134,17 +134,10 @@ public class UserCommandServiceImpl implements UserCommandService {
         try {
             Map<String, Object> templateData = Map.of(
                     "username", username,
-                    "activationUrl", "http://localhost:8080/api/v1/auth/activate?token=" + rawActivationToken
+                    "activationToken", rawActivationToken
             );
 
-            var emailCommand = new SendEmailCommand(
-                    email,
-                    EmailTemplate.WELCOME,
-                    templateData,
-                    "Activate Your Account"
-            );
-
-            emailCommandService.handle(emailCommand);
+            notificationContextFacade.sendEmail(email, EmailTemplate.WELCOME, templateData);
         } catch (Exception e) {
             log.error("Failed to send activation email to {}: {}", email, e.getMessage());
         }
@@ -235,7 +228,7 @@ public class UserCommandServiceImpl implements UserCommandService {
                 .toList();
 
         existingTokens.forEach(token -> {
-            token.markAsUsed();
+            token.forceMarkAsUsed();
             accountActivationTokenRepository.save(token);
             log.info("Previous activation token invalidated for user: {}", user.getUsername());
         });
@@ -255,22 +248,27 @@ public class UserCommandServiceImpl implements UserCommandService {
     }
 
     @Override
-    @Transactional
     public boolean handle(ForgotPasswordCommand command) {
+        if (!rateLimiterService.isAllowed(command.email(), "forgot-password")) {
+            long retryAfter = rateLimiterService.getSecondsUntilReset(command.email(), "forgot-password");
+            throw new RateLimitExceededException(
+                    "Too many password reset requests. Please try again later.",
+                    retryAfter
+            );
+        }
+
         var user = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new RuntimeException("User with email not found"));
 
         var existingTokens = accountActivationTokenRepository.findByUser_IdAndIsUsedFalse(user.getId());
         existingTokens.ifPresent(token -> {
-            token.markAsUsed();
+            token.forceMarkAsUsed();
             accountActivationTokenRepository.save(token);
             log.info("Previous password reset token invalidated for user: {}", user.getUsername());
         });
 
         String rawToken = UUID.randomUUID().toString();
-
         String hashedToken = hashingService.encode(rawToken);
-
         Date expiresAt = Date.from(Instant.now().plus(15, ChronoUnit.MINUTES));
 
         var resetToken = new UserToken(user, hashedToken, expiresAt);
@@ -302,6 +300,14 @@ public class UserCommandServiceImpl implements UserCommandService {
             var user = userRepository.findById(potentialToken.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
+            if (!rateLimiterService.isAllowed(user.getEmail(), "reset-password")) {
+                long retryAfter = rateLimiterService.getSecondsUntilReset(user.getEmail(), "reset-password");
+                throw new RateLimitExceededException(
+                        "Too many password reset attempts. Please try again later.",
+                        retryAfter
+                );
+            }
+
             user.setPassword(hashingService.encode(command.password()));
             userRepository.save(user);
 
@@ -314,6 +320,8 @@ public class UserCommandServiceImpl implements UserCommandService {
 
             return true;
         } catch (InvalidPasswordResetTokenException e) {
+            throw e;
+        } catch (RateLimitExceededException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error resetting password: {}", e.getMessage(), e);
@@ -328,14 +336,7 @@ public class UserCommandServiceImpl implements UserCommandService {
                     "resetToken", rawResetToken
             );
 
-            var emailCommand = new SendEmailCommand(
-                    email,
-                    EmailTemplate.PASSWORD_RESET,
-                    templateData,
-                    "Reset Your Password"
-            );
-
-            emailCommandService.handle(emailCommand);
+            notificationContextFacade.sendEmail(email, EmailTemplate.PASSWORD_RESET, templateData);
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}: {}", email, e.getMessage());
         }
@@ -347,14 +348,7 @@ public class UserCommandServiceImpl implements UserCommandService {
                     "username", username
             );
 
-            var emailCommand = new SendEmailCommand(
-                    email,
-                    EmailTemplate.PASSWORD_CHANGED,
-                    templateData,
-                    "Password Changed Successfully"
-            );
-
-            emailCommandService.handle(emailCommand);
+            notificationContextFacade.sendEmail(email, EmailTemplate.PASSWORD_CHANGED, templateData);
         } catch (Exception e) {
             log.error("Failed to send password changed email to {}: {}", email, e.getMessage());
         }

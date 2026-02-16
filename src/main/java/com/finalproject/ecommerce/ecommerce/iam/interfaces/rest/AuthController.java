@@ -13,6 +13,7 @@ import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.Refres
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.SignInCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.SignUpCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.RateLimitExceededException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -85,22 +86,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userResource);
     }
 
-    @PostMapping("/activate")
-    @Operation(summary = "Activate account", description = "Activate user account using the token received via email")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Account activated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid or expired activation token")
-    })
-    public ResponseEntity<String> activateAccount(@Valid @RequestBody ActivateAccountResource resource) {
-        var command = new ActivateAccountCommand(resource.activationToken());
-        boolean success = userCommandService.handle(command);
-
-        if (success) {
-            return ResponseEntity.ok("Account activated successfully. You can now sign in.");
-        }
-        return ResponseEntity.badRequest().body("Failed to activate account");
-    }
-
     @GetMapping("/activate")
     @Operation(summary = "Activate account via URL", description = "Activate user account using token from email link")
     @ApiResponses(value = {
@@ -167,10 +152,11 @@ public class AuthController {
 
 
     @PostMapping("/forgot-password")
-    @Operation(summary = "Forgot password", description = "Request password reset token via email")
+    @Operation(summary = "Forgot password", description = "Request password reset token via email (Rate limited: 10 requests per hour)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Password reset email sent successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "429", description = "Too many requests - Rate limit exceeded")
     })
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordResource resource) {
         try {
@@ -181,17 +167,20 @@ public class AuthController {
                 return ResponseEntity.ok("Password reset token sent to your email. Token expires in 15 minutes.");
             }
             return ResponseEntity.badRequest().body("Failed to send password reset email");
+        } catch (RateLimitExceededException e) {
+            return ResponseEntity.status(429).body(e.getMessage() + " Try again in " + (e.getRetryAfterSeconds() / 60) + " minutes.");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
     @PostMapping("/reset-password")
-    @Operation(summary = "Reset password", description = "Reset password using the token received via email")
+    @Operation(summary = "Reset password", description = "Reset password using the token received via email (Rate limited: 10 requests per hour)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Password reset successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid token or passwords don't match"),
-            @ApiResponse(responseCode = "401", description = "Invalid or expired reset token")
+            @ApiResponse(responseCode = "401", description = "Invalid or expired reset token"),
+            @ApiResponse(responseCode = "429", description = "Too many requests - Rate limit exceeded")
     })
     public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordResource resource) {
         try {
@@ -206,6 +195,8 @@ public class AuthController {
                 return ResponseEntity.ok("Password reset successfully. You can now sign in with your new password.");
             }
             return ResponseEntity.badRequest().body("Failed to reset password");
+        } catch (RateLimitExceededException e) {
+            return ResponseEntity.status(429).body(e.getMessage() + " Try again in " + (e.getRetryAfterSeconds() / 60) + " minutes.");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }

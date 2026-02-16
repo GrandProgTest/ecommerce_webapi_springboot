@@ -1,6 +1,5 @@
 package com.finalproject.ecommerce.ecommerce.notifications.application.internal.commandservices;
 
-import com.finalproject.ecommerce.ecommerce.notifications.domain.exceptions.EmailSendingException;
 import com.finalproject.ecommerce.ecommerce.notifications.domain.model.commands.SendEmailCommand;
 import com.finalproject.ecommerce.ecommerce.notifications.domain.model.valueobjects.EmailTemplate;
 import com.finalproject.ecommerce.ecommerce.notifications.domain.services.EmailCommandService;
@@ -10,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -27,8 +25,9 @@ public class EmailCommandServiceImpl implements EmailCommandService {
         this.templateEngine = templateEngine;
     }
 
+    @Async
     @Override
-    public boolean handle(SendEmailCommand command) {
+    public void handle(SendEmailCommand command) {
         try {
             log.info("Preparing to send email to {} using template {}", command.toEmail(), command.template().getTemplateName());
 
@@ -42,11 +41,8 @@ public class EmailCommandServiceImpl implements EmailCommandService {
                 log.warn("Email sending failed for {} with template {}", command.toEmail(), command.template().getTemplateName());
             }
 
-            return sent;
-
         } catch (Exception e) {
             log.error("Error sending email to {} with template {}: {}", command.toEmail(), command.template().getTemplateName(), e.getMessage(), e);
-            throw new EmailSendingException("Failed to send email to " + command.toEmail(), e);
         }
     }
 

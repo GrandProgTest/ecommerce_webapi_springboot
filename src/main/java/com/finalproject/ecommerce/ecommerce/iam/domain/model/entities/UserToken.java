@@ -71,6 +71,10 @@ public class UserToken extends AuditableModel {
         this.isUsed = true;
     }
 
+    public void forceMarkAsUsed() {
+        this.isUsed = true;
+    }
+
     public Long getUserId() {
         return user != null ? user.getId() : null;
     }
