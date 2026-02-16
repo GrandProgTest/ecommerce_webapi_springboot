@@ -100,6 +100,14 @@ public class IamContextFacadeImpl implements IamContextFacade {
     }
 
     @Override
+    public String getUsernameById(Long userId) {
+        var getUserByIdQuery = new GetUserByIdQuery(userId);
+        return userQueryService.handle(getUserByIdQuery)
+                .map(user -> user.getUsername())
+                .orElse(null);
+    }
+
+    @Override
     public Map<Long, String> getUserEmails(List<Long> userIds) {
         Map<Long, String> emailMap = new HashMap<>();
         for (Long userId : userIds) {

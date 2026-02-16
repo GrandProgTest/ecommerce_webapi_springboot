@@ -1,13 +1,17 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest;
 
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.UpdateOrderStatusCommand;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CancelOrderCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetAllOrdersQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.CreateOrderResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.UpdateOrderStatusResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.CreateOrderCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.OrderResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.UpdateOrderStatusCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -89,5 +93,45 @@ public class OrdersController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(orderResources);
+    }
+
+    @PatchMapping("/{orderId}/status")
+    @PreAuthorize("hasRole('ROLE_MANAGER')")
+    @Operation(summary = "Update order delivery status",
+               description = "Update order status to SHIPPED or DELIVERED. Only accessible by managers. Order must be PAID before status can be updated.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order status updated successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid status or order is not paid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - manager role required", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+    public ResponseEntity<OrderResource> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestBody UpdateOrderStatusResource resource) {
+
+        var command = UpdateOrderStatusCommandFromResourceAssembler.toCommandFromResource(orderId, resource);
+        var updatedOrder = orderCommandService.handle(command);
+        var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(updatedOrder);
+
+        return ResponseEntity.ok(orderResource);
+    }
+
+    @DeleteMapping("/{orderId}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Cancel order",
+               description = "Cancel an order. Only PENDING orders can be cancelled. Users can only cancel their own orders.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order cancelled successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "400", description = "Order cannot be cancelled (already paid/shipped/delivered)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - can only cancel own orders", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+    public ResponseEntity<OrderResource> cancelOrder(@PathVariable Long orderId) {
+
+        var command = new CancelOrderCommand(orderId);
+        var cancelledOrder = orderCommandService.handle(command);
+        var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(cancelledOrder);
+
+        return ResponseEntity.ok(orderResource);
     }
 }

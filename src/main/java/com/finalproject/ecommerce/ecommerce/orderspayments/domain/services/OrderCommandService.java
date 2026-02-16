@@ -5,6 +5,7 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CreateOrderFromCartCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.MarkOrderAsPaidCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.SeedOrderStatusCommand;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.UpdateOrderStatusCommand;
 
 public interface OrderCommandService {
     Order handle(CreateOrderFromCartCommand command);
@@ -14,4 +15,6 @@ public interface OrderCommandService {
     Order handle(MarkOrderAsPaidCommand command);
 
     void handle(SeedOrderStatusCommand command);
+
+    Order handle(UpdateOrderStatusCommand command);
 }

@@ -106,7 +106,46 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         if (this.status.isPaid()) {
             throw new IllegalStateException("Paid orders cannot be cancelled");
         }
+
+        OrderStatuses currentStatusEnum = this.status.toEnum();
+        if (currentStatusEnum == OrderStatuses.SHIPPED || currentStatusEnum == OrderStatuses.DELIVERED) {
+            throw new IllegalStateException(
+                "Cannot cancel order. Order is already " + currentStatusEnum.name()
+            );
+        }
+
         this.status = cancelledStatus;
+    }
+
+    public void updateStatus(OrderStatus newStatus) {
+        if (!this.status.isPaid()) {
+            throw new IllegalStateException("Only paid orders can have their delivery status updated");
+        }
+
+        OrderStatuses newStatusEnum = newStatus.toEnum();
+        if (newStatusEnum != OrderStatuses.SHIPPED && newStatusEnum != OrderStatuses.DELIVERED) {
+            throw new IllegalArgumentException("Can only update to SHIPPED or DELIVERED status");
+        }
+
+        OrderStatuses currentStatusEnum = this.status.toEnum();
+
+        if (currentStatusEnum == OrderStatuses.DELIVERED) {
+            throw new IllegalStateException(
+                "Cannot change status from DELIVERED. Order has already been delivered."
+            );
+        }
+
+        if (currentStatusEnum == OrderStatuses.SHIPPED && newStatusEnum == OrderStatuses.PAID) {
+            throw new IllegalStateException(
+                "Cannot change status back to PAID from SHIPPED"
+            );
+        }
+
+        if (currentStatusEnum == newStatusEnum) {
+            return;
+        }
+
+        this.status = newStatus;
     }
 
     public boolean isPending() {

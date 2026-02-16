@@ -22,5 +22,7 @@ public interface IamContextFacade {
 
     String getUserEmail(Long userId);
 
+    String getUsernameById(Long userId);
+
     Map<Long, String> getUserEmails(List<Long> userIds);
 }

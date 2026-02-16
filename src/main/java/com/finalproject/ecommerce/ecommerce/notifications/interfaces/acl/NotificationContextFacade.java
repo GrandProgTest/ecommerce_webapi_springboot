@@ -22,5 +22,8 @@ public interface NotificationContextFacade {
     boolean sendLowStockAlert(String toEmail, String productName, int currentStock);
 
     CompletableFuture<Void> sendLowStockAlertBatch(Set<String> recipientEmails, String productName, int currentStock);
+
+    boolean sendOrderStatusUpdate(String toEmail, String username, Long orderId, String orderStatus,
+                                   String statusMessage, String totalAmount, String orderDate);
 }
 

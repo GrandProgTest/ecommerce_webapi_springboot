@@ -5,6 +5,7 @@ public enum EmailTemplate {
     PASSWORD_CHANGED("password-changed", "Password Changed Successfully"),
     WELCOME("welcome", "Welcome to Our Store"),
     ORDER_CONFIRMATION("order-confirmation", "Order Confirmation"),
+    ORDER_STATUS_UPDATE("order-status-update", "Order Status Update"),
     ORDER_SHIPPED("order-shipped", "Your Order Has Been Shipped"),
     ORDER_DELIVERED("order-delivered", "Your Order Has Been Delivered"),
     PAYMENT_SUCCESS("payment-success", "Payment Successful"),

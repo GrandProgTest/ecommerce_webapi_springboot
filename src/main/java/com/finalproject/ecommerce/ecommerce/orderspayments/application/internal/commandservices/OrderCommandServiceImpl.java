@@ -9,10 +9,7 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.application.ports.out
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.InvalidOrderOperationException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.OrderNotFoundException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CancelOrderCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CreateOrderFromCartCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.MarkOrderAsPaidCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.SeedOrderStatusCommand;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.*;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.OrderStatuses;
@@ -96,7 +93,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             if (!productContextFacade.isProductActive(cartItem.productId())) {
                 String productName = productContextFacade.getProductName(cartItem.productId());
                 throw new InvalidOrderOperationException(
-                    "Product '" + productName + "' (ID: " + cartItem.productId() + ") is not active and cannot be purchased"
+                        "Product '" + productName + "' (ID: " + cartItem.productId() + ") is not active and cannot be purchased"
                 );
             }
 
@@ -152,7 +149,11 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             }
         }
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        sendOrderStatusNotification(savedOrder, "Your order has been cancelled. If you were charged, a refund will be processed.");
+
+        return savedOrder;
     }
 
     @Override
@@ -175,7 +176,11 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         log.info("Order {} marked as paid via Stripe session {}", order.getId(), command.stripeSessionId());
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        sendOrderStatusNotification(savedOrder, "Your payment has been successfully processed!");
+
+        return savedOrder;
     }
 
     @Override
@@ -193,6 +198,38 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                 orderStatusRepository.save(new OrderStatus(status, description));
             }
         });
+    }
+
+    @Override
+    public Order handle(UpdateOrderStatusCommand command) {
+        Order order = orderRepository.findById(command.orderId())
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + command.orderId()));
+
+        if (!order.isPaid()) {
+            throw new InvalidOrderOperationException(
+                    "Cannot update delivery status. Order must be PAID first. Current status: " +
+                            order.getStatus().getName());
+        }
+
+        OrderStatus newStatus = orderStatusRepository.findByName(command.newStatus().name())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Order status " + command.newStatus().name() + " not found in database"));
+
+        order.updateStatus(newStatus);
+
+        log.info("Order {} status updated to {} by manager", order.getId(), command.newStatus().name());
+
+        Order savedOrder = orderRepository.save(order);
+
+        String message = switch (command.newStatus()) {
+            case SHIPPED -> "Your order has been shipped! It's on its way to you.";
+            case DELIVERED -> "Your order has been delivered! We hope you enjoy your purchase.";
+            default -> "Your order status has been updated.";
+        };
+
+        sendOrderStatusNotification(savedOrder, message);
+
+        return savedOrder;
     }
 
     private void notifyUsersOfLowStock(Long productId, Integer currentStock) {
@@ -226,6 +263,39 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         } catch (Exception e) {
             log.error("Error queueing low stock notifications for product {}: {}",
                     productId, e.getMessage());
+        }
+    }
+
+    private void sendOrderStatusNotification(Order order, String statusMessage) {
+        try {
+            String userEmail = iamContextFacade.getUserEmail(order.getUserId());
+            if (userEmail == null || userEmail.isBlank()) {
+                log.warn("No email found for user {} - skipping order status notification for order {}",
+                        order.getUserId(), order.getId());
+                return;
+            }
+
+            String username = iamContextFacade.getUsernameById(order.getUserId());
+
+            String totalAmount = String.format("%.2f", order.getTotalAmount());
+            String orderDate = order.getCreatedAt().toString();
+            String orderStatus = order.getStatus().getName();
+
+            notificationContextFacade.sendOrderStatusUpdate(
+                    userEmail,
+                    username != null ? username : "Customer",
+                    order.getId(),
+                    orderStatus,
+                    statusMessage,
+                    totalAmount,
+                    orderDate
+            );
+
+            log.info("Order status notification sent for order {} to user {}", order.getId(), order.getUserId());
+
+        } catch (Exception e) {
+            log.error("Failed to send order status notification for order {}: {}",
+                    order.getId(), e.getMessage());
         }
     }
 }

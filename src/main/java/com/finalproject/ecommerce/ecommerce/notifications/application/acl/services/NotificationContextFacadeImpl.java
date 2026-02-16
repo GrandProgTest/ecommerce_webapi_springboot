@@ -140,6 +140,30 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
             return CompletableFuture.completedFuture(null);
         }
     }
+
+    @Override
+    public boolean sendOrderStatusUpdate(String toEmail, String username, Long orderId,
+                                          String orderStatus, String statusMessage,
+                                          String totalAmount, String orderDate) {
+        try {
+            Map<String, Object> templateData = Map.of(
+                    "username", username,
+                    "orderId", orderId.toString(),
+                    "orderStatus", orderStatus,
+                    "statusMessage", statusMessage,
+                    "totalAmount", totalAmount,
+                    "orderDate", orderDate,
+                    "orderUrl", "http://localhost:8080/api/v1/orders/user/" + orderId
+            );
+
+            var command = new SendEmailCommand(toEmail, EmailTemplate.ORDER_STATUS_UPDATE, templateData);
+            emailCommandService.handle(command);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to send order status update email to {}: {}", toEmail, e.getMessage());
+            return false;
+        }
+    }
 }
 
 
