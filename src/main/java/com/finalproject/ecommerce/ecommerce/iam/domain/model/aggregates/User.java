@@ -40,22 +40,34 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     @JoinColumn(nullable = false)
     private Role role;
 
+    @NotNull
+    @Column(nullable = false)
+    private Boolean isActive;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Address> addresses = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<RefreshToken> refreshTokens = new ArrayList<>();
+    private List<RefreshToken> userTokens = new ArrayList<>();
 
-    public User() {}
+    public User() {
+        this.isActive = false;
+    }
 
     public User(String username, String email, String password, Role role) {
+        this();
         this.username = username;
         this.email = email;
         this.password = password;
         this.role = role;
     }
 
-    public void changeRole(Role newRole) {
-        this.role = newRole;
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
     }
 }

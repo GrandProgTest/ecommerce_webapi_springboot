@@ -1,13 +1,11 @@
 package com.finalproject.ecommerce.ecommerce.iam.interfaces.rest;
 
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ActivateAccountCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ResendActivationTokenCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignOutCommand;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.AuthenticatedUserResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.RefreshTokenResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.SignInResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.SignUpResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.UserResource;
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.*;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.AuthenticatedUserResourceFromEntityAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.RefreshTokenCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.SignInCommandFromResourceAssembler;
@@ -17,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -67,12 +66,12 @@ public class AuthController {
     }
 
     @PostMapping("/sign-up")
-    @Operation(summary = "Sign up", description = "Register a new user")
+    @Operation(summary = "Sign up", description = "Register a new user. Role is automatically assigned based on email domain: @ravn.co = MANAGER, others = CLIENT. Account activation required via email.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User created successfully"),
+            @ApiResponse(responseCode = "201", description = "User created successfully. Check email for activation link."),
             @ApiResponse(responseCode = "400", description = "Invalid input or user already exists")
     })
-    public ResponseEntity<UserResource> signUp(@RequestBody SignUpResource resource) {
+    public ResponseEntity<UserResource> signUp(@Valid @RequestBody SignUpResource resource) {
         var signUpCommand = SignUpCommandFromResourceAssembler.toCommandFromResource(resource);
         var result = userCommandService.handle(signUpCommand);
 
@@ -82,6 +81,55 @@ public class AuthController {
 
         var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(result.get());
         return ResponseEntity.status(HttpStatus.CREATED).body(userResource);
+    }
+
+    @PostMapping("/activate")
+    @Operation(summary = "Activate account", description = "Activate user account using the token received via email")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account activated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired activation token")
+    })
+    public ResponseEntity<String> activateAccount(@Valid @RequestBody ActivateAccountResource resource) {
+        var command = new ActivateAccountCommand(resource.activationToken());
+        boolean success = userCommandService.handle(command);
+
+        if (success) {
+            return ResponseEntity.ok("Account activated successfully. You can now sign in.");
+        }
+        return ResponseEntity.badRequest().body("Failed to activate account");
+    }
+
+    @GetMapping("/activate")
+    @Operation(summary = "Activate account via URL", description = "Activate user account using token from email link")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Account activated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid or expired activation token")
+    })
+    public ResponseEntity<String> activateAccountViaUrl(@RequestParam String token) {
+        var command = new ActivateAccountCommand(token);
+        boolean success = userCommandService.handle(command);
+
+        if (success) {
+            return ResponseEntity.ok("Account activated successfully. You can now sign in.");
+        }
+        return ResponseEntity.badRequest().body("Failed to activate account");
+    }
+
+    @PostMapping("/resend-activation")
+    @Operation(summary = "Resend activation token", description = "Resend activation email to user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Activation email sent successfully"),
+            @ApiResponse(responseCode = "404", description = "User not found"),
+            @ApiResponse(responseCode = "400", description = "Account already activated")
+    })
+    public ResponseEntity<String> resendActivationToken(@Valid @RequestBody ResendActivationTokenResource resource) {
+        var command = new ResendActivationTokenCommand(resource.email());
+        boolean success = userCommandService.handle(command);
+
+        if (success) {
+            return ResponseEntity.ok("Activation email sent. Please check your inbox.");
+        }
+        return ResponseEntity.badRequest().body("Failed to resend activation email");
     }
 
     @PostMapping("/refresh")

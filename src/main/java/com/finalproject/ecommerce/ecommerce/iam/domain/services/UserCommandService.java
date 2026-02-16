@@ -1,7 +1,9 @@
 package com.finalproject.ecommerce.ecommerce.iam.domain.services;
 
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ActivateAccountCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.DeleteUserCommand;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.ResendActivationTokenCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignInCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignUpCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.UpdateUserCommand;
@@ -17,4 +19,8 @@ public interface UserCommandService {
     Optional<User> handle(UpdateUserCommand command);
 
     void handle(DeleteUserCommand command);
+
+    boolean handle(ActivateAccountCommand command);
+
+    boolean handle(ResendActivationTokenCommand command);
 }

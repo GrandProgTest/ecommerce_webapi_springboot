@@ -29,27 +29,20 @@ public class Role {
         this.name = name;
     }
 
-
     public String getStringName() {
         return name.name();
     }
 
+    public static Role getDefaultManagerRole() {
+        return new Role(Roles.ROLE_MANAGER);
+    }
 
-    public static Role getDefaultRole() {
+    public static Role getDefaultClientRole() {
         return new Role(Roles.ROLE_CLIENT);
     }
 
-
     public static Role toRoleFromName(String name) {
         return new Role(Roles.valueOf(name));
-    }
-
-
-    public static List<Role> validateRoleSet(List<Role> roles) {
-        if (roles == null || roles.isEmpty()) {
-            return List.of(getDefaultRole());
-        }
-        return roles;
     }
 
 }
