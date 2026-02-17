@@ -22,7 +22,6 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandServi
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.AccountActivationTokenRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RoleRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
-import com.finalproject.ecommerce.ecommerce.notifications.domain.model.valueobjects.EmailTemplate;
 import com.finalproject.ecommerce.ecommerce.notifications.interfaces.acl.NotificationContextFacade;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.RateLimitExceededException;
 import com.finalproject.ecommerce.ecommerce.shared.infrastructure.ratelimit.RateLimiterService;
@@ -34,7 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -132,12 +130,9 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     private void sendActivationEmail(String email, String username, String rawActivationToken) {
         try {
-            Map<String, Object> templateData = Map.of(
-                    "username", username,
-                    "activationToken", rawActivationToken
-            );
+            String activationLink = "http://localhost:8080/activate?token=" + rawActivationToken;
 
-            notificationContextFacade.sendEmail(email, EmailTemplate.WELCOME, templateData);
+            notificationContextFacade.sendWelcomeEmail(email, username, activationLink);
         } catch (Exception e) {
             log.error("Failed to send activation email to {}: {}", email, e.getMessage());
         }
@@ -319,9 +314,7 @@ public class UserCommandServiceImpl implements UserCommandService {
             sendPasswordChangedEmail(user.getEmail(), user.getUsername());
 
             return true;
-        } catch (InvalidPasswordResetTokenException e) {
-            throw e;
-        } catch (RateLimitExceededException e) {
+        } catch (InvalidPasswordResetTokenException | RateLimitExceededException e) {
             throw e;
         } catch (Exception e) {
             log.error("Unexpected error resetting password: {}", e.getMessage(), e);
@@ -331,12 +324,9 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     private void sendPasswordResetEmail(String email, String username, String rawResetToken) {
         try {
-            Map<String, Object> templateData = Map.of(
-                    "username", username,
-                    "resetToken", rawResetToken
-            );
+            int expirationMinutes = 15;
 
-            notificationContextFacade.sendEmail(email, EmailTemplate.PASSWORD_RESET, templateData);
+            notificationContextFacade.sendPasswordResetEmail(email, username, rawResetToken, expirationMinutes);
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}: {}", email, e.getMessage());
         }
@@ -344,11 +334,9 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     private void sendPasswordChangedEmail(String email, String username) {
         try {
-            Map<String, Object> templateData = Map.of(
-                    "username", username
-            );
+            String changeDateTime = new Date().toString();
 
-            notificationContextFacade.sendEmail(email, EmailTemplate.PASSWORD_CHANGED, templateData);
+            notificationContextFacade.sendPasswordChangedEmail(email, username, changeDateTime);
         } catch (Exception e) {
             log.error("Failed to send password changed email to {}: {}", email, e.getMessage());
         }

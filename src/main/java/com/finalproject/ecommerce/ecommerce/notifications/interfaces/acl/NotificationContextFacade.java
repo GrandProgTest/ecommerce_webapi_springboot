@@ -1,29 +1,24 @@
 package com.finalproject.ecommerce.ecommerce.notifications.interfaces.acl;
 
-import com.finalproject.ecommerce.ecommerce.notifications.domain.model.valueobjects.EmailTemplate;
-
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 
 public interface NotificationContextFacade {
     
-    boolean sendPasswordResetEmail(String toEmail, String userName, String resetLink, int expirationMinutes);
-    
-    boolean sendPasswordChangedEmail(String toEmail, String userName, String changeDateTime);
-    
-    boolean sendWelcomeEmail(String toEmail, String userName, String storeUrl);
+    void sendPasswordResetEmail(String toEmail, String userName, String resetToken, int expirationMinutes);
 
-    boolean sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData);
-    
-    boolean sendEmail(String toEmail, EmailTemplate template, Map<String, Object> templateData);
+    void sendPasswordChangedEmail(String toEmail, String userName, String changeDateTime);
 
-    boolean sendLowStockAlert(String toEmail, String productName, int currentStock);
+    void sendWelcomeEmail(String toEmail, String userName, String storeUrl);
 
-    CompletableFuture<Void> sendLowStockAlertBatch(Set<String> recipientEmails, String productName, int currentStock);
+    void sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData);
 
-    boolean sendOrderStatusUpdate(String toEmail, String username, Long orderId, String orderStatus,
+    void sendLowStockAlert(String toEmail, String productName, int currentStock);
+
+    void sendLowStockAlertBatch(Set<String> recipientEmails, String productName, int currentStock);
+
+    void sendOrderStatusUpdate(String toEmail, String username, Long orderId, String orderStatus,
                                    String statusMessage, String totalAmount, String orderDate);
 }
 

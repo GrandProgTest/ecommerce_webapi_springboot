@@ -26,25 +26,23 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
     }
 
     @Override
-    public boolean sendPasswordResetEmail(String toEmail, String userName, String resetLink, int expirationMinutes) {
+    public void sendPasswordResetEmail(String toEmail, String userName, String resetToken, int expirationMinutes) {
         try {
             Map<String, Object> templateData = Map.of(
-                    "userName", userName,
-                    "resetLink", resetLink,
+                    "username", userName,
+                    "resetToken", resetToken,
                     "expirationMinutes", String.valueOf(expirationMinutes)
             );
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.PASSWORD_RESET, templateData);
             emailCommandService.handle(command);
-            return true;
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}: {}", toEmail, e.getMessage());
-            return false;
         }
     }
 
     @Override
-    public boolean sendPasswordChangedEmail(String toEmail, String userName, String changeDateTime) {
+    public void sendPasswordChangedEmail(String toEmail, String userName, String changeDateTime) {
         try {
             Map<String, Object> templateData = Map.of(
                     "userName", userName,
@@ -53,15 +51,13 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.PASSWORD_CHANGED, templateData);
             emailCommandService.handle(command);
-            return true;
         } catch (Exception e) {
             log.error("Failed to send password changed email to {}: {}", toEmail, e.getMessage());
-            return false;
         }
     }
 
     @Override
-    public boolean sendWelcomeEmail(String toEmail, String userName, String storeUrl) {
+    public void sendWelcomeEmail(String toEmail, String userName, String storeUrl) {
         try {
             Map<String, Object> templateData = Map.of(
                     "userName", userName,
@@ -70,39 +66,24 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.WELCOME, templateData);
             emailCommandService.handle(command);
-            return true;
         } catch (Exception e) {
             log.error("Failed to send welcome email to {}: {}", toEmail, e.getMessage());
-            return false;
         }
     }
 
     @Override
-    public boolean sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData) {
+    public void sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData) {
         try {
             var command = new SendEmailCommand(toEmail, EmailTemplate.ORDER_CONFIRMATION, orderData);
             emailCommandService.handle(command);
-            return true;
         } catch (Exception e) {
             log.error("Failed to send order confirmation email to {}: {}", toEmail, e.getMessage());
-            return false;
         }
     }
 
-    @Override
-    public boolean sendEmail(String toEmail, EmailTemplate template, Map<String, Object> templateData) {
-        try {
-            var command = new SendEmailCommand(toEmail, template, templateData);
-            emailCommandService.handle(command);
-            return true;
-        } catch (Exception e) {
-            log.error("Failed to send email to {} with template {}: {}", toEmail, template, e.getMessage());
-            return false;
-        }
-    }
 
     @Override
-    public boolean sendLowStockAlert(String toEmail, String productName, int currentStock) {
+    public void sendLowStockAlert(String toEmail, String productName, int currentStock) {
         try {
             Map<String, Object> templateData = Map.of(
                     "productName", productName,
@@ -111,24 +92,22 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.LOW_STOCK_ALERT, templateData);
             emailCommandService.handle(command);
-            return true;
         } catch (Exception e) {
             log.error("Failed to send low stock alert email to {}: {}", toEmail, e.getMessage());
-            return false;
         }
     }
 
     @Override
-    public CompletableFuture<Void> sendLowStockAlertBatch(Set<String> recipientEmails,
-                                                          String productName,
-                                                          int currentStock) {
+    public void sendLowStockAlertBatch(Set<String> recipientEmails,
+                                       String productName,
+                                       int currentStock) {
         try {
             Map<String, Object> templateData = Map.of(
                     "productName", productName,
                     "currentStock", String.valueOf(currentStock)
             );
 
-            return emailCommandServiceImpl.sendBatchEmailAsync(
+            emailCommandServiceImpl.sendBatchEmailAsync(
                     recipientEmails,
                     EmailTemplate.LOW_STOCK_ALERT,
                     EmailTemplate.LOW_STOCK_ALERT.getDefaultSubject(),
@@ -137,12 +116,12 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
 
         } catch (Exception e) {
             log.error("Failed to queue batch low stock alerts: {}", e.getMessage());
-            return CompletableFuture.completedFuture(null);
+            CompletableFuture.completedFuture(null);
         }
     }
 
     @Override
-    public boolean sendOrderStatusUpdate(String toEmail, String username, Long orderId,
+    public void sendOrderStatusUpdate(String toEmail, String username, Long orderId,
                                           String orderStatus, String statusMessage,
                                           String totalAmount, String orderDate) {
         try {
@@ -158,10 +137,8 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.ORDER_STATUS_UPDATE, templateData);
             emailCommandService.handle(command);
-            return true;
         } catch (Exception e) {
             log.error("Failed to send order status update email to {}: {}", toEmail, e.getMessage());
-            return false;
         }
     }
 }
