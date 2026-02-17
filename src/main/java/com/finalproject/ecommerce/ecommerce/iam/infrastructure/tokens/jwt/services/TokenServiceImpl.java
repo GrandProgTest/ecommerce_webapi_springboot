@@ -34,7 +34,7 @@ public class TokenServiceImpl implements BearerTokenService {
     @Value("${authorization.jwt.secret}")
     private String secret;
 
-    @Value("${authorization.jwt.access-token.expiration.minutes}")
+    @Value("${authorization.jwt.accessToken.expirationMinutes}")
     private int expirationMinutes;
 
     /**

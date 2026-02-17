@@ -38,7 +38,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     private final UserRepository userRepository;
     private final TokenService tokenService;
 
-    @Value("${authorization.jwt.refresh-token.expiration.days}")
+    @Value("${authorization.jwt.refreshToken.expirationDays}")
     private int refreshTokenExpirationDays;
 
     public RefreshTokenCommandServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, TokenService tokenService) {
