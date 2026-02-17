@@ -45,8 +45,13 @@ public class CartCommandServiceImpl implements CartCommandService {
             throw new InvalidCartOperationException("User with ID " + userId + " does not exist");
         }
 
-        if (!productContextFacade.isProductAvailableForPurchase(command.productId(), command.quantity())) {
-            throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available or does not have enough stock");
+        Integer availableStock = productContextFacade.getProductStock(command.productId());
+        if (availableStock == null || availableStock <= 0) {
+            throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available or out of stock");
+        }
+
+        if (!productContextFacade.isProductActive(command.productId())) {
+            throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available");
         }
 
         CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
@@ -55,6 +60,25 @@ public class CartCommandServiceImpl implements CartCommandService {
             Cart newCart = new Cart(userId, activeStatus);
             return cartRepository.save(newCart);
         });
+
+        int currentQuantityInCart = cart.getProductQuantity(command.productId());
+        int totalRequestedQuantity = currentQuantityInCart + command.quantity();
+
+        if (totalRequestedQuantity > availableStock) {
+            if (currentQuantityInCart >= availableStock) {
+                throw new InvalidCartOperationException(
+                        "You already have the maximum available quantity (" + currentQuantityInCart +
+                                ") of this product in your cart. Cannot add more items."
+                );
+            } else {
+                int remainingSpace = availableStock - currentQuantityInCart;
+                throw new InvalidCartOperationException(
+                        "Cannot add " + command.quantity() + " items. You have " + currentQuantityInCart +
+                                " in your cart and the product has only " + availableStock +
+                                " in stock. You can add up to " + remainingSpace + " more item(s)."
+                );
+            }
+        }
 
         cart.addProduct(command.productId(), command.quantity());
 
@@ -69,8 +93,16 @@ public class CartCommandServiceImpl implements CartCommandService {
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
-        if (!productContextFacade.hasAvailableStock(command.productId(), command.quantity())) {
-            throw new InvalidCartOperationException("Product with ID " + command.productId() + " does not have enough stock");
+        Integer availableStock = productContextFacade.getProductStock(command.productId());
+        if (availableStock == null || availableStock <= 0) {
+            throw new InvalidCartOperationException("Product with ID " + command.productId() + " is out of stock");
+        }
+
+        if (command.quantity() > availableStock) {
+            throw new InvalidCartOperationException(
+                    "Cannot set quantity to " + command.quantity() + ". Product has only " +
+                            availableStock + " in stock."
+            );
         }
 
         cart.updateProductQuantity(command.productId(), command.quantity());
@@ -88,8 +120,16 @@ public class CartCommandServiceImpl implements CartCommandService {
 
         var cartItem = cart.getItems().stream().filter(item -> item.getId().equals(command.cartItemId())).findFirst().orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
 
-        if (!productContextFacade.hasAvailableStock(cartItem.getProductId(), command.quantity())) {
-            throw new InvalidCartOperationException("Product does not have enough stock");
+        Integer availableStock = productContextFacade.getProductStock(cartItem.getProductId());
+        if (availableStock == null || availableStock <= 0) {
+            throw new InvalidCartOperationException("Product is out of stock");
+        }
+
+        if (command.quantity() > availableStock) {
+            throw new InvalidCartOperationException(
+                    "Cannot set quantity to " + command.quantity() + ". Product has only " +
+                            availableStock + " in stock."
+            );
         }
 
         cart.updateCartItemQuantity(command.cartItemId(), command.quantity());
