@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.application.internal.eventhandlers;
 
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.SeedDeliveryStatusCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.SeedOrderStatusCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,11 @@ public class OrderApplicationReadyEventHandler {
         var seedOrderStatusCommand = new SeedOrderStatusCommand();
         orderCommandService.handle(seedOrderStatusCommand);
         log.info("Order status seeding verification finished for {} at {}", applicationName, currentTimestamp());
+
+        log.info("Starting to verify if delivery status seeding is needed for {} at {}", applicationName, currentTimestamp());
+        var seedDeliveryStatusCommand = new SeedDeliveryStatusCommand();
+        orderCommandService.handle(seedDeliveryStatusCommand);
+        log.info("Delivery status seeding verification finished for {} at {}", applicationName, currentTimestamp());
     }
 
     private Timestamp currentTimestamp() {

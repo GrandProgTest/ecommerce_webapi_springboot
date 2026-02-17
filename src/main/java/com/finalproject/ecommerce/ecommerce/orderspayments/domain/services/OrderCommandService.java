@@ -1,11 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.domain.services;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CancelOrderCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CreateOrderFromCartCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.MarkOrderAsPaidCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.SeedOrderStatusCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.UpdateOrderStatusCommand;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.*;
 
 public interface OrderCommandService {
     Order handle(CreateOrderFromCartCommand command);
@@ -16,5 +12,7 @@ public interface OrderCommandService {
 
     void handle(SeedOrderStatusCommand command);
 
-    Order handle(UpdateOrderStatusCommand command);
+    void handle(SeedDeliveryStatusCommand command);
+
+    Order handle(UpdateOrderDeliveryStatusCommand command);
 }

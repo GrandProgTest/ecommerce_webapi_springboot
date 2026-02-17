@@ -1,31 +1,30 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest;
 
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.UpdateOrderStatusCommand;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CancelOrderCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetAllOrdersQuery;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.CreateOrderResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.UpdateOrderStatusResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.PaginatedOrderResponse;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.UpdateOrderDeliveryStatusResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.CreateOrderCommandFromResourceAssembler;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.OrderResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.UpdateOrderStatusCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.UpdateOrderDeliveryStatusCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
 import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -61,55 +60,86 @@ public class OrdersController {
 
     @GetMapping
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "List all orders", description = "Returns all orders in the system. Only accessible by managers.")
+    @Operation(summary = "Get all orders with pagination and filtering (Manager)",
+            description = "Get paginated list of orders with sorting options and optional filters. Only accessible by managers.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully with pagination metadata (may be empty list if no orders match filters)", content = @Content(schema = @Schema(implementation = PaginatedOrderResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid page size - Allowed values are: 20, 50, 100", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Access denied - manager role required", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+    public ResponseEntity<PaginatedOrderResponse> getAllOrders(
+            @Parameter(description = "Page number (0-indexed)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of orders per page (allowed: 20, 50, 100)", example = "20")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Sort by field (createdAt, totalAmount, status)", example = "createdAt")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (asc or desc)", example = "desc")
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            @Parameter(description = "Filter by order status (PENDING, PAID, CANCELLED) - optional", required = false, example = "PAID")
+            @RequestParam(required = false) String status,
+            @Parameter(description = "Filter by delivery status (PACKED, SHIPPED, IN_TRANSIT, DELIVERED) - optional", required = false, example = "SHIPPED")
+            @RequestParam(required = false) String deliveryStatus,
+            @Parameter(description = "Filter by user ID - optional", required = false, example = "1")
+            @RequestParam(required = false) Long userId) {
 
-    public ResponseEntity<List<OrderResource>> getAllOrders() {
-        var query = new GetAllOrdersQuery();
-        var orders = orderQueryService.handle(query);
-        var orderResources = orders.stream()
-                .map(OrderResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
+        if (size != 20 && size != 50 && size != 100) {
+            throw new InvalidPageSizeException(size);
+        }
 
-        return ResponseEntity.ok(orderResources);
+        var query = new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, userId);
+        Page<com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order> orderPage = orderQueryService.handle(query);
+        var response = OrderResourceFromEntityAssembler.toPaginatedResponse(orderPage);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get user's orders", description = "Returns all orders for the specified user. Managers can view any user's orders, clients can only view their own.")
+    @Operation(summary = "Get user orders with pagination and sorting",
+               description = "Get paginated list of user's orders, sorted by most recent first. Includes order status and delivery tracking. Users can only view their own orders.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully with pagination metadata (may be empty list if user has no orders)", content = @Content(schema = @Schema(implementation = PaginatedOrderResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid page size - Allowed values are: 20, 50, 100", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "Access denied - user can only access their own orders", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+            @ApiResponse(responseCode = "403", description = "Access denied - can only view own orders", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+    public ResponseEntity<PaginatedOrderResponse> getUserOrders(
+            @PathVariable Long userId,
+            @Parameter(description = "Page number (0-indexed)", example = "0")
+            @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of orders per page (allowed: 20, 50, 100)", example = "20")
+            @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Sort by field (createdAt, totalAmount, status)", example = "createdAt")
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Sort direction (asc or desc)", example = "desc")
+            @RequestParam(defaultValue = "desc") String sortDirection) {
 
-    public ResponseEntity<List<OrderResource>> getOrdersByUserId(@PathVariable Long userId) {
-        var query = new GetOrdersByUserIdQuery(userId);
-        var orders = orderQueryService.handle(query);
-        var orderResources = orders.stream()
-                .map(OrderResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
+        if (size != 20 && size != 50 && size != 100) {
+            throw new com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException(size);
+        }
 
-        return ResponseEntity.ok(orderResources);
+        var query = new GetUserOrdersWithPaginationQuery(userId, page, size, sortBy, sortDirection);
+        Page<com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order> orderPage = orderQueryService.handle(query);
+        var response = OrderResourceFromEntityAssembler.toPaginatedResponse(orderPage);
+
+        return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{orderId}/status")
+    @PatchMapping("/{orderId}/delivery-status")
     @PreAuthorize("hasRole('ROLE_MANAGER')")
     @Operation(summary = "Update order delivery status",
-               description = "Update order status to SHIPPED or DELIVERED. Only accessible by managers. Order must be PAID before status can be updated.")
+            description = "Update order delivery status to PACKED, SHIPPED, IN_TRANSIT, or DELIVERED. Only accessible by managers. Order must be PAID before delivery status can be updated.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Order status updated successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "200", description = "Order delivery status updated successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
             @ApiResponse(responseCode = "400", description = "Invalid status or order is not paid", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "403", description = "Access denied - manager role required", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Order not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
-    public ResponseEntity<OrderResource> updateOrderStatus(
+    public ResponseEntity<OrderResource> updateOrderDeliveryStatus(
             @PathVariable Long orderId,
-            @RequestBody UpdateOrderStatusResource resource) {
+            @RequestBody UpdateOrderDeliveryStatusResource resource) {
 
-        var command = UpdateOrderStatusCommandFromResourceAssembler.toCommandFromResource(orderId, resource);
+        var command = UpdateOrderDeliveryStatusCommandFromResourceAssembler.toCommandFromResource(orderId, resource);
         var updatedOrder = orderCommandService.handle(command);
         var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(updatedOrder);
 
@@ -119,7 +149,7 @@ public class OrdersController {
     @DeleteMapping("/{orderId}/cancel")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Cancel order",
-               description = "Cancel an order. Only PENDING orders can be cancelled. Users can only cancel their own orders.")
+            description = "Cancel an order. Only PENDING orders can be cancelled. Users can only cancel their own orders.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Order cancelled successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
             @ApiResponse(responseCode = "400", description = "Order cannot be cancelled (already paid/shipped/delivered)", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),

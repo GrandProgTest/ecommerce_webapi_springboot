@@ -2,15 +2,17 @@ package com.finalproject.ecommerce.ecommerce.orderspayments.application.internal
 
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetAllOrdersQuery;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrderByIdQuery;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderRepository;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderSpecification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -26,22 +28,42 @@ public class OrderQueryServiceImpl implements OrderQueryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Order> handle(GetAllOrdersQuery query) {
-        return orderRepository.findAll();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Order> handle(GetOrdersByUserIdQuery query) {
-        iamContextFacade.validateUserCanAccessResource(query.userId());
-        return orderRepository.findByUserId(query.userId());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Optional<Order> handle(GetOrderByIdQuery query) {
         Optional<Order> order = orderRepository.findById(query.orderId());
         order.ifPresent(o -> iamContextFacade.validateUserCanAccessResource(o.getUserId()));
         return order;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Order> handle(GetAllOrdersWithPaginationQuery query) {
+        Sort sort = query.sortDirection().equalsIgnoreCase("desc")
+                ? Sort.by(query.sortBy()).descending()
+                : Sort.by(query.sortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
+
+        return orderRepository.findAll(
+                OrderSpecification.withFilters(
+                        query.status(),
+                        query.deliveryStatus(),
+                        query.userId()
+                ),
+                pageable
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Order> handle(GetUserOrdersWithPaginationQuery query) {
+        iamContextFacade.validateUserCanAccessResource(query.userId());
+
+        Sort sort = query.sortDirection().equalsIgnoreCase("desc")
+                ? Sort.by(query.sortBy()).descending()
+                : Sort.by(query.sortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
+
+        return orderRepository.findByUserId(query.userId(), pageable);
     }
 }

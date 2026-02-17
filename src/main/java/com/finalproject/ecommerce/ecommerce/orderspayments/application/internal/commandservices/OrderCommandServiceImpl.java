@@ -10,10 +10,12 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.Inv
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.OrderNotFoundException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.*;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.DeliveryStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.OrderStatuses;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.DeliveryStatusRepository;
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.DiscountRepository;
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderRepository;
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderStatusRepository;
@@ -35,6 +37,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
     private final OrderRepository orderRepository;
     private final OrderStatusRepository orderStatusRepository;
+    private final DeliveryStatusRepository deliveryStatusRepository;
     private final DiscountRepository discountRepository;
     private final CartContextFacade cartContextFacade;
     private final ProductContextFacade productContextFacade;
@@ -43,9 +46,10 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     private final NotificationContextFacade notificationContextFacade;
 
 
-    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DiscountRepository discountRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade, PaymentProvider paymentProvider, NotificationContextFacade notificationContextFacade) {
+    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DeliveryStatusRepository deliveryStatusRepository, DiscountRepository discountRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade, PaymentProvider paymentProvider, NotificationContextFacade notificationContextFacade) {
         this.orderRepository = orderRepository;
         this.orderStatusRepository = orderStatusRepository;
+        this.deliveryStatusRepository = deliveryStatusRepository;
         this.discountRepository = discountRepository;
         this.cartContextFacade = cartContextFacade;
         this.productContextFacade = productContextFacade;
@@ -192,8 +196,6 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                     case PENDING -> "Order is pending payment";
                     case PAID -> "Order has been paid";
                     case CANCELLED -> "Order has been cancelled";
-                    case SHIPPED -> "Order has been shipped";
-                    case DELIVERED -> "Order has been delivered";
                 };
                 orderStatusRepository.save(new OrderStatus(status, description));
             }
@@ -201,7 +203,23 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     }
 
     @Override
-    public Order handle(UpdateOrderStatusCommand command) {
+    @Transactional
+    public void handle(SeedDeliveryStatusCommand command) {
+        Arrays.stream(com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.DeliveryStatuses.values()).forEach(status -> {
+            if (!deliveryStatusRepository.findByName(status.name()).isPresent()) {
+                String description = switch (status) {
+                    case PACKED -> "Order has been packed and is ready for shipping";
+                    case SHIPPED -> "Order has been shipped";
+                    case IN_TRANSIT -> "Order is in transit";
+                    case DELIVERED -> "Order has been delivered";
+                };
+                deliveryStatusRepository.save(new DeliveryStatus(status, description));
+            }
+        });
+    }
+
+    @Override
+    public Order handle(UpdateOrderDeliveryStatusCommand command) {
         Order order = orderRepository.findById(command.orderId())
                 .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + command.orderId()));
 
@@ -211,20 +229,21 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                             order.getStatus().getName());
         }
 
-        OrderStatus newStatus = orderStatusRepository.findByName(command.newStatus().name())
+        DeliveryStatus newDeliveryStatus = deliveryStatusRepository.findByName(command.newDeliveryStatus().name())
                 .orElseThrow(() -> new IllegalStateException(
-                        "Order status " + command.newStatus().name() + " not found in database"));
+                        "Delivery status " + command.newDeliveryStatus().name() + " not found in database"));
 
-        order.updateStatus(newStatus);
+        order.updateDeliveryStatus(newDeliveryStatus);
 
-        log.info("Order {} status updated to {} by manager", order.getId(), command.newStatus().name());
+        log.info("Order {} delivery status updated to {} by manager", order.getId(), command.newDeliveryStatus().name());
 
         Order savedOrder = orderRepository.save(order);
 
-        String message = switch (command.newStatus()) {
+        String message = switch (command.newDeliveryStatus()) {
+            case PACKED -> "Your order has been packed and is ready for shipping.";
             case SHIPPED -> "Your order has been shipped! It's on its way to you.";
+            case IN_TRANSIT -> "Your order is in transit and will arrive soon.";
             case DELIVERED -> "Your order has been delivered! We hope you enjoy your purchase.";
-            default -> "Your order status has been updated.";
         };
 
         sendOrderStatusNotification(savedOrder, message);

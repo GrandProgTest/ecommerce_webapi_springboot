@@ -1,9 +1,9 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates;
 
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.DeliveryStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderItem;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.OrderStatuses;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -35,6 +35,10 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(nullable = false)
     private OrderStatus status;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn
+    private DeliveryStatus deliveryStatus;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
@@ -107,45 +111,23 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
             throw new IllegalStateException("Paid orders cannot be cancelled");
         }
 
-        OrderStatuses currentStatusEnum = this.status.toEnum();
-        if (currentStatusEnum == OrderStatuses.SHIPPED || currentStatusEnum == OrderStatuses.DELIVERED) {
-            throw new IllegalStateException(
-                "Cannot cancel order. Order is already " + currentStatusEnum.name()
-            );
+        if (this.deliveryStatus != null && this.deliveryStatus.isDelivered()) {
+            throw new IllegalStateException("Cannot cancel order. Order has already been delivered");
         }
 
         this.status = cancelledStatus;
     }
 
-    public void updateStatus(OrderStatus newStatus) {
+    public void updateDeliveryStatus(DeliveryStatus newDeliveryStatus) {
         if (!this.status.isPaid()) {
             throw new IllegalStateException("Only paid orders can have their delivery status updated");
         }
 
-        OrderStatuses newStatusEnum = newStatus.toEnum();
-        if (newStatusEnum != OrderStatuses.SHIPPED && newStatusEnum != OrderStatuses.DELIVERED) {
-            throw new IllegalArgumentException("Can only update to SHIPPED or DELIVERED status");
+        if (this.deliveryStatus != null && this.deliveryStatus.isDelivered()) {
+            throw new IllegalStateException("Cannot change delivery status. Order has already been delivered");
         }
 
-        OrderStatuses currentStatusEnum = this.status.toEnum();
-
-        if (currentStatusEnum == OrderStatuses.DELIVERED) {
-            throw new IllegalStateException(
-                "Cannot change status from DELIVERED. Order has already been delivered."
-            );
-        }
-
-        if (currentStatusEnum == OrderStatuses.SHIPPED && newStatusEnum == OrderStatuses.PAID) {
-            throw new IllegalStateException(
-                "Cannot change status back to PAID from SHIPPED"
-            );
-        }
-
-        if (currentStatusEnum == newStatusEnum) {
-            return;
-        }
-
-        this.status = newStatus;
+        this.deliveryStatus = newDeliveryStatus;
     }
 
     public boolean isPending() {
