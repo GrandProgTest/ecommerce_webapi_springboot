@@ -17,6 +17,7 @@ public class ProductDetailResourceFromEntityAssembler {
             entity.getPrice(),
             entity.getStock(),
             entity.getIsActive(),
+            entity.getIsDeleted(),
             entity.getCategoryIds(),
             entity.getCreatedByUserId(),
             images

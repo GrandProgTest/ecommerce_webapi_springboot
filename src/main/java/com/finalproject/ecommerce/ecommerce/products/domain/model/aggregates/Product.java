@@ -48,6 +48,10 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @Column(nullable = false)
     private Boolean isActive;
 
+    @NotNull
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
@@ -107,6 +111,19 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
 
     public void deactivate() {
         this.isActive = false;
+    }
+
+    public void softDelete() {
+        this.isDeleted = true;
+        this.isActive = false;
+    }
+
+    public void restore() {
+        this.isDeleted = false;
+    }
+
+    public boolean isDeleted() {
+        return this.isDeleted;
     }
 
     public void addImage(ImageUrl imageUrl, Boolean isPrimary) {

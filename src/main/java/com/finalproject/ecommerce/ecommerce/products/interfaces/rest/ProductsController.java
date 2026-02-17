@@ -10,16 +10,8 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetPro
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateProductResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.PaginatedProductResponse;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductDetailResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ProductResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.ToggleProductLikeResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateProductResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.CreateProductCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.ProductDetailResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.ProductResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.UpdateProductCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.*;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.*;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
 import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.resources.PageMetadata;
 import io.swagger.v3.oas.annotations.Operation;
@@ -100,6 +92,22 @@ public class ProductsController {
         var deleteProductCommand = new DeleteProductCommand(productId);
         productCommandService.handle(deleteProductCommand);
         return ResponseEntity.ok("Product with given id successfully deleted");
+    }
+
+    @PatchMapping("/{productId}/soft-delete")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Soft delete product", description = "Soft delete a product by marking it as deleted. Only ROLE_MANAGER can soft delete products.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Product soft deleted successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
+            @ApiResponse(responseCode = "404", description = "Product not found")})
+    public ResponseEntity<ProductResource> softDeleteProduct(@PathVariable Long productId) {
+        var softDeleteCommand = SoftDeleteProductCommandFromResourceAssembler.toCommandFromResource(productId);
+        var softDeletedProduct = productCommandService.handle(softDeleteCommand);
+        if (softDeletedProduct.isEmpty()) return ResponseEntity.notFound().build();
+        var softDeletedProductEntity = softDeletedProduct.get();
+        var softDeletedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(softDeletedProductEntity);
+        return ResponseEntity.ok(softDeletedProductResource);
     }
 
     @PostMapping("/{productId}/category")

@@ -14,6 +14,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Deact
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DecreaseProductStockCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.IncreaseProductStockCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.SoftDeleteProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
@@ -197,6 +198,24 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             return Optional.of(updatedProduct);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while deactivating product: %s".formatted(e.getMessage()));
+        }
+    }
+
+    @Override
+    public Optional<Product> handle(SoftDeleteProductCommand command) {
+        var product = productRepository.findById(command.productId())
+                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
+
+        if (ordersContextFacade.productExistsInOrders(command.productId())) {
+            throw new ProductInOrdersException(command.productId());
+        }
+
+        try {
+            product.softDelete();
+            var updatedProduct = productRepository.save(product);
+            return Optional.of(updatedProduct);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error while soft deleting product: %s".formatted(e.getMessage()));
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.queryservices;
 
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
@@ -17,9 +18,11 @@ import java.util.Optional;
 public class ProductQueryServiceImpl implements ProductQueryService {
 
     private final ProductRepository productRepository;
+    private final IamContextFacade iamContextFacade;
 
-    public ProductQueryServiceImpl(ProductRepository productRepository) {
+    public ProductQueryServiceImpl(ProductRepository productRepository, IamContextFacade iamContextFacade) {
         this.productRepository = productRepository;
+        this.iamContextFacade = iamContextFacade;
     }
 
     @Override
@@ -29,12 +32,12 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
     @Override
     public List<Product> handle(GetAllProductsQuery query) {
-        return productRepository.findAll();
+        return productRepository.findByIsDeleted(false);
     }
 
     @Override
     public List<Product> handle(GetActiveProductsQuery query) {
-        return productRepository.findByIsActive(true);
+        return productRepository.findByIsDeletedAndIsActive(false, true);
     }
 
     @Override
@@ -42,7 +45,9 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         if (query.productIds() == null || query.productIds().isEmpty()) {
             return List.of();
         }
-        return productRepository.findAllById(query.productIds());
+        return productRepository.findAllById(query.productIds()).stream()
+                .filter(product -> !product.isDeleted())
+                .toList();
     }
 
     @Override
@@ -52,7 +57,12 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 : Sort.by(query.sortBy()).ascending();
 
         Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
-        return productRepository.findAll(pageable);
+
+        if (iamContextFacade.currentUserHasRole("ROLE_MANAGER")) {
+            return productRepository.findByIsDeleted(false, pageable);
+        }
+
+        return productRepository.findByIsDeletedAndIsActive(false, true, pageable);
     }
 
     @Override
@@ -62,6 +72,11 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 : Sort.by(query.sortBy()).ascending();
 
         Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
-        return productRepository.findDistinctByProductCategories_Category_Id(query.categoryId(), pageable);
+
+        if (iamContextFacade.currentUserHasRole("ROLE_MANAGER")) {
+            return productRepository.findDistinctByIsDeletedAndProductCategories_Category_Id(false, query.categoryId(), pageable);
+        }
+
+        return productRepository.findDistinctByIsDeletedAndIsActiveAndProductCategories_Category_Id(false, true, query.categoryId(), pageable);
     }
 }

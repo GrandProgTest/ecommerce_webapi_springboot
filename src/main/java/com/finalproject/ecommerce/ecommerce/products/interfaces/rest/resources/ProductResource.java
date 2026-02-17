@@ -4,5 +4,5 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record ProductResource(Long id, String name, String description, BigDecimal price, Integer stock,
-                              Boolean isActive, List<Long> categoryIds, Long createdByUserId, String primaryImageUrl) {
+                              Boolean isActive, Boolean isDeleted, List<Long> categoryIds, Long createdByUserId, String primaryImageUrl) {
 }

@@ -16,5 +16,17 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     Optional<Product> findByIdAndIsActive(Long id, Boolean isActive);
 
-    Page<Product> findDistinctByProductCategories_Category_Id(Long categoryId, Pageable pageable);
+    Page<Product> findByIsActive(Boolean isActive, Pageable pageable);
+
+    List<Product> findByIsDeleted(Boolean isDeleted);
+
+    Page<Product> findByIsDeleted(Boolean isDeleted, Pageable pageable);
+
+    List<Product> findByIsDeletedAndIsActive(Boolean isDeleted, Boolean isActive);
+
+    Page<Product> findByIsDeletedAndIsActive(Boolean isDeleted, Boolean isActive, Pageable pageable);
+
+    Page<Product> findDistinctByIsDeletedAndProductCategories_Category_Id(Boolean isDeleted, Long categoryId, Pageable pageable);
+
+    Page<Product> findDistinctByIsDeletedAndIsActiveAndProductCategories_Category_Id(Boolean isDeleted, Boolean isActive, Long categoryId, Pageable pageable);
 }

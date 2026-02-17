@@ -10,6 +10,7 @@ public record ProductDetailResource(
         BigDecimal price,
         Integer stock,
         Boolean isActive,
+        Boolean isDeleted,
         List<Long> categoryIds,
         Long createdByUserId,
         List<ProductImageResource> images

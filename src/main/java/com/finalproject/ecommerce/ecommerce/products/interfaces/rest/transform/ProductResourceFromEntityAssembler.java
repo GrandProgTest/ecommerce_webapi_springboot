@@ -9,15 +9,16 @@ public class ProductResourceFromEntityAssembler {
 
     public static ProductResource toResourceFromEntity(Product entity) {
         return new ProductResource(
-            entity.getId(),
-            entity.getName(),
-            entity.getDescription(),
-            entity.getPrice(),
-            entity.getStock(),
-            entity.getIsActive(),
-            entity.getCategoryIds(),
-            entity.getCreatedByUserId(),
-            entity.getPrimaryImageUrl()
+                entity.getId(),
+                entity.getName(),
+                entity.getDescription(),
+                entity.getPrice(),
+                entity.getStock(),
+                entity.getIsActive(),
+                entity.getIsDeleted(),
+                entity.getCategoryIds(),
+                entity.getCreatedByUserId(),
+                entity.getPrimaryImageUrl()
         );
     }
 }
