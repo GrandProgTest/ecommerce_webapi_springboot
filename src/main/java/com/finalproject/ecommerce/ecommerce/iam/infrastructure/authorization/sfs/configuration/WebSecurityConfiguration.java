@@ -83,6 +83,7 @@ public class WebSecurityConfiguration {
                 "/api/v1/auth/forgot-password",
                 "/api/v1/auth/reset-password",
                 "/api/v1/webhooks/stripe",
+                "/graphql",
                 "/graphiql/**",
                 "/v3/api-docs/**",
                 "/v3/api-docs",

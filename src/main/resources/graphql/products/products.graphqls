@@ -7,22 +7,24 @@ type Product implements AuditableEntity {
     isActive: Boolean!
     categoryIds: [ID!]!
     createdByUserId: ID!
-    images: [ProductImage!]!
     likeCount: Int!
     isLikedByCurrentUser: Boolean
     isInStock: Boolean!
-    categories: [Category!]!
-    primaryImage: ProductImage
-    createdAt: String!
-    updatedAt: String!
+    primaryImageUrl: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
 }
 
 type ProductPage {
-    content: [Product!]!
+    products: [Product!]!
+    pageMetadata: PageMetadata!
+}
+
+type PageMetadata {
+    currentPage: Int!
+    pageSize: Int!
     totalElements: Int!
     totalPages: Int!
-    pageNumber: Int!
-    pageSize: Int!
     hasNext: Boolean!
     hasPrevious: Boolean!
 }
@@ -32,13 +34,25 @@ type ProductImage {
     productId: ID!
     imageUrl: String!
     isPrimary: Boolean!
-    createdAt: String!
+    createdAt: DateTime!
 }
 
 type Category {
     id: ID!
     name: String!
-    createdAt: String!
+    createdAt: DateTime!
+}
+
+type DeleteProductResponse {
+    success: Boolean!
+    message: String!
+}
+
+type LikeProductResponse {
+    success: Boolean!
+    isLiked: Boolean!
+    likeCount: Int!
+    message: String!
 }
 
 input ProductFilterInput {
@@ -93,8 +107,9 @@ extend type Query {
     products(
         page: Int = 0
         size: Int = 20
-        filters: ProductFilterInput
-        sort: ProductSortInput
+        categoryId: ID
+        sortBy: String = "id"
+        sortDirection: String = "asc"
     ): ProductPage!
 
     category(id: ID!): Category
@@ -107,7 +122,7 @@ extend type Query {
 extend type Mutation {
     createProduct(input: CreateProductInput!): Product!
     updateProduct(id: ID!, input: UpdateProductInput!): Product!
-    deleteProduct(id: ID!): Boolean!
+    deleteProduct(id: ID!): DeleteProductResponse!
     activateProduct(id: ID!): Product!
     deactivateProduct(id: ID!): Product!
     assignCategoryToProduct(productId: ID!, categoryId: ID!): Product!
@@ -118,6 +133,6 @@ extend type Mutation {
     updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
     deleteCategory(id: ID!): Boolean!
 
-    likeProduct(productId: ID!): Boolean!
-    unlikeProduct(productId: ID!): Boolean!
+    likeProduct(productId: ID!, userId: ID!): LikeProductResponse!
+    unlikeProduct(productId: ID!, userId: ID!): LikeProductResponse!
 }
