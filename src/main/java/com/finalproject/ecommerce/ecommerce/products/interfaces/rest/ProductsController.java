@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.interfaces.rest;
 
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ActivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeactivateProductCommand;
@@ -158,7 +159,7 @@ public class ProductsController {
         boolean isLiked = productCommandService.handle(toggleCommand);
 
         var product = productQueryService.handle(new GetProductByIdQuery(productId))
-                .orElseThrow(() -> new IllegalStateException("Product not found after toggle"));
+                .orElseThrow(() -> new ProductNotFoundException(productId));
 
         String message = isLiked ? "Product liked successfully" : "Product like removed successfully";
         var response = new ToggleProductLikeResource(

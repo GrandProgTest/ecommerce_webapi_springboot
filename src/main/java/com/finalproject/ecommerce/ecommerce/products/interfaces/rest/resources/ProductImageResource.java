@@ -1,7 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources;
 
-import java.util.Date;
+import java.time.Instant;
 
 public record ProductImageResource(Long id, Long productId, String imageUrl, Boolean isPrimary,
-                                   Date createdAt) {
+                                   Instant createdAt) {
 }
