@@ -1,6 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.payment.stripe.webhook;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.payment.stripe.dto.StripeWebhookEventResponse;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.StripeProperties;
 import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
@@ -8,8 +9,8 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.StripeObject;
 import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -17,22 +18,18 @@ import java.util.Optional;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class StripeWebhookValidator {
 
-    @Value("${stripe.api.secret-key}")
-    private String secretKey;
-
-    @Value("${stripe.api.webhook-secret}")
-    private String webhookSecret;
-
+    private final StripeProperties stripeProperties;
 
     public Optional<StripeWebhookEventResponse> validateAndParseWebhook(String payload, String signature) {
-        Stripe.apiKey = secretKey;
+        Stripe.apiKey = stripeProperties.getApi().getSecretKey();
 
         Event event;
 
         try {
-            event = Webhook.constructEvent(payload, signature, webhookSecret);
+            event = Webhook.constructEvent(payload, signature, stripeProperties.getApi().getWebhookSecret());
         } catch (SignatureVerificationException e) {
             log.error("Webhook signature verification failed: {}", e.getMessage());
             throw new RuntimeException("Invalid signature");

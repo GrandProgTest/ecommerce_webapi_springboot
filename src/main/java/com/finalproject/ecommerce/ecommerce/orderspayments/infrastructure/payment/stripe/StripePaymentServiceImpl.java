@@ -4,12 +4,13 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.application.dtos.Paym
 import com.finalproject.ecommerce.ecommerce.orderspayments.application.ports.out.PaymentProvider;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.acl.ProductContextFacade;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.StripeProperties;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -23,26 +24,16 @@ import java.util.stream.Collectors;
 public class StripePaymentServiceImpl implements PaymentProvider {
 
     private final ProductContextFacade productContextFacade;
+    private final StripeProperties stripeProperties;
 
-    @Value("${stripe.api.secret-key}")
-    private String secretKey;
-
-    @Value("${stripe.success.url}")
-    private String successUrl;
-
-    @Value("${stripe.cancel.url}")
-    private String cancelUrl;
-
-    @Value("${stripe.currency:usd}")
-    private String currency;
-
-    public StripePaymentServiceImpl(ProductContextFacade productContextFacade) {
+    public StripePaymentServiceImpl(ProductContextFacade productContextFacade, StripeProperties stripeProperties) {
         this.productContextFacade = productContextFacade;
+        this.stripeProperties = stripeProperties;
     }
 
     @Override
     public PaymentSessionDto initiatePayment(Order order) {
-        Stripe.apiKey = secretKey;
+        Stripe.apiKey = stripeProperties.getApi().getSecretKey();
 
         try {
             List<Long> productIds = order.getItems().stream()
@@ -70,7 +61,7 @@ public class StripePaymentServiceImpl implements PaymentProvider {
 
                 SessionCreateParams.LineItem.PriceData priceData =
                         SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency(currency)
+                                .setCurrency(stripeProperties.getCurrency())
                                 .setUnitAmount(unitAmountInCents)
                                 .setProductData(productData)
                                 .build();
@@ -86,8 +77,8 @@ public class StripePaymentServiceImpl implements PaymentProvider {
 
             SessionCreateParams params = SessionCreateParams.builder()
                     .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
-                    .setCancelUrl(cancelUrl)
+                    .setSuccessUrl(stripeProperties.getSuccess().getUrl() + "?session_id={CHECKOUT_SESSION_ID}")
+                    .setCancelUrl(stripeProperties.getCancel().getUrl())
                     .addAllLineItem(lineItems)
                     .putMetadata("order_id", order.getId().toString())
                     .putMetadata("user_id", order.getUserId().toString())
@@ -112,7 +103,7 @@ public class StripePaymentServiceImpl implements PaymentProvider {
 
     @Override
     public void cancelPayment(String sessionId) {
-        Stripe.apiKey = secretKey;
+        Stripe.apiKey = stripeProperties.getApi().getSecretKey();
 
         try {
             Session session = Session.retrieve(sessionId);

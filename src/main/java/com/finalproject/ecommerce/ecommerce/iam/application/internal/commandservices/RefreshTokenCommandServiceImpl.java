@@ -10,9 +10,9 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SignOutCom
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.RefreshTokenRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.JwtProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,14 +37,13 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
     private final TokenService tokenService;
+    private final JwtProperties jwtProperties;
 
-    @Value("${authorization.jwt.refreshToken.expirationDays}")
-    private int refreshTokenExpirationDays;
-
-    public RefreshTokenCommandServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, TokenService tokenService) {
+    public RefreshTokenCommandServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, TokenService tokenService, JwtProperties jwtProperties) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
+        this.jwtProperties = jwtProperties;
     }
 
     @Override
@@ -59,7 +58,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
         String plainToken = generateSecureToken();
         String tokenHash = hashToken(plainToken);
 
-        Instant expiresAt = Instant.now().plus(refreshTokenExpirationDays, ChronoUnit.DAYS);
+        Instant expiresAt = Instant.now().plus(jwtProperties.getRefreshToken().getExpirationDays(), ChronoUnit.DAYS);
 
         RefreshToken refreshToken = new RefreshToken(tokenHash, user, expiresAt);
 

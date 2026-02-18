@@ -1,10 +1,11 @@
 package com.finalproject.ecommerce.ecommerce.notifications.infrastructure.email;
 
 import com.finalproject.ecommerce.ecommerce.notifications.domain.exceptions.EmailSendingException;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.EmailProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
@@ -14,16 +15,11 @@ import java.util.Set;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class GmailEmailProvider implements EmailProvider {
 
     private final JavaMailSender mailSender;
-
-    @Value("${spring.mail.username}")
-    private String fromEmail;
-
-    public GmailEmailProvider(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
+    private final EmailProperties emailProperties;
 
     @Override
     public boolean sendEmail(String to, String subject, String htmlBody) {
@@ -31,7 +27,7 @@ public class GmailEmailProvider implements EmailProvider {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
+            helper.setFrom(emailProperties.getUsername());
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlBody, true);
@@ -68,8 +64,8 @@ public class GmailEmailProvider implements EmailProvider {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
-            helper.setTo(fromEmail);
+            helper.setFrom(emailProperties.getUsername());
+            helper.setTo(emailProperties.getUsername());
 
             String[] bccArray = uniqueRecipients.toArray(new String[0]);
             helper.setBcc(bccArray);
