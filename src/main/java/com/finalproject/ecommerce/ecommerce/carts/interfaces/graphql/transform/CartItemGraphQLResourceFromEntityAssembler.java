@@ -8,6 +8,6 @@ import java.time.ZoneId;
 public class CartItemGraphQLResourceFromEntityAssembler {
 
     public static CartItemGraphQLResource toResourceFromEntity(CartItem item) {
-        return new CartItemGraphQLResource(item.getId(), item.getProductId(), item.getQuantity(), item.getCreatedAt() != null ? item.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toString() : null, item.getUpdatedAt() != null ? item.getUpdatedAt().toInstant().atZone(ZoneId.systemDefault()).toString() : null);
+        return new CartItemGraphQLResource(item.getId(), item.getProductId(), item.getQuantity(), item.getCreatedAt() != null ? item.getCreatedAt() : null, item.getUpdatedAt() != null ? item.getUpdatedAt() : null);
     }
 }

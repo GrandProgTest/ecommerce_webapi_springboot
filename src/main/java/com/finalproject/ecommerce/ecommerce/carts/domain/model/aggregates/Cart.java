@@ -10,8 +10,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
+import java.time.InstantSource;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,7 +32,7 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
     private CartStatus status;
 
     @Column
-    private Date checkedOutAt;
+    private Instant checkedOutAt;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<CartItem> items = new ArrayList<>();
@@ -129,7 +130,7 @@ public class Cart extends AuditableAbstractAggregateRoot<Cart> {
         }
 
         this.status = checkedOutStatus;
-        this.checkedOutAt = new Date();
+        this.checkedOutAt = Instant.now();
     }
 
     public void markAsAbandoned(CartStatus abandonedStatus) {

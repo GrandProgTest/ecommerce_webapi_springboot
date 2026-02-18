@@ -33,7 +33,7 @@ public class UserToken extends AuditableModel {
     private Boolean isUsed;
 
 
-    protected UserToken() {
+    public UserToken() {
         this.isUsed = false;
     }
 
@@ -54,7 +54,7 @@ public class UserToken extends AuditableModel {
     }
 
     public boolean isExpired() {
-        return new Date().after(this.expiresAt);
+        return new Date().after(expiresAt);
     }
 
     public boolean isValid() {

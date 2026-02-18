@@ -10,8 +10,8 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -50,7 +50,7 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
     private String checkoutUrl;
 
     @Column
-    private Date paidAt;
+    private Instant paidAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
@@ -98,7 +98,7 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
             throw new IllegalStateException("Only pending orders can be marked as paid");
         }
         this.status = paidStatus;
-        this.paidAt = new Date();
+        this.paidAt = Instant.now();
     }
 
     public void setStripeCheckoutInfo(String sessionId, String checkoutUrl) {

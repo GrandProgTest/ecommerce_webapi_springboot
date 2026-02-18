@@ -57,11 +57,11 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
     }
 
     @Override
-    public void sendWelcomeEmail(String toEmail, String userName, String storeUrl) {
+    public void sendWelcomeEmail(String toEmail, String userName, String activationUrl) {
         try {
             Map<String, Object> templateData = Map.of(
-                    "userName", userName,
-                    "storeUrl", storeUrl
+                    "username", userName,
+                    "activationUrl", activationUrl
             );
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.WELCOME, templateData);

@@ -130,7 +130,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     private void sendActivationEmail(String email, String username, String rawActivationToken) {
         try {
-            String activationLink = "http://localhost:8080/activate?token=" + rawActivationToken;
+            String activationLink = "http://localhost:8080/api/v1/auth/activate?token=" + rawActivationToken;
 
             notificationContextFacade.sendWelcomeEmail(email, username, activationLink);
         } catch (Exception e) {

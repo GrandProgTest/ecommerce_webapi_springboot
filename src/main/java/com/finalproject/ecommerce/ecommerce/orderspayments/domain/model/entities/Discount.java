@@ -4,7 +4,7 @@ import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.Audit
 import jakarta.persistence.*;
 import lombok.Getter;
 
-import java.util.Date;
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -17,10 +17,10 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     private Integer percentage;
 
     @Column(nullable = false)
-    private Date startDate;
+    private Instant startDate;
 
     @Column(nullable = false)
-    private Date endDate;
+    private Instant endDate;
 
     @Column(nullable = false)
     private Boolean isActive;
@@ -28,11 +28,11 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     protected Discount() {
     }
 
-    public Discount(String code, Integer percentage, Date startDate, Date endDate) {
+    public Discount(String code, Integer percentage, Instant startDate, Instant endDate) {
         this.code = code;
         this.percentage = percentage;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.startDate = Instant.now();
+        this.endDate = Instant.now();
         this.isActive = true;
         validateDiscount();
     }
@@ -47,15 +47,19 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
         if (startDate == null || endDate == null) {
             throw new IllegalArgumentException("Start and end dates cannot be null");
         }
-        if (endDate.before(startDate)) {
+        if (endDate.isBefore(startDate)) {
             throw new IllegalArgumentException("End date must be after start date");
         }
     }
 
     public boolean isValid() {
-        Date now = new Date();
-        return isActive && !now.before(startDate) && !now.after(endDate);
+        Instant now = Instant.now();
+
+        return isActive
+                && !now.isBefore(startDate)
+                && !now.isAfter(endDate);
     }
+
 
     public void deactivate() {
         this.isActive = false;

@@ -10,7 +10,7 @@ public interface NotificationContextFacade {
 
     void sendPasswordChangedEmail(String toEmail, String userName, String changeDateTime);
 
-    void sendWelcomeEmail(String toEmail, String userName, String storeUrl);
+    void sendWelcomeEmail(String toEmail, String userName, String activationUrl);
 
     void sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData);
 
