@@ -41,6 +41,7 @@ public class PermissionValidationServiceImpl implements PermissionValidationServ
         if (!currentUserId.get().equals(resourceUserId)) {
             throw new AccessDeniedException("You don't have permission to access this resource");
         }
+        System.out.println("User with ID " + currentUserId.get() + " is authorized to access resource owned by user with ID " + resourceUserId);
     }
 
     @Override

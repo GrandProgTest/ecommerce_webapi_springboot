@@ -51,7 +51,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
             validateImageSize(file);
         }
 
-        int currentImageCount = productImageRepository.findByProductId(productId).size();
+        int currentImageCount = productImageRepository.findByProduct_Id(productId).size();
         int totalAfterUpload = currentImageCount + files.size();
 
         if (totalAfterUpload > MAX_IMAGES_PER_PRODUCT) {
@@ -70,7 +70,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
         List<ProductImage> uploadedImages = new ArrayList<>();
 
         if (primaryIndex != null) {
-            productImageRepository.findByProductId(productId)
+            productImageRepository.findByProduct_Id(productId)
                     .forEach(ProductImage::unsetAsPrimary);
         }
 
@@ -150,7 +150,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
 
 
     private void validateMaxImages(Long productId) {
-        int currentImageCount = productImageRepository.findByProductId(productId).size();
+        int currentImageCount = productImageRepository.findByProduct_Id(productId).size();
         if (currentImageCount >= MAX_IMAGES_PER_PRODUCT) {
             log.warn("Maximum images exceeded for product {}: current={}, max={}",
                     productId, currentImageCount, MAX_IMAGES_PER_PRODUCT);

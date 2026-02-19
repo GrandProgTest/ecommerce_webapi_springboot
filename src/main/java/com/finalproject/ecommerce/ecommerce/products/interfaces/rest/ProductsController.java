@@ -237,4 +237,21 @@ public class ProductsController {
         var response = new PaginatedProductResponse(productResources, pageMetadata);
         return ResponseEntity.ok(response);
     }
+
+    @PatchMapping("/{productId}/sale-price")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    @Operation(summary = "Set product sale price", description = "Set a temporary sale price for a product. Only ROLE_MANAGER can set sale prices.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Sale price set successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
+            @ApiResponse(responseCode = "404", description = "Product not found")})
+    public ResponseEntity<ProductResource> setProductSalePrice(@PathVariable Long productId, @RequestBody SetProductSalePriceResource resource) {
+        var command = SetProductSalePriceCommandFromResourceAssembler.toCommandFromResource(productId, resource);
+        var updatedProduct = productCommandService.handle(command);
+        if (updatedProduct.isEmpty()) return ResponseEntity.notFound().build();
+        var updatedProductEntity = updatedProduct.get();
+        var updatedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(updatedProductEntity);
+        return ResponseEntity.ok(updatedProductResource);
+    }
 }

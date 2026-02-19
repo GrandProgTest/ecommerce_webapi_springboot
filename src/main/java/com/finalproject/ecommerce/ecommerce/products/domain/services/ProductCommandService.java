@@ -25,4 +25,6 @@ public interface ProductCommandService {
     Optional<Product> handle(DeactivateProductCommand command);
 
     Optional<Product> handle(SoftDeleteProductCommand command);
+
+    Optional<Product> handle(SetProductSalePriceCommand command);
 }

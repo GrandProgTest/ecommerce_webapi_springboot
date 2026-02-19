@@ -7,8 +7,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 
-import java.time.Instant;
-
 @Getter
 @Entity
 public class ProductImage extends AuditableModel {
@@ -20,9 +18,6 @@ public class ProductImage extends AuditableModel {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     private Product product;
-
-    @Column(name = "product_id", insertable = false, updatable = false)
-    private Long productId;
 
     @NotNull
     @Embedded
@@ -60,5 +55,9 @@ public class ProductImage extends AuditableModel {
 
     public String getUrl() {
         return imageUrl.url();
+    }
+
+    public Long getProductId() {
+        return product != null ? product.getId() : null;
     }
 }

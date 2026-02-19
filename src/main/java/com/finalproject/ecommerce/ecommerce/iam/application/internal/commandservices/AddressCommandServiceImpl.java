@@ -9,6 +9,7 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.DeleteAddr
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.SetDefaultAddressCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.UpdateAddressCommand;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.AddressCommandService;
+import com.finalproject.ecommerce.ecommerce.iam.domain.services.PermissionValidationService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.AddressRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
@@ -22,17 +23,17 @@ public class AddressCommandServiceImpl implements AddressCommandService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
-    private final IamContextFacade iamContextFacade;
+    private final PermissionValidationService permissionValidationService;
 
-    public AddressCommandServiceImpl(AddressRepository addressRepository, UserRepository userRepository, IamContextFacade iamContextFacade) {
+    public AddressCommandServiceImpl(AddressRepository addressRepository, UserRepository userRepository, PermissionValidationService permissionValidationService) {
         this.addressRepository = addressRepository;
         this.userRepository = userRepository;
-        this.iamContextFacade = iamContextFacade;
+        this.permissionValidationService = permissionValidationService;
     }
 
     @Override
     public Address handle(CreateAddressCommand command, Long userId) {
-        iamContextFacade.validateUserCanAccessResource(userId);
+        permissionValidationService.validateUserCanAccessResource(userId);
 
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with id " + userId + " not found"));
 
@@ -49,7 +50,7 @@ public class AddressCommandServiceImpl implements AddressCommandService {
 
     @Override
     public Optional<Address> handle(UpdateAddressCommand command, Long userId) {
-        iamContextFacade.validateUserCanAccessResource(userId);
+        permissionValidationService.validateUserCanAccessResource(userId);
 
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with id " + userId + " not found"));
 
@@ -72,7 +73,7 @@ public class AddressCommandServiceImpl implements AddressCommandService {
 
     @Override
     public void handle(DeleteAddressCommand command) {
-        iamContextFacade.validateUserCanAccessResource(command.userId());
+        permissionValidationService.validateUserCanAccessResource(command.userId());
 
         User user = userRepository.findById(command.userId()).orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " not found"));
 
@@ -93,7 +94,7 @@ public class AddressCommandServiceImpl implements AddressCommandService {
 
     @Override
     public Optional<Address> handle(SetDefaultAddressCommand command) {
-        iamContextFacade.validateUserCanAccessResource(command.userId());
+        permissionValidationService.validateUserCanAccessResource(command.userId());
 
         User user = userRepository.findById(command.userId()).orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " not found"));
 

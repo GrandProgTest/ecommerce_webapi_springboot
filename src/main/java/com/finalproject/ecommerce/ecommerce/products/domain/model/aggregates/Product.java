@@ -16,6 +16,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +39,13 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @ValidPrice
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @ValidPrice
+    @Column(precision = 10, scale = 2)
+    private BigDecimal salePrice;
+
+    @Column
+    private Instant salePriceExpireDate;
 
     @NotNull
     @Min(value = 0)
@@ -221,5 +229,36 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
 
     public List<ProductImage> getImages() {
         return new ArrayList<>(images);
+    }
+
+    public void setSalePrice(BigDecimal salePrice, java.time.Instant salePriceExpireDate) {
+        if (salePrice != null) {
+            if (salePrice.compareTo(this.price) >= 0) {
+                throw new IllegalArgumentException("Sale price must be less than the base price");
+            }
+            if (salePriceExpireDate == null) {
+                throw new IllegalArgumentException("Sale price expire date is required");
+            }
+            java.time.Instant minimumExpireDate = java.time.Instant.now().plus(java.time.Duration.ofHours(24));
+            if (salePriceExpireDate.isBefore(minimumExpireDate)) {
+                throw new IllegalArgumentException("Sale price expire date must be at least 24 hours from now");
+            }
+        }
+        this.salePrice = salePrice;
+        this.salePriceExpireDate = salePriceExpireDate;
+    }
+
+    public boolean hasActiveSalePrice() {
+        if (this.salePrice == null || this.salePriceExpireDate == null) {
+            return false;
+        }
+        return this.salePriceExpireDate.isAfter(java.time.Instant.now());
+    }
+
+    public BigDecimal getEffectivePrice() {
+        if (hasActiveSalePrice()) {
+            return this.salePrice;
+        }
+        return this.price;
     }
 }

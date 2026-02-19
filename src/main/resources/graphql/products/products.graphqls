@@ -3,6 +3,10 @@ type Product implements AuditableEntity {
     name: String!
     description: String
     price: Float!
+    salePrice: Float
+    salePriceExpireDate: DateTime
+    effectivePrice: Float!
+    hasActiveSalePrice: Boolean!
     stock: Int!
     isActive: Boolean!
     categoryIds: [ID!]!
@@ -101,6 +105,11 @@ input UpdateCategoryInput {
     name: String!
 }
 
+input SetProductSalePriceInput {
+    salePrice: Float!
+    salePriceExpireDate: DateTime!
+}
+
 # Products Queries
 extend type Query {
     product(id: ID!): Product
@@ -135,4 +144,6 @@ extend type Mutation {
 
     likeProduct(productId: ID!, userId: ID!): LikeProductResponse!
     unlikeProduct(productId: ID!, userId: ID!): LikeProductResponse!
+
+    setProductSalePrice(productId: ID!, input: SetProductSalePriceInput!): Product!
 }

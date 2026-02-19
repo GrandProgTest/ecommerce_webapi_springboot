@@ -97,6 +97,15 @@ public class ProductMutationResolver {
 
         return LikeResponseFromEntityAssembler.toResponseFromEntity(product, userId, isLiked);
     }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('MANAGER')")
+    public ProductGraphQLResource setProductSalePrice(@Argument Long productId, @Argument SetProductSalePriceGraphQLInput input) {
+        var command = SetProductSalePriceCommandFromGraphQLInputAssembler.toCommandFromInput(productId, input);
+        var product = productCommandService.handle(command)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+        return ProductGraphQLResourceFromEntityAssembler.toResourceFromEntity(product);
+    }
 }
 
 
