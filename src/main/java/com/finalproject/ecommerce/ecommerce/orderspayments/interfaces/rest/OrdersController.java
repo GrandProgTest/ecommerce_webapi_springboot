@@ -20,7 +20,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -76,20 +75,20 @@ public class OrdersController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @Parameter(description = "Sort direction (asc or desc)", example = "desc")
             @RequestParam(defaultValue = "desc") String sortDirection,
-            @Parameter(description = "Filter by order status (PENDING, PAID, CANCELLED) - optional", required = false, example = "PAID")
+            @Parameter(description = "Filter by order status (PENDING, PAID, CANCELLED) - optional", example = "PAID")
             @RequestParam(required = false) String status,
-            @Parameter(description = "Filter by delivery status (PACKED, SHIPPED, IN_TRANSIT, DELIVERED) - optional", required = false, example = "SHIPPED")
+            @Parameter(description = "Filter by delivery status (PACKED, SHIPPED, IN_TRANSIT, DELIVERED) - optional", example = "SHIPPED")
             @RequestParam(required = false) String deliveryStatus,
-            @Parameter(description = "Filter by user ID - optional", required = false, example = "1")
+            @Parameter(description = "Filter by user ID - optional", example = "1")
             @RequestParam(required = false) Long userId) {
 
         if (size != 20 && size != 50 && size != 100) {
             throw new InvalidPageSizeException(size);
         }
 
-        var query = new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, userId);
-        Page<com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order> orderPage = orderQueryService.handle(query);
-        var response = OrderResourceFromEntityAssembler.toPaginatedResponse(orderPage);
+        var response = OrderResourceFromEntityAssembler.toPaginatedResponse(
+                orderQueryService.handle(new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, userId))
+        );
 
         return ResponseEntity.ok(response);
     }
@@ -115,12 +114,12 @@ public class OrdersController {
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
         if (size != 20 && size != 50 && size != 100) {
-            throw new com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException(size);
+            throw new InvalidPageSizeException(size);
         }
 
-        var query = new GetUserOrdersWithPaginationQuery(userId, page, size, sortBy, sortDirection);
-        Page<com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order> orderPage = orderQueryService.handle(query);
-        var response = OrderResourceFromEntityAssembler.toPaginatedResponse(orderPage);
+        var response = OrderResourceFromEntityAssembler.toPaginatedResponse(
+                orderQueryService.handle(new GetUserOrdersWithPaginationQuery(userId, page, size, sortBy, sortDirection))
+        );
 
         return ResponseEntity.ok(response);
     }

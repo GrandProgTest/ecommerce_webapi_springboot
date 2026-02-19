@@ -1,0 +1,63 @@
+type User implements AuditableEntity {
+    id: ID!
+    username: String!
+    email: String!
+    role: String!
+    isActive: Boolean!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+enum UserRole {
+    ROLE_CLIENT
+    ROLE_MANAGER
+}
+
+type AuthPayload {
+    id: ID!
+    username: String!
+    email: String!
+    accessToken: String!
+    refreshToken: String!
+}
+
+type ForgotPasswordResponse {
+    message: String!
+}
+
+type ResetPasswordResponse {
+    message: String!
+}
+
+input SignUpInput {
+    username: String!
+    email: String!
+    password: String!
+    role: UserRole
+}
+
+input SignInInput {
+    username: String!
+    password: String!
+}
+
+input ResetPasswordInput {
+    token: String!
+    newPassword: String!
+}
+
+# IAM Queries
+extend type Query {
+    currentUser: User
+    user(id: ID!): User
+}
+
+# IAM Mutations
+extend type Mutation {
+    signUp(input: SignUpInput!): AuthPayload!
+    signIn(input: SignInInput!): AuthPayload!
+    signOut: Boolean!
+    forgotPassword(email: String!): ForgotPasswordResponse!
+    resetPassword(input: ResetPasswordInput!): ResetPasswordResponse!
+    refreshToken(refreshToken: String!): AuthPayload!
+}

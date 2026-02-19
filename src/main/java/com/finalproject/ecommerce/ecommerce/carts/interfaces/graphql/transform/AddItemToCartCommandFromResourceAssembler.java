@@ -6,6 +6,6 @@ import com.finalproject.ecommerce.ecommerce.carts.interfaces.graphql.resources.A
 public class AddItemToCartCommandFromResourceAssembler {
 
     public static AddProductToCartCommand toCommandFromResource(AddItemToCartGraphQLResource resource) {
-        return new AddProductToCartCommand(null, resource.productId(), resource.quantity());
+        return new AddProductToCartCommand(resource.userId(), resource.productId(), resource.quantity());
     }
 }

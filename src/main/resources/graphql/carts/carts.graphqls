@@ -4,17 +4,17 @@ type Cart implements AuditableEntity {
     status: CartStatus!
     items: [CartItem!]!
     totalItems: Int!
-    createdAt: String!
-    updatedAt: String!
-    checkedOutAt: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    checkedOutAt: DateTime
 }
 
 type CartItem implements AuditableEntity {
     id: ID!
     productId: ID!
     quantity: Int!
-    createdAt: String!
-    updatedAt: String!
+    createdAt: DateTime!
+    updatedAt: DateTime!
 }
 
 enum CartStatus {
@@ -40,7 +40,7 @@ extend type Query {
 }
 
 extend type Mutation {
-    addItemToCart(productId: ID!, quantity: Int!): Cart!
+    addItemToCart(userId: ID!, productId: ID!, quantity: Int!): Cart!
     updateCartItemQuantity(userId: ID!, cartItemId: ID!, input: UpdateCartItemQuantityInput!): Cart!
     removeItemFromCart(userId: ID!, cartItemId: ID!): Cart!
     clearCart(userId: ID!): Cart!

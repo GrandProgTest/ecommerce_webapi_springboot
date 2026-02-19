@@ -1,0 +1,185 @@
+type Order implements AuditableEntity {
+    id: ID!
+    userId: ID!
+    user: OrderUser
+    cartId: ID
+    addressId: ID!
+    discountCode: String
+    status: OrderStatus!
+    deliveryStatus: DeliveryStatus
+    totalAmount: Float!
+    checkoutUrl: String
+    items: [OrderItem!]!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    paidAt: DateTime
+}
+
+type OrderUser {
+    id: ID!
+    username: String!
+    email: String!
+}
+
+type OrderItem {
+    id: ID!
+    orderId: ID!
+    productId: ID!
+    priceAtPurchase: Float!
+    quantity: Int!
+}
+
+enum OrderStatus {
+    PENDING
+    PAID
+    CANCELLED
+}
+
+enum DeliveryStatus {
+    PACKED
+    SHIPPED
+    IN_TRANSIT
+    DELIVERED
+}
+
+type Payment {
+    id: ID!
+    orderId: ID!
+    stripePaymentIntentId: String!
+    status: PaymentStatus!
+    amount: Float!
+    createdAt: DateTime!
+}
+
+enum PaymentStatus {
+    PENDING
+    SUCCEEDED
+    FAILED
+}
+
+type PaymentIntentResponse {
+    clientSecret: String!
+    paymentIntentId: String!
+}
+
+type WebhookResponse {
+    status: String!
+    message: String
+}
+
+type StripeWebhook {
+    id: ID!
+    paymentId: ID
+    stripeEventId: String!
+    eventType: String!
+    payload: String!
+    status: WebhookStatus!
+    receivedAt: DateTime!
+    processedAt: DateTime
+}
+
+enum WebhookStatus {
+    RECEIVED
+    PROCESSED
+    FAILED
+}
+
+type Discount {
+    id: ID!
+    code: String!
+    percentage: Int!
+    startDate: String!
+    endDate: String!
+    isActive: Boolean!
+    createdAt: DateTime!
+}
+
+input CreateDiscountInput {
+    code: String!
+    percentage: Int!
+    startDate: DateTime!
+    endDate: DateTime!
+}
+
+type Address {
+    id: ID!
+    userId: ID!
+    street: String!
+    city: String!
+    state: String
+    country: String!
+    postalCode: String!
+    isDefault: Boolean!
+    createdAt: DateTime!
+}
+
+input CreateAddressInput {
+    street: String!
+    city: String!
+    state: String
+    country: String!
+    postalCode: String!
+    isDefault: Boolean
+}
+
+# Orders & Payments Queries
+extend type Query {
+    # Get a single order by ID
+    order(id: ID!): Order
+
+    # Get user's orders with pagination (matches REST: GET /orders/user/{userId})
+    getUserOrders(
+        userId: ID!
+        page: Int = 0
+        size: Int = 20
+        sortBy: String = "createdAt"
+        sortDirection: String = "desc"
+    ): [Order!]!
+
+    # Get all orders with pagination and filtering - Manager only (matches REST: GET /orders)
+    getAllOrders(
+        page: Int = 0
+        size: Int = 20
+        sortBy: String = "createdAt"
+        sortDirection: String = "desc"
+        status: String
+        deliveryStatus: String
+        userId: String
+    ): [Order!]!
+
+    discount(code: String!): Discount
+    activeDiscounts: [Discount!]!
+
+    currentUserAddresses: [Address!]!
+    address(id: ID!): Address
+}
+
+# Orders & Payments Mutations
+extend type Mutation {
+    # Create order from cart (matches REST: POST /orders/{userId})
+    createOrder(userId: ID!, cartId: ID!, addressId: ID!, discountCode: String): Order!
+
+    # Cancel order (matches REST: DELETE /orders/{orderId}/cancel)
+    cancelOrder(orderId: ID!): Order!
+
+    # Update order delivery status - Manager only (matches REST: PATCH /orders/{orderId}/delivery-status)
+    updateOrderDeliveryStatus(orderId: ID!, deliveryStatus: String!): Order!
+
+    # Discount operations
+    applyDiscountToOrder(orderId: ID!, discountCode: String!): Order!
+    removeDiscountFromOrder(orderId: ID!): Order!
+
+    # Payment operations
+    createPaymentIntent(orderId: ID!): PaymentIntentResponse!
+    handleStripeWebhook(payload: String!): WebhookResponse!
+
+    # Address operations
+    createAddress(input: CreateAddressInput!): Address!
+    updateAddress(id: ID!, input: CreateAddressInput!): Address!
+    deleteAddress(id: ID!): Boolean!
+    setDefaultAddress(id: ID!): Address!
+
+    # Discount management
+    createDiscount(input: CreateDiscountInput!): Discount!
+    deactivateDiscount(id: ID!): Discount!
+}
