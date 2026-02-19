@@ -30,10 +30,6 @@ public class ProductMutationResolver {
         var command = CreateProductCommandFromGraphQLInputAssembler.toCommandFromInput(input);
         var productId = productCommandService.handle(command);
 
-        if (productId == null || productId == 0L) {
-            throw new IllegalArgumentException("Failed to create product");
-        }
-
         var product = productQueryService.handle(new GetProductByIdQuery(productId))
                 .orElseThrow(() -> new ProductNotFoundException(productId));
 
@@ -45,10 +41,6 @@ public class ProductMutationResolver {
     public CategoryGraphQLResource createCategory(@Argument CreateCategoryGraphQLInput input) {
         var command = CreateCategoryCommandFromGraphQLInputAssembler.toCommandFromInput(input);
         Long categoryId = categoryCommandService.handle(command);
-
-        if (categoryId == null || categoryId == 0L) {
-            throw new IllegalArgumentException("Failed to create category");
-        }
 
         var category = categoryQueryService.findById(categoryId)
                 .orElseThrow(() -> new CategoryNotFoundException(categoryId));

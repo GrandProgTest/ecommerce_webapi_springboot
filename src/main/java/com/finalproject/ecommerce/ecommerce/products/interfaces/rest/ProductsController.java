@@ -5,7 +5,6 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Activ
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeactivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByCategoryWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
@@ -155,7 +154,7 @@ public class ProductsController {
     public ResponseEntity<ToggleProductLikeResource> toggleProductLike(
             @PathVariable Long userId,
             @PathVariable Long productId) {
-        var toggleCommand = new ToggleProductLikeCommand(userId, productId);
+        var toggleCommand = ToggleProductLikeCommandFromResourceAssembler.toCommandFromResource(userId, productId);
         boolean isLiked = productCommandService.handle(toggleCommand);
 
         var product = productQueryService.handle(new GetProductByIdQuery(productId))

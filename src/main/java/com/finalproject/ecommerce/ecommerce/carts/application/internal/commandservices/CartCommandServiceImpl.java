@@ -50,7 +50,7 @@ public class CartCommandServiceImpl implements CartCommandService {
             throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available or out of stock");
         }
 
-        if (!productContextFacade.isProductActive(command.productId())) {
+        if (productContextFacade.isProductDeleted(command.productId()) || !productContextFacade.isProductActive(command.productId())) {
             throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available");
         }
 
@@ -93,6 +93,14 @@ public class CartCommandServiceImpl implements CartCommandService {
 
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
+        if (productContextFacade.isProductDeleted(command.productId())) {
+            throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available");
+        }
+
+        if (!productContextFacade.isProductActive(command.productId())) {
+            throw new InvalidCartOperationException("Product with ID " + command.productId() + " is not available");
+        }
+
         Integer availableStock = productContextFacade.getProductStock(command.productId());
         if (availableStock == null || availableStock <= 0) {
             throw new InvalidCartOperationException("Product with ID " + command.productId() + " is out of stock");
@@ -119,6 +127,14 @@ public class CartCommandServiceImpl implements CartCommandService {
         Cart cart = cartRepository.findByUserIdAndStatus(command.userId(), activeStatus).orElseThrow(() -> new CartNotFoundException("Active cart not found for user: " + command.userId()));
 
         var cartItem = cart.getItems().stream().filter(item -> item.getId().equals(command.cartItemId())).findFirst().orElseThrow(() -> new InvalidCartOperationException("Cart item not found"));
+
+        if (productContextFacade.isProductDeleted(cartItem.getProductId())) {
+            throw new InvalidCartOperationException("Product is not available");
+        }
+
+        if (!productContextFacade.isProductActive(cartItem.getProductId())) {
+            throw new InvalidCartOperationException("Product is not available");
+        }
 
         Integer availableStock = productContextFacade.getProductStock(cartItem.getProductId());
         if (availableStock == null || availableStock <= 0) {

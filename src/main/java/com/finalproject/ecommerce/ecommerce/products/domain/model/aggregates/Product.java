@@ -122,24 +122,12 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.isDeleted = false;
     }
 
-    public boolean isDeleted() {
-        return this.isDeleted;
-    }
-
     public void addImage(ImageUrl imageUrl, Boolean isPrimary) {
         if (isPrimary != null && isPrimary) {
             images.forEach(ProductImage::unsetAsPrimary);
         }
         var image = new ProductImage(this, imageUrl, isPrimary);
         this.images.add(image);
-    }
-
-    public void setPrimaryImage(Long imageId) {
-        images.forEach(ProductImage::unsetAsPrimary);
-        images.stream()
-                .filter(img -> img.getId().equals(imageId))
-                .findFirst()
-                .ifPresent(ProductImage::setAsPrimary);
     }
 
     public boolean isActive() {
@@ -221,10 +209,6 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
             throw new IllegalArgumentException("Quantity must be positive");
         }
         this.stock += quantity;
-    }
-
-    public boolean isLowStock() {
-        return this.stock <= 3;
     }
 
     public String getPrimaryImageUrl() {

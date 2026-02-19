@@ -94,12 +94,13 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         Order order = new Order(command.userId(), command.cartId(), command.addressId(), pendingStatus);
 
         cartDto.items().forEach(cartItem -> {
-            if (!productContextFacade.isProductActive(cartItem.productId())) {
+            if (productContextFacade.isProductDeleted(cartItem.productId()) || !productContextFacade.isProductActive(cartItem.productId())) {
                 String productName = productContextFacade.getProductName(cartItem.productId());
                 throw new InvalidOrderOperationException(
-                        "Product '" + productName + "' (ID: " + cartItem.productId() + ") is not active and cannot be purchased"
+                        "Product '" + productName + "' (ID: " + cartItem.productId() + ") is not available and cannot be purchased"
                 );
             }
+
 
             BigDecimal price = productContextFacade.getProductPrice(cartItem.productId());
             order.addItem(cartItem.productId(), price, cartItem.quantity());

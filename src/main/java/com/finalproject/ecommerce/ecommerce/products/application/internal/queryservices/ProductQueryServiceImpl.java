@@ -46,7 +46,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
             return List.of();
         }
         return productRepository.findAllById(query.productIds()).stream()
-                .filter(product -> !product.isDeleted())
+                .filter(product -> !product.getIsDeleted())
                 .toList();
     }
 
