@@ -25,7 +25,7 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     @Column(nullable = false)
     private Boolean isActive;
 
-    protected Discount() {
+    public Discount() {
     }
 
     public Discount(String code, Integer percentage, Instant startDate, Instant endDate) {

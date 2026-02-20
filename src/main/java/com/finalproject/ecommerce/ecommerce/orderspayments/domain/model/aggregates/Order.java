@@ -55,8 +55,7 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
-
-    protected Order() {
+    public Order() {
     }
 
     public Order(Long userId, Long cartId, Long addressId, OrderStatus status) {

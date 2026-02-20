@@ -27,15 +27,13 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Optional<Order> handle(GetOrderByIdQuery query) {
         Optional<Order> order = orderRepository.findById(query.orderId());
-        order.ifPresent(o -> iamContextFacade.validateUserCanAccessResource(o.getUserId()));
+        order.ifPresent(o -> iamContextFacade.validateManagerOrUserCanAccessResource(o.getUserId()));
         return order;
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<Order> handle(GetAllOrdersWithPaginationQuery query) {
         Sort sort = query.sortDirection().equalsIgnoreCase("desc")
                 ? Sort.by(query.sortBy()).descending()
@@ -54,7 +52,6 @@ public class OrderQueryServiceImpl implements OrderQueryService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<Order> handle(GetUserOrdersWithPaginationQuery query) {
         iamContextFacade.validateUserCanAccessResource(query.userId());
 

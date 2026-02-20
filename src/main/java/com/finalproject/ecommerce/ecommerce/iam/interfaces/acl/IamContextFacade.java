@@ -8,8 +8,6 @@ public interface IamContextFacade {
 
     Long fetchUserIdByUsername(String username);
 
-    String fetchUsernameByUserId(Long userId);
-
     boolean userExists(Long userId);
 
     Optional<Long> getCurrentUserId();
@@ -25,4 +23,6 @@ public interface IamContextFacade {
     String getUsernameById(Long userId);
 
     Map<Long, String> getUserEmails(List<Long> userIds);
+
+    void validateManagerOrUserCanAccessResource(Long resourceUserId);
 }

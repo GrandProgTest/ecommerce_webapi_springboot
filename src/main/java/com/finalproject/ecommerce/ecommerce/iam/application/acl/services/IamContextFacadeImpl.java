@@ -36,14 +36,6 @@ public class IamContextFacadeImpl implements IamContextFacade {
     }
 
     @Override
-    public String fetchUsernameByUserId(Long userId) {
-        var getUserByIdQuery = new GetUserByIdQuery(userId);
-        var result = userQueryService.handle(getUserByIdQuery);
-        if (result.isEmpty()) return Strings.EMPTY;
-        return result.get().getUsername();
-    }
-
-    @Override
     public boolean userExists(Long userId) {
         var getUserByIdQuery = new GetUserByIdQuery(userId);
         var result = userQueryService.handle(getUserByIdQuery);
@@ -85,6 +77,11 @@ public class IamContextFacadeImpl implements IamContextFacade {
     @Override
     public void validateUserCanAccessResource(Long resourceUserId) {
         permissionValidationService.validateUserCanAccessResource(resourceUserId);
+    }
+
+    @Override
+    public void validateManagerOrUserCanAccessResource(Long resourceId) {
+        permissionValidationService.validateManagerOrUserCanAccessResource(resourceId);
     }
 
     @Override
