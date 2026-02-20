@@ -2,7 +2,6 @@ package com.finalproject.ecommerce.ecommerce.products.interfaces.graphql;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByCategoryWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.resources.PageMetadataGraphQLResource;
@@ -46,9 +45,9 @@ public class ProductQueryResolver {
             throw new InvalidPageSizeException(size);
         }
 
-        var productPage = categoryId != null
-                ? productQueryService.handle(new GetProductsByCategoryWithPaginationQuery(categoryId, page, size, sortBy, sortDirection))
-                : productQueryService.handle(new GetProductsWithPaginationQuery(page, size, sortBy, sortDirection));
+        var productPage = productQueryService.handle(
+                new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
+        );
 
         var productResources = productPage.getContent().stream()
                 .map(ProductGraphQLResourceFromEntityAssembler::toResourceFromEntity)

@@ -17,6 +17,4 @@ public interface ProductQueryService {
     List<Product> handle(GetProductsByIdsQuery query);
 
     Page<Product> handle(GetProductsWithPaginationQuery query);
-
-    Page<Product> handle(GetProductsByCategoryWithPaginationQuery query);
 }

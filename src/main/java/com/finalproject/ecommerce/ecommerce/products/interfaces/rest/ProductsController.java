@@ -197,7 +197,8 @@ public class ProductsController {
 
     @GetMapping
     @Operation(summary = "Get all products with pagination and filtering",
-            description = "Get paginated list of products with sorting options and optional category filter. Public endpoint - No authentication required.")
+            description = "Get paginated list of products with sorting options and optional category filter. Public endpoint - No authentication required. " +
+                    "Regular users and unauthenticated users will only see active products. Managers can see all products (active and inactive).")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Products retrieved successfully with pagination metadata (may be empty list if no products or category has no products)"),
             @ApiResponse(responseCode = "400", description = "Invalid page size - Allowed values are: 20, 50, 100")})
@@ -217,9 +218,9 @@ public class ProductsController {
             throw new InvalidPageSizeException(size);
         }
 
-        var productPage = categoryId != null
-                ? productQueryService.handle(new GetProductsByCategoryWithPaginationQuery(categoryId, page, size, sortBy, sortDirection))
-                : productQueryService.handle(new GetProductsWithPaginationQuery(page, size, sortBy, sortDirection));
+        var productPage = productQueryService.handle(
+                new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
+        );
 
         var productResources = productPage.getContent().stream()
                 .map(ProductResourceFromEntityAssembler::toResourceFromEntity)
