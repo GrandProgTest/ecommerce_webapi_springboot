@@ -1,12 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql;
 
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CancelOrderCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CreateOrderFromCartCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.UpdateOrderDeliveryStatusCommand;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.DeliveryStatuses;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.resources.OrderGraphQLResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.transform.OrderGraphQLResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.resources.*;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.transform.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -27,15 +23,8 @@ public class OrderMutationResolver {
             @Argument String addressId,
             @Argument String discountCode) {
 
-        Long parsedUserId = Long.parseLong(userId);
-        Long parsedCartId = Long.parseLong(cartId);
-        Long parsedAddressId = Long.parseLong(addressId);
-
-        var command = new CreateOrderFromCartCommand(
-                parsedUserId,
-                parsedCartId,
-                parsedAddressId,
-                discountCode
+        var command = CreateOrderCommandFromGraphQLAssembler.toCommandFromArguments(
+                userId, cartId, addressId, discountCode
         );
         var order = orderCommandService.handle(command);
 
@@ -45,8 +34,7 @@ public class OrderMutationResolver {
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
     public OrderGraphQLResource cancelOrder(@Argument String orderId) {
-        Long parsedOrderId = Long.parseLong(orderId);
-        var command = new CancelOrderCommand(parsedOrderId);
+        var command = CancelOrderCommandFromGraphQLAssembler.toCommandFromArguments(orderId);
         var cancelledOrder = orderCommandService.handle(command);
 
         return OrderGraphQLResourceFromEntityAssembler.toResourceFromEntity(cancelledOrder);
@@ -58,12 +46,25 @@ public class OrderMutationResolver {
             @Argument String orderId,
             @Argument String deliveryStatus) {
 
-        Long parsedOrderId = Long.parseLong(orderId);
-        DeliveryStatuses newDeliveryStatus = DeliveryStatuses.valueOf(deliveryStatus);
-
-        var command = new UpdateOrderDeliveryStatusCommand(parsedOrderId, newDeliveryStatus);
+        var command = UpdateOrderDeliveryStatusCommandFromGraphQLAssembler.toCommandFromArguments(
+                orderId, deliveryStatus
+        );
         var updatedOrder = orderCommandService.handle(command);
 
         return OrderGraphQLResourceFromEntityAssembler.toResourceFromEntity(updatedOrder);
+    }
+
+    @MutationMapping
+    @PreAuthorize("isAuthenticated()")
+    public OrderGraphQLResource confirmPayment(
+            @Argument String orderId,
+            @Argument String paymentMethodId) {
+
+        var command = ConfirmPaymentCommandFromGraphQLAssembler.toCommandFromArguments(
+                orderId, paymentMethodId
+        );
+        var paidOrder = orderCommandService.handle(command);
+
+        return OrderGraphQLResourceFromEntityAssembler.toResourceFromEntity(paidOrder);
     }
 }

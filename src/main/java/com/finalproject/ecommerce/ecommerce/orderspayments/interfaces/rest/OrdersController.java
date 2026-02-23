@@ -4,13 +4,8 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.CreateOrderResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.PaginatedOrderResponse;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.UpdateOrderDeliveryStatusResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.CreateOrderCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.OrderResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.UpdateOrderDeliveryStatusCommandFromResourceAssembler;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.*;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.*;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
 import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.dto.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,8 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -169,7 +162,7 @@ public class OrdersController {
     @PostMapping("/{orderId}/confirm-payment")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Confirm payment for order (Backend only)",
-            description = "Confirms payment directly with Stripe using a payment method ID. Use 'pm_card_visa' for testing. This is for backend-only implementations without frontend.")
+            description = "Confirms payment directly with Stripe using a payment method ID. Use 'pm_card_visa' for testing successful payments. This is for backend-only implementations without frontend.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Payment confirmed successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
             @ApiResponse(responseCode = "400", description = "Order already paid or payment failed", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
@@ -177,15 +170,11 @@ public class OrdersController {
             @ApiResponse(responseCode = "403", description = "Access denied - can only pay for own orders", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Order not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
     public ResponseEntity<?> confirmPayment(
+            @Parameter(description = "Order ID to confirm payment for", required = true, example = "1")
             @PathVariable Long orderId,
-            @RequestBody Map<String, String> body) {
+            @RequestBody(required = false) ConfirmPaymentResource resource) {
 
-        String paymentMethodId = body.getOrDefault("paymentMethodId", "pm_card_visa");
-
-        var command = new com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.ConfirmPaymentCommand(
-                orderId,
-                paymentMethodId
-        );
+        var command = ConfirmPaymentCommandFromResourceAssembler.toCommandFromResource(orderId, resource);
         var order = orderCommandService.handle(command);
         var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(order);
 

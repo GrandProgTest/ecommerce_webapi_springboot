@@ -171,6 +171,7 @@ extend type Mutation {
 
     # Payment operations
     createPaymentIntent(orderId: ID!): PaymentIntentResponse!
+    confirmPayment(orderId: ID!, paymentMethodId: String = "pm_card_visa"): Order!
     handleStripeWebhook(payload: String!): WebhookResponse!
 
     # Address operations
