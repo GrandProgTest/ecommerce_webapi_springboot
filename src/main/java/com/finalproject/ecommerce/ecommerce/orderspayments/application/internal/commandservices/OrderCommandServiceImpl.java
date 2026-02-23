@@ -4,22 +4,23 @@ import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.CartContextFaca
 import com.finalproject.ecommerce.ecommerce.carts.interfaces.acl.dto.CartDto;
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.notifications.interfaces.acl.NotificationContextFacade;
-import com.finalproject.ecommerce.ecommerce.orderspayments.application.dtos.PaymentSessionDto;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.*;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.DeliveryStatuses;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.PaymentIntentStatuses;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.payment.stripe.dto.PaymentIntentResponse;
 import com.finalproject.ecommerce.ecommerce.orderspayments.application.ports.out.PaymentProvider;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.InvalidOrderOperationException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.exceptions.OrderNotFoundException;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.*;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.DeliveryStatus;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.OrderStatuses;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.DeliveryStatusRepository;
-import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.DiscountRepository;
-import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderRepository;
-import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderStatusRepository;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.*;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.acl.ProductContextFacade;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.StripeProperties;
+import com.stripe.Stripe;
+import com.stripe.exception.StripeException;
+import com.stripe.param.PaymentIntentConfirmParams;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,23 +40,29 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     private final OrderStatusRepository orderStatusRepository;
     private final DeliveryStatusRepository deliveryStatusRepository;
     private final DiscountRepository discountRepository;
+    private final PaymentIntentRepository paymentIntentRepository;
+    private final PaymentIntentStatusRepository paymentIntentStatusRepository;
     private final CartContextFacade cartContextFacade;
     private final ProductContextFacade productContextFacade;
     private final IamContextFacade iamContextFacade;
     private final PaymentProvider paymentProvider;
     private final NotificationContextFacade notificationContextFacade;
+    private final StripeProperties stripeProperties;
 
 
-    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DeliveryStatusRepository deliveryStatusRepository, DiscountRepository discountRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade, PaymentProvider paymentProvider, NotificationContextFacade notificationContextFacade) {
+    public OrderCommandServiceImpl(OrderRepository orderRepository, OrderStatusRepository orderStatusRepository, DeliveryStatusRepository deliveryStatusRepository, DiscountRepository discountRepository, PaymentIntentRepository paymentIntentRepository, PaymentIntentStatusRepository paymentIntentStatusRepository, CartContextFacade cartContextFacade, ProductContextFacade productContextFacade, IamContextFacade iamContextFacade, PaymentProvider paymentProvider, NotificationContextFacade notificationContextFacade, StripeProperties stripeProperties) {
         this.orderRepository = orderRepository;
         this.orderStatusRepository = orderStatusRepository;
         this.deliveryStatusRepository = deliveryStatusRepository;
         this.discountRepository = discountRepository;
+        this.paymentIntentRepository = paymentIntentRepository;
+        this.paymentIntentStatusRepository = paymentIntentStatusRepository;
         this.cartContextFacade = cartContextFacade;
         this.productContextFacade = productContextFacade;
         this.iamContextFacade = iamContextFacade;
         this.paymentProvider = paymentProvider;
         this.notificationContextFacade = notificationContextFacade;
+        this.stripeProperties = stripeProperties;
     }
 
     @Override
@@ -121,9 +128,30 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         Order savedOrder = orderRepository.save(order);
 
-        PaymentSessionDto paymentSession = paymentProvider.initiatePayment(savedOrder);
-        savedOrder.setStripeCheckoutInfo(paymentSession.sessionId(), paymentSession.checkoutUrl());
+        PaymentIntentResponse paymentIntentDto = paymentProvider.initiatePayment(savedOrder);
+
+        savedOrder.setStripePaymentInfo(paymentIntentDto.paymentIntentId(), paymentIntentDto.clientSecret());
         savedOrder = orderRepository.save(savedOrder);
+
+        PaymentIntentStatuses statusEnum = mapStripeStatusToEnum(paymentIntentDto.status());
+
+        PaymentIntentStatus paymentIntentStatus = paymentIntentStatusRepository
+                .findByName(statusEnum)
+                .orElseThrow(() -> new IllegalStateException(
+                        "PaymentIntentStatus " + statusEnum + " not found in database"));
+
+        PaymentIntent paymentIntent = PaymentIntent.fromStripeResponse(
+                savedOrder,
+                paymentIntentDto.paymentIntentId(),
+                paymentIntentDto.clientSecret(),
+                paymentIntentStatus,
+                savedOrder.getTotalAmount(),
+                "usd"
+        );
+        paymentIntentRepository.save(paymentIntent);
+
+        log.info("PaymentIntent entity created for Order {} with Stripe Payment Intent {} and status {}",
+                savedOrder.getId(), paymentIntent.getStripePaymentIntentId(), paymentIntentStatus.getName());
 
         cartContextFacade.checkoutCart(command.userId(), command.cartId());
 
@@ -145,12 +173,12 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             productContextFacade.increaseProductStock(orderItem.getProductId(), orderItem.getQuantity());
         });
 
-        if (order.getStripeSessionId() != null && !order.getStripeSessionId().isEmpty()) {
+        if (order.getStripePaymentIntentId() != null && !order.getStripePaymentIntentId().isEmpty()) {
             try {
-                paymentProvider.cancelPayment(order.getStripeSessionId());
+                paymentProvider.cancelPayment(order.getStripePaymentIntentId());
             } catch (RuntimeException e) {
-                log.error("Failed to cancel payment session {} for order {}: {}",
-                        order.getStripeSessionId(), order.getId(), e.getMessage());
+                log.error("Failed to cancel payment intent {} for order {}: {}",
+                        order.getStripePaymentIntentId(), order.getId(), e.getMessage());
             }
         }
 
@@ -164,13 +192,13 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     @Override
     @Transactional
     public Order handle(MarkOrderAsPaidCommand command) {
-        Order order = orderRepository.findByStripeSessionId(command.stripeSessionId())
+        Order order = orderRepository.findByStripePaymentIntentId(command.stripePaymentIntentId())
                 .orElseThrow(() -> new OrderNotFoundException(
-                        "Order not found with Stripe session ID: " + command.stripeSessionId()));
+                        "Order not found with Stripe Payment Intent ID: " + command.stripePaymentIntentId()));
 
         if (order.isPaid()) {
-            log.warn("Idempotent webhook: Order {} is already PAID. Stripe session {} - ignoring duplicate event",
-                    order.getId(), command.stripeSessionId());
+            log.warn("Idempotent webhook: Order {} is already PAID. Stripe Payment Intent {} - ignoring duplicate event",
+                    order.getId(), command.stripePaymentIntentId());
             return order;
         }
 
@@ -179,13 +207,79 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
         order.markAsPaid(paidStatus);
 
-        log.info("Order {} marked as paid via Stripe session {}", order.getId(), command.stripeSessionId());
+        log.info("Order {} marked as paid via Stripe Payment Intent {}", order.getId(), command.stripePaymentIntentId());
 
         Order savedOrder = orderRepository.save(order);
 
         sendOrderStatusNotification(savedOrder, "Your payment has been successfully processed!");
 
         return savedOrder;
+    }
+
+    @Override
+    @Transactional
+    public Order handle(ConfirmPaymentCommand command) {
+        Order order = orderRepository.findById(command.orderId())
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + command.orderId()));
+
+        iamContextFacade.validateUserCanAccessResource(order.getUserId());
+
+        if (order.isPaid()) {
+            throw new InvalidOrderOperationException("Order " + command.orderId() + " is already paid");
+        }
+
+        if (order.getStripePaymentIntentId() == null) {
+            throw new InvalidOrderOperationException("Order " + command.orderId() + " does not have a payment intent");
+        }
+
+        try {
+            Stripe.apiKey = stripeProperties.getApi().getSecretKey();
+
+            com.stripe.model.PaymentIntent stripePI =
+                com.stripe.model.PaymentIntent.retrieve(order.getStripePaymentIntentId());
+
+            PaymentIntentConfirmParams params =
+                    PaymentIntentConfirmParams.builder()
+                    .setPaymentMethod(command.paymentMethodId())
+                    .setReturnUrl("https://example.com/order-confirmation")
+                    .build();
+
+            stripePI = stripePI.confirm(params);
+
+            log.info("Payment Intent {} confirmed with status: {}",
+                     stripePI.getId(), stripePI.getStatus());
+
+            PaymentIntent paymentIntent = paymentIntentRepository
+                    .findByStripePaymentIntentId(order.getStripePaymentIntentId())
+                    .orElseThrow(() -> new RuntimeException("PaymentIntent entity not found"));
+
+            // Map Stripe status to enum
+            PaymentIntentStatuses statusEnum = mapStripeStatusToEnum(stripePI.getStatus());
+            PaymentIntentStatus newStatus = paymentIntentStatusRepository
+                    .findByName(statusEnum)
+                    .orElse(paymentIntent.getStatus());
+
+            paymentIntent.updateStatus(newStatus);
+            paymentIntentRepository.save(paymentIntent);
+
+            if ("succeeded".equals(stripePI.getStatus())) {
+                OrderStatus paidStatus = orderStatusRepository.findByName(OrderStatuses.PAID.name())
+                        .orElseThrow(() -> new IllegalStateException("Paid order status not found"));
+
+                order.markAsPaid(paidStatus);
+                order = orderRepository.save(order);
+
+                sendOrderStatusNotification(order, "Your payment has been successfully processed!");
+
+                log.info("Order {} marked as PAID after direct payment confirmation", order.getId());
+            }
+
+            return order;
+
+        } catch (StripeException e) {
+            log.error("Error confirming payment for order {}: {}", command.orderId(), e.getMessage(), e);
+            throw new InvalidOrderOperationException("Payment confirmation failed: " + e.getMessage());
+        }
     }
 
     @Override
@@ -206,7 +300,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
     @Override
     @Transactional
     public void handle(SeedDeliveryStatusCommand command) {
-        Arrays.stream(com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.DeliveryStatuses.values()).forEach(status -> {
+        Arrays.stream(DeliveryStatuses.values()).forEach(status -> {
             if (!deliveryStatusRepository.findByName(status.name()).isPresent()) {
                 String description = switch (status) {
                     case PACKED -> "Order has been packed and is ready for shipping";
@@ -215,6 +309,25 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                     case DELIVERED -> "Order has been delivered";
                 };
                 deliveryStatusRepository.save(new DeliveryStatus(status, description));
+            }
+        });
+    }
+
+    @Override
+    @Transactional
+    public void handle(SeedPaymentIntentStatusCommand command) {
+        Arrays.stream(PaymentIntentStatuses.values()).forEach(status -> {
+            if (!paymentIntentStatusRepository.existsByName(status)) {
+                String description = switch (status) {
+                    case REQUIRES_PAYMENT_METHOD -> "Payment intent requires a payment method";
+                    case REQUIRES_CONFIRMATION -> "Payment intent requires confirmation";
+                    case REQUIRES_ACTION -> "Payment intent requires additional action (e.g., 3D Secure)";
+                    case PROCESSING -> "Payment is being processed";
+                    case REQUIRES_CAPTURE -> "Payment requires manual capture";
+                    case CANCELED -> "Payment intent was canceled";
+                    case SUCCEEDED -> "Payment succeeded";
+                };
+                paymentIntentStatusRepository.save(new PaymentIntentStatus(status, description));
             }
         });
     }
@@ -316,6 +429,27 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         } catch (Exception e) {
             log.error("Failed to send order status notification for order {}: {}",
                     order.getId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Maps Stripe payment intent status string to PaymentIntentStatuses enum
+     * Stripe uses dot notation and lowercase (e.g., "requires_payment_method", "succeeded")
+     * We convert to uppercase and replace dots with underscores to match enum
+     */
+    private PaymentIntentStatuses mapStripeStatusToEnum(String stripeStatus) {
+        if (stripeStatus == null) {
+            log.warn("Stripe status is null, defaulting to REQUIRES_PAYMENT_METHOD");
+            return PaymentIntentStatuses.REQUIRES_PAYMENT_METHOD;
+        }
+
+        String normalized = stripeStatus.toUpperCase().replace(".", "_");
+
+        try {
+            return PaymentIntentStatuses.valueOf(normalized);
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown Stripe status '{}', defaulting to REQUIRES_PAYMENT_METHOD", stripeStatus);
+            return PaymentIntentStatuses.REQUIRES_PAYMENT_METHOD;
         }
     }
 }

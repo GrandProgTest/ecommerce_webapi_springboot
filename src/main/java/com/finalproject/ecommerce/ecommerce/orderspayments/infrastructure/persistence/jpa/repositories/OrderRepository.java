@@ -15,7 +15,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
     Optional<Order> findByCartId(Long cartId);
 
-    Optional<Order> findByStripeSessionId(String stripeSessionId);
+    Optional<Order> findByStripePaymentIntentId(String stripePaymentIntentId);
 
     boolean existsByItemsProductIdAndStatusName(Long productId, String statusName);
 }

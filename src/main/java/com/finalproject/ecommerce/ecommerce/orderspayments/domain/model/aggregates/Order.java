@@ -44,10 +44,10 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
     private BigDecimal totalAmount;
 
     @Column(length = 500)
-    private String stripeSessionId;
+    private String stripePaymentIntentId;
 
     @Column(length = 1000)
-    private String checkoutUrl;
+    private String stripeClientSecret;
 
     @Column
     private Instant paidAt;
@@ -100,9 +100,9 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         this.paidAt = Instant.now();
     }
 
-    public void setStripeCheckoutInfo(String sessionId, String checkoutUrl) {
-        this.stripeSessionId = sessionId;
-        this.checkoutUrl = checkoutUrl;
+    public void setStripePaymentInfo(String paymentIntentId, String clientSecret) {
+        this.stripePaymentIntentId = paymentIntentId;
+        this.stripeClientSecret = clientSecret;
     }
 
     public void cancel(OrderStatus cancelledStatus) {

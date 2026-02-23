@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

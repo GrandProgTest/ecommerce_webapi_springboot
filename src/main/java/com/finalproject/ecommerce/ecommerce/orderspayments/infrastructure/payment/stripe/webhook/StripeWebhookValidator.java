@@ -6,8 +6,8 @@ import com.stripe.Stripe;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.model.Event;
 import com.stripe.model.EventDataObjectDeserializer;
+import com.stripe.model.PaymentIntent;
 import com.stripe.model.StripeObject;
-import com.stripe.model.checkout.Session;
 import com.stripe.net.Webhook;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,8 +35,8 @@ public class StripeWebhookValidator {
             throw new RuntimeException("Invalid signature");
         }
 
-        if (event.getType().startsWith("checkout.session.")) {
-            return parseCheckoutSessionEvent(event);
+        if (event.getType().startsWith("payment_intent.")) {
+            return parsePaymentIntentEvent(event);
         }
 
         EventDataObjectDeserializer dataObjectDeserializer = event.getDataObjectDeserializer();
@@ -54,22 +54,21 @@ public class StripeWebhookValidator {
         return Optional.empty();
     }
 
-    private Optional<StripeWebhookEventResponse> parseCheckoutSessionEvent(Event event) {
+    private Optional<StripeWebhookEventResponse> parsePaymentIntentEvent(Event event) {
         try {
-            Session session = (Session) event.getData().getObject();
+            PaymentIntent paymentIntent = (PaymentIntent) event.getData().getObject();
 
             return Optional.of(StripeWebhookEventResponse.builder()
                     .eventType(event.getType())
                     .eventId(event.getId())
-                    .sessionId(session.getId())
-                    .customerEmail(session.getCustomerEmail())
-                    .paymentStatus(session.getPaymentStatus())
-                    .amountTotal(session.getAmountTotal())
-                    .currency(session.getCurrency())
-                    .orderId(session.getMetadata().get("order_id"))
+                    .paymentIntentId(paymentIntent.getId())
+                    .paymentStatus(paymentIntent.getStatus())
+                    .amountTotal(paymentIntent.getAmount())
+                    .currency(paymentIntent.getCurrency())
+                    .orderId(paymentIntent.getMetadata().get("order_id"))
                     .build());
         } catch (Exception e) {
-            log.error("Failed to parse checkout session event {}: {}", event.getId(), e.getMessage(), e);
+            log.error("Failed to parse payment intent event {}: {}", event.getId(), e.getMessage(), e);
             return Optional.empty();
         }
     }

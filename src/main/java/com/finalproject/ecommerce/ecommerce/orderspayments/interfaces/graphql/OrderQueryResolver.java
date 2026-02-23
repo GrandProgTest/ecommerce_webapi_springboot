@@ -78,7 +78,6 @@ public class OrderQueryResolver {
                 .collect(Collectors.toList());
     }
 
-    // GraphQL Field Resolver - Lazily resolve user field for Order
     @SchemaMapping(typeName = "Order", field = "user")
     public OrderUserGraphQLResource user(OrderGraphQLResource order) {
         Long userId = Long.parseLong(order.userId());

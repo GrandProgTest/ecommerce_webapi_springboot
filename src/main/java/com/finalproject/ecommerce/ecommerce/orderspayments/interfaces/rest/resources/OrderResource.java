@@ -5,6 +5,6 @@ import java.time.Instant;
 import java.util.List;
 
 public record OrderResource(Long id, Long userId, Long cartId, Long addressId, String discountCode, String status,
-                            String deliveryStatus, BigDecimal totalAmount, String checkoutUrl,
+                            String deliveryStatus, BigDecimal totalAmount, String clientSecret,
                             List<OrderItemResource> items, Instant createdAt, Instant paidAt) {
 }

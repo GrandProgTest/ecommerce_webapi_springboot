@@ -41,24 +41,24 @@ public class StripeWebhookController {
             log.info("Processing Stripe event: {}", webhookEvent.getEventType());
 
             switch (webhookEvent.getEventType()) {
-                case "checkout.session.completed":
-                    webhookEventHandler.handleCheckoutSessionCompleted(
+                case "payment_intent.succeeded":
+                    webhookEventHandler.handlePaymentIntentSucceeded(
                         webhookEvent.getEventId(),
-                        webhookEvent.getSessionId()
+                        webhookEvent.getPaymentIntentId()
                     );
                     break;
 
-                case "checkout.session.async_payment_succeeded":
-                    webhookEventHandler.handleAsyncPaymentSucceeded(
+                case "payment_intent.payment_failed":
+                    webhookEventHandler.handlePaymentIntentFailed(
                         webhookEvent.getEventId(),
-                        webhookEvent.getSessionId()
+                        webhookEvent.getPaymentIntentId()
                     );
                     break;
 
-                case "checkout.session.async_payment_failed":
-                    webhookEventHandler.handleAsyncPaymentFailed(
+                case "payment_intent.canceled":
+                    webhookEventHandler.handlePaymentIntentCanceled(
                         webhookEvent.getEventId(),
-                        webhookEvent.getSessionId()
+                        webhookEvent.getPaymentIntentId()
                     );
                     break;
 

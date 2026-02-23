@@ -25,6 +25,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -162,5 +164,35 @@ public class OrdersController {
         var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(cancelledOrder);
 
         return ResponseEntity.ok(orderResource);
+    }
+
+    @PostMapping("/{orderId}/confirm-payment")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Confirm payment for order (Backend only)",
+            description = "Confirms payment directly with Stripe using a payment method ID. Use 'pm_card_visa' for testing. This is for backend-only implementations without frontend.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Payment confirmed successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
+            @ApiResponse(responseCode = "400", description = "Order already paid or payment failed", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Access denied - can only pay for own orders", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+    public ResponseEntity<?> confirmPayment(
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> body) {
+
+        String paymentMethodId = body.getOrDefault("paymentMethodId", "pm_card_visa");
+
+        var command = new com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.ConfirmPaymentCommand(
+                orderId,
+                paymentMethodId
+        );
+        var order = orderCommandService.handle(command);
+        var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(order);
+
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Payment processed. Check order status.",
+                "order", orderResource,
+                "note", "If status is still PENDING, the payment may require additional authentication. Check webhook logs or Stripe dashboard."
+        ));
     }
 }

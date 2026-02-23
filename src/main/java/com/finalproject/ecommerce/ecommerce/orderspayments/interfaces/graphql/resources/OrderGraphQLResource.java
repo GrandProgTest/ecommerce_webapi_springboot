@@ -5,7 +5,7 @@ import java.util.List;
 
 public record OrderGraphQLResource(String id, String userId, OrderUserGraphQLResource user, String cartId,
                                    String addressId, String discountCode, String status, String deliveryStatus,
-                                   Double totalAmount, String checkoutUrl, List<OrderItemGraphQLResource> items,
+                                   Double totalAmount, String clientSecret, List<OrderItemGraphQLResource> items,
                                    Instant createdAt, Instant paidAt) {
 }
 

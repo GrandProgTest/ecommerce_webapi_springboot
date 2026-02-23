@@ -22,7 +22,7 @@ public class OrderResourceFromEntityAssembler {
                 order.getStatus().getName(),
                 order.getDeliveryStatus() != null ? order.getDeliveryStatus().getName() : null,
                 order.getTotalAmount(),
-                order.getCheckoutUrl(),
+                order.getStripeClientSecret(),
                 order.getItems().stream()
                         .map(OrderResourceFromEntityAssembler::toItemResource)
                         .collect(Collectors.toList()),

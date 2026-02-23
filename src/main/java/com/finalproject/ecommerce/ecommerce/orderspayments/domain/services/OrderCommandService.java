@@ -10,9 +10,13 @@ public interface OrderCommandService {
 
     Order handle(MarkOrderAsPaidCommand command);
 
+    Order handle(ConfirmPaymentCommand command);
+
     void handle(SeedOrderStatusCommand command);
 
     void handle(SeedDeliveryStatusCommand command);
+
+    void handle(SeedPaymentIntentStatusCommand command);
 
     Order handle(UpdateOrderDeliveryStatusCommand command);
 }

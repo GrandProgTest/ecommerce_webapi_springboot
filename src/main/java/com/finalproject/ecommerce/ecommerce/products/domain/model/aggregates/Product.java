@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductAlreadyLikedException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotLikedException;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.annotations.ValidPrice;

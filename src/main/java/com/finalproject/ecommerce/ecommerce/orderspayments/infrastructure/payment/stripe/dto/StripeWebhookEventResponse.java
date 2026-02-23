@@ -8,8 +8,7 @@ import lombok.Getter;
 public class StripeWebhookEventResponse {
     private final String eventType;
     private final String eventId;
-    private final String sessionId;
-    private final String customerEmail;
+    private final String paymentIntentId;
     private final String paymentStatus;
     private final Long amountTotal;
     private final String currency;

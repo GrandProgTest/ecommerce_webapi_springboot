@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import jakarta.persistence.*;
 import lombok.Getter;

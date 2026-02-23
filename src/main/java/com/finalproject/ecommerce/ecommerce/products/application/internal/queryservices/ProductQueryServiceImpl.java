@@ -29,25 +29,25 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    @Cacheable(value = "productById", key = "#query.productId()")
+    //@Cacheable(value = "productById", key = "#query.productId()")
     public Optional<Product> handle(GetProductByIdQuery query) {
         return productRepository.findById(query.productId());
     }
 
     @Override
-    @Cacheable(value = "allProducts", key = "'all'")
+    //@Cacheable(value = "allProducts", key = "'all'")
     public List<Product> handle(GetAllProductsQuery query) {
         return productRepository.findByIsDeleted(false);
     }
 
     @Override
-    @Cacheable(value = "activeProducts", key = "'active'")
+    //@Cacheable(value = "activeProducts", key = "'active'")
     public List<Product> handle(GetActiveProductsQuery query) {
         return productRepository.findByIsDeletedAndIsActive(false, true);
     }
 
     @Override
-    @Cacheable(value = "productsByIds", key = "#query.productIds().toString()")
+    //@Cacheable(value = "productsByIds", key = "#query.productIds().toString()")
     public List<Product> handle(GetProductsByIdsQuery query) {
         if (query.productIds() == null || query.productIds().isEmpty()) {
             return List.of();
@@ -58,8 +58,8 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    @Cacheable(value = "productsPage",
-            key = "'cat_' + (#query.categoryId() != null ? #query.categoryId() : 'all') + '_active_' + (#query.isActive() != null ? #query.isActive() : 'any') + '_page_' + #query.page() + '_size_' + #query.size() + '_sort_' + #query.sortBy() + '_' + #query.sortDirection()")
+    //@Cacheable(value = "productsPage",
+    //        key = "'cat_' + (#query.categoryId() != null ? #query.categoryId() : 'all') + '_active_' + (#query.isActive() != null ? #query.isActive() : 'any') + '_page_' + #query.page() + '_size_' + #query.size() + '_sort_' + #query.sortBy() + '_' + #query.sortDirection()")
     public Page<Product> handle(GetProductsWithPaginationQuery query) {
         Sort sort = query.sortDirection().equalsIgnoreCase("desc")
                 ? Sort.by(query.sortBy()).descending()

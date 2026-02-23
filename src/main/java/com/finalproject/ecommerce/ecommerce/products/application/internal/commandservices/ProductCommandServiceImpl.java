@@ -199,7 +199,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
-    @Caching(evict = {
+    /*@Caching(evict = {
             @CacheEvict(value = "productById", key = "#command.productId()"),
             @CacheEvict(value = "allProducts", allEntries = true),
             @CacheEvict(value = "activeProducts", allEntries = true),
@@ -207,6 +207,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             @CacheEvict(value = "productsByCategory", allEntries = true),
             @CacheEvict(value = "productsByIds", allEntries = true)
     })
+    */
     public Optional<Product> handle(SoftDeleteProductCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
@@ -225,6 +226,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    /*
     @Caching(evict = {
             @CacheEvict(value = "productById", key = "#command.productId()"),
             @CacheEvict(value = "allProducts", allEntries = true),
@@ -233,6 +235,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             @CacheEvict(value = "productsByCategory", allEntries = true),
             @CacheEvict(value = "productsByIds", allEntries = true)
     })
+     */
     public Optional<Product> handle(SetProductSalePriceCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));

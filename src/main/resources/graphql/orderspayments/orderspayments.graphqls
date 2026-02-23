@@ -8,7 +8,7 @@ type Order implements AuditableEntity {
     status: OrderStatus!
     deliveryStatus: DeliveryStatus
     totalAmount: Float!
-    checkoutUrl: String
+    clientSecret: String
     items: [OrderItem!]!
     createdAt: DateTime!
     updatedAt: DateTime!

@@ -18,7 +18,7 @@ public class OrderGraphQLResourceFromEntityAssembler {
                 order.getStatus().getName(),
                 order.getDeliveryStatus() != null ? order.getDeliveryStatus().getName() : null,
                 order.getTotalAmount().doubleValue(),
-                order.getCheckoutUrl(),
+                order.getStripeClientSecret(),
                 order.getItems().stream()
                         .map(OrderItemGraphQLResourceFromEntityAssembler::toResourceFromEntity)
                         .collect(Collectors.toList()),
