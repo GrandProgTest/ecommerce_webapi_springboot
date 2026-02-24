@@ -9,12 +9,12 @@ import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductIn
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.*;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductSalePriceLog;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductPriceLog;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.CategoryRepository;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductCategoryRepository;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
-import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductSalePriceLogRepository;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductPriceLogRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -30,13 +30,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final IamContextFacade iamContextFacade;
     private final OrdersContextFacade ordersContextFacade;
     private final NotificationContextFacade notificationContextFacade;
-    private final ProductSalePriceLogRepository productSalePriceLogRepository;
+    private final ProductPriceLogRepository productPriceLogRepository;
 
-    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository, ProductSalePriceLogRepository productSalePriceLogRepository, IamContextFacade iamContextFacade, OrdersContextFacade ordersContextFacade, NotificationContextFacade notificationContextFacade) {
+    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository, ProductPriceLogRepository productPriceLogRepository, IamContextFacade iamContextFacade, OrdersContextFacade ordersContextFacade, NotificationContextFacade notificationContextFacade) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.productCategoryRepository = productCategoryRepository;
-        this.productSalePriceLogRepository = productSalePriceLogRepository;
+        this.productPriceLogRepository = productPriceLogRepository;
         this.iamContextFacade = iamContextFacade;
         this.ordersContextFacade = ordersContextFacade;
         this.notificationContextFacade = notificationContextFacade;
@@ -72,8 +72,18 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         if (result.isEmpty()) throw new ProductNotFoundException(command.productId());
         var productToUpdate = result.get();
         try {
+            BigDecimal oldPrice = productToUpdate.getPrice();
+
             productToUpdate.updateProductInfo(command.name(), command.description(), command.price(), command.stock());
             var updatedProduct = productRepository.save(productToUpdate);
+
+            if (command.price() != null && oldPrice.compareTo(command.price()) != 0) {
+                var priceLog = ProductPriceLog.basePriceChange(
+                        updatedProduct.getId(), oldPrice, command.price()
+                );
+                productPriceLogRepository.save(priceLog);
+            }
+
             return Optional.of(updatedProduct);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while updating product: %s".formatted(e.getMessage()));
@@ -246,13 +256,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             product.setSalePrice(command.salePrice(), command.salePriceExpireDate());
             var updatedProduct = productRepository.save(product);
 
-            var salePriceLog = new ProductSalePriceLog(
+            var salePriceLog = ProductPriceLog.salePriceChange(
                     product.getId(),
                     product.getPrice(),
                     command.salePrice(),
                     command.salePriceExpireDate()
             );
-            productSalePriceLogRepository.save(salePriceLog);
+            productPriceLogRepository.save(salePriceLog);
 
             if (command.salePrice() != null) {
                 notifyUsersOfDiscount(updatedProduct, command.salePrice(), command.salePriceExpireDate());
