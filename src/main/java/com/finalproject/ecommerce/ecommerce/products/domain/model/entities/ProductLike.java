@@ -18,6 +18,7 @@ public class ProductLike {
 
     private Long userId;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Product product;
 

@@ -235,25 +235,27 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         try {
             Stripe.apiKey = stripeProperties.getApi().getSecretKey();
 
+            // The payment intent here is being called directly
+            // from the stripe library so that it does not messes up
+            // with the domain payment intent we created
             com.stripe.model.PaymentIntent stripePI =
-                com.stripe.model.PaymentIntent.retrieve(order.getStripePaymentIntentId());
+                    com.stripe.model.PaymentIntent.retrieve(order.getStripePaymentIntentId());
 
             PaymentIntentConfirmParams params =
                     PaymentIntentConfirmParams.builder()
-                    .setPaymentMethod(command.paymentMethodId())
-                    .setReturnUrl("https://example.com/order-confirmation")
-                    .build();
+                            .setPaymentMethod(command.paymentMethodId())
+                            .setReturnUrl("https://example.com/order-confirmation")
+                            .build();
 
             stripePI = stripePI.confirm(params);
 
             log.info("Payment Intent {} confirmed with status: {}",
-                     stripePI.getId(), stripePI.getStatus());
+                    stripePI.getId(), stripePI.getStatus());
 
             PaymentIntent paymentIntent = paymentIntentRepository
                     .findByStripePaymentIntentId(order.getStripePaymentIntentId())
                     .orElseThrow(() -> new RuntimeException("PaymentIntent entity not found"));
 
-            // Map Stripe status to enum
             PaymentIntentStatuses statusEnum = mapStripeStatusToEnum(stripePI.getStatus());
             PaymentIntentStatus newStatus = paymentIntentStatusRepository
                     .findByName(statusEnum)
@@ -432,14 +434,9 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         }
     }
 
-    /**
-     * Maps Stripe payment intent status string to PaymentIntentStatuses enum
-     * Stripe uses dot notation and lowercase (e.g., "requires_payment_method", "succeeded")
-     * We convert to uppercase and replace dots with underscores to match enum
-     */
+
     private PaymentIntentStatuses mapStripeStatusToEnum(String stripeStatus) {
         if (stripeStatus == null) {
-            log.warn("Stripe status is null, defaulting to REQUIRES_PAYMENT_METHOD");
             return PaymentIntentStatuses.REQUIRES_PAYMENT_METHOD;
         }
 
@@ -448,7 +445,6 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         try {
             return PaymentIntentStatuses.valueOf(normalized);
         } catch (IllegalArgumentException e) {
-            log.warn("Unknown Stripe status '{}', defaulting to REQUIRES_PAYMENT_METHOD", stripeStatus);
             return PaymentIntentStatuses.REQUIRES_PAYMENT_METHOD;
         }
     }

@@ -45,21 +45,39 @@ public class ProductQueryResolver {
             throw new InvalidPageSizeException(size);
         }
 
-        var productPage = productQueryService.handle(
+        var productPageResponse = productQueryService.handle(
                 new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
         );
 
-        var productResources = productPage.getContent().stream()
-                .map(ProductGraphQLResourceFromEntityAssembler::toResourceFromEntity)
+        var productResources = productPageResponse.products().stream()
+                .map(p -> new ProductGraphQLResource(
+                        p.id(), p.name(), p.description(),
+                        p.price() != null ? p.price().doubleValue() : null,
+                        p.salePrice() != null ? p.salePrice().doubleValue() : null,
+                        p.salePriceExpireDate(),
+                        p.effectivePrice() != null ? p.effectivePrice().doubleValue() : null,
+                        p.hasActiveSalePrice(),
+                        p.stock(),
+                        p.isActive(),
+                        p.categoryIds(),
+                        p.createdByUserId(),
+                        null,
+                        null,
+                        p.stock() != null && p.stock() > 0,
+                        p.primaryImageUrl(),
+                        null,
+                        null
+                ))
                 .toList();
 
+        var meta = productPageResponse.pageMetadata();
         var pageMetadata = new PageMetadataGraphQLResource(
-                productPage.getNumber(),
-                productPage.getSize(),
-                productPage.getTotalElements(),
-                productPage.getTotalPages(),
-                productPage.hasNext(),
-                productPage.hasPrevious()
+                meta.currentPage(),
+                meta.pageSize(),
+                meta.totalElements(),
+                meta.totalPages(),
+                meta.hasNext(),
+                meta.hasPrevious()
         );
 
         return new ProductPageGraphQLResource(productResources, pageMetadata);

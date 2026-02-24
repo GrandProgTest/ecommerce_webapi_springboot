@@ -23,19 +23,12 @@ enum CartStatus {
     ABANDONED
 }
 
-input AddItemToCartInput {
-    productId: ID!
-    quantity: Int!
-}
-
 input UpdateCartItemQuantityInput {
     quantity: Int!
 }
 
 
 extend type Query {
-
-    cartByUserId(userId: ID!): Cart
     currentUserCart: Cart
 }
 

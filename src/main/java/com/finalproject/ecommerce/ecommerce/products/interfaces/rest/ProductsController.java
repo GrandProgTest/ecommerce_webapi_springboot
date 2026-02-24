@@ -6,7 +6,6 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Assig
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeactivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsByCategoryWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
@@ -218,21 +217,28 @@ public class ProductsController {
             throw new InvalidPageSizeException(size);
         }
 
-        var productPage = productQueryService.handle(
+        var productPageResponse = productQueryService.handle(
                 new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
         );
 
-        var productResources = productPage.getContent().stream()
-                .map(ProductResourceFromEntityAssembler::toResourceFromEntity)
+        var productResources = productPageResponse.products().stream()
+                .map(p -> new ProductResource(
+                        p.id(), p.name(), p.description(), p.price(),
+                        p.salePrice(), p.salePriceExpireDate(),
+                        p.effectivePrice(), p.hasActiveSalePrice(),
+                        p.stock(), p.isActive(), p.isDeleted(),
+                        p.categoryIds(), p.createdByUserId(), p.primaryImageUrl()
+                ))
                 .toList();
 
+        var meta = productPageResponse.pageMetadata();
         var pageMetadata = new PageMetadata(
-                productPage.getNumber(),
-                productPage.getSize(),
-                productPage.getTotalElements(),
-                productPage.getTotalPages(),
-                productPage.hasNext(),
-                productPage.hasPrevious()
+                meta.currentPage(),
+                meta.pageSize(),
+                meta.totalElements(),
+                meta.totalPages(),
+                meta.hasNext(),
+                meta.hasPrevious()
         );
 
         var response = new PaginatedProductResponse(productResources, pageMetadata);

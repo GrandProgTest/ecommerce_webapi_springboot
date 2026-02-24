@@ -33,13 +33,6 @@ type PageMetadata {
     hasPrevious: Boolean!
 }
 
-type ProductImage {
-    id: ID!
-    productId: ID!
-    imageUrl: String!
-    isPrimary: Boolean!
-    createdAt: DateTime!
-}
 
 type Category {
     id: ID!
@@ -59,27 +52,6 @@ type LikeProductResponse {
     message: String!
 }
 
-input ProductFilterInput {
-    categoryId: ID
-    minPrice: Float
-    maxPrice: Float
-    isActive: Boolean
-    search: String
-    inStock: Boolean
-}
-
-input ProductSortInput {
-    field: ProductSortField!
-    direction: SortDirection = ASC
-}
-
-enum ProductSortField {
-    NAME
-    PRICE
-    CREATED_AT
-    STOCK
-    LIKE_COUNT
-}
 
 input CreateProductInput {
     name: String!
@@ -89,19 +61,8 @@ input CreateProductInput {
     categoryIds: [ID!]
 }
 
-input UpdateProductInput {
-    name: String
-    description: String
-    price: Float
-    stock: Int
-    isActive: Boolean
-}
 
 input CreateCategoryInput {
-    name: String!
-}
-
-input UpdateCategoryInput {
     name: String!
 }
 
@@ -120,27 +81,16 @@ extend type Query {
         sortBy: String = "id"
         sortDirection: String = "asc"
     ): ProductPage!
-
-    category(id: ID!): Category
-    categories: [Category!]!
-
-    isProductLiked(productId: ID!): Boolean!
 }
 
 # Products Mutations
 extend type Mutation {
     createProduct(input: CreateProductInput!): Product!
-    updateProduct(id: ID!, input: UpdateProductInput!): Product!
     deleteProduct(id: ID!): DeleteProductResponse!
     activateProduct(id: ID!): Product!
     deactivateProduct(id: ID!): Product!
-    assignCategoryToProduct(productId: ID!, categoryId: ID!): Product!
-    uploadProductImage(productId: ID!, imageUrl: String!, isPrimary: Boolean): ProductImage!
-    deleteProductImage(imageId: ID!): Boolean!
 
     createCategory(input: CreateCategoryInput!): Category!
-    updateCategory(id: ID!, input: UpdateCategoryInput!): Category!
-    deleteCategory(id: ID!): Boolean!
 
     likeProduct(productId: ID!, userId: ID!): LikeProductResponse!
     unlikeProduct(productId: ID!, userId: ID!): LikeProductResponse!

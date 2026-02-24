@@ -25,6 +25,7 @@ public class Category extends AuditableModel {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
 
