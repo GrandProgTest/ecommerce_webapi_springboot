@@ -16,6 +16,7 @@ import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -43,9 +44,11 @@ public class OrderQueryResolver {
 
     @QueryMapping
     @PreAuthorize("hasRole('MANAGER')")
-    public List<OrderGraphQLResource> getAllOrders(@Argument Integer page, @Argument Integer size, @Argument String sortBy, @Argument String sortDirection, @Argument String status, @Argument String deliveryStatus, @Argument String userId) {
+    public List<OrderGraphQLResource> getAllOrders(@Argument Integer page, @Argument Integer size, @Argument String sortBy, @Argument String sortDirection, @Argument String status, @Argument String deliveryStatus, @Argument String userId, @Argument String dateFrom, @Argument String dateTo) {
         Long parsedUserId = userId != null ? Long.parseLong(userId) : null;
-        return orderQueryService.handle(new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, parsedUserId))
+        Instant parsedDateFrom = dateFrom != null ? Instant.parse(dateFrom) : null;
+        Instant parsedDateTo = dateTo != null ? Instant.parse(dateTo) : null;
+        return orderQueryService.handle(new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, parsedUserId, parsedDateFrom, parsedDateTo))
                 .getContent().stream().map(OrderGraphQLMapper::toResource).collect(Collectors.toList());
     }
 

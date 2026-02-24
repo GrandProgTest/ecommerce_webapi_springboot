@@ -81,7 +81,6 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
         }
     }
 
-
     @Override
     public void sendLowStockAlert(String toEmail, String productName, int currentStock) {
         try {
@@ -139,6 +138,32 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
             emailCommandService.handle(command);
         } catch (Exception e) {
             log.error("Failed to send order status update email to {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    @Override
+    public void sendDiscountAlertBatch(Set<String> recipientEmails, String productName,
+                                       String originalPrice, String salePrice,
+                                       String savingsPercentage, String salePriceExpireDate) {
+        try {
+            Map<String, Object> templateData = Map.of(
+                    "productName", productName,
+                    "originalPrice", originalPrice,
+                    "salePrice", salePrice,
+                    "savingsPercentage", savingsPercentage,
+                    "salePriceExpireDate", salePriceExpireDate
+            );
+
+            emailCommandServiceImpl.sendBatchEmailAsync(
+                    recipientEmails,
+                    EmailTemplate.DISCOUNT_ALERT,
+                    EmailTemplate.DISCOUNT_ALERT.getDefaultSubject(),
+                    templateData
+            );
+
+        } catch (Exception e) {
+            log.error("Failed to queue batch discount alert emails: {}", e.getMessage());
+            CompletableFuture.completedFuture(null);
         }
     }
 }

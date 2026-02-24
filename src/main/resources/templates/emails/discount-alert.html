@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Discount Alert</title>
+</head>
+<body>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #4CAF50; color: white; padding: 20px; border-radius: 5px; text-align: center;">
+        <h1 style="margin: 0;">&#127881; Discount Alert!</h1>
+    </div>
+    <div style="background-color: #f9f9f9; padding: 30px; margin-top: 20px; border-radius: 5px;">
+        <div style="background-color: #e8f5e9; border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;">Great news for a product you liked:</p>
+            <p style="font-weight: bold; font-size: 20px; margin: 0 0 15px 0;">{{productName}}</p>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <span style="text-decoration: line-through; color: #999; font-size: 16px;">${{originalPrice}}</span>
+                <span style="color: #4CAF50; font-weight: bold; font-size: 24px;">${{salePrice}}</span>
+                <span style="background-color: #ff5722; color: white; padding: 3px 8px; border-radius: 3px; font-size: 14px; font-weight: bold;">{{savingsPercentage}}% OFF</span>
+            </div>
+            <p style="margin: 0; color: #666; font-size: 14px;">&#9200; Sale ends: {{salePriceExpireDate}}</p>
+        </div>
+        <p>Hello,</p>
+        <p>A product you liked, <strong>{{productName}}</strong>, just got a discount!</p>
+        <p>The price dropped from <strong>${{originalPrice}}</strong> to <strong>${{salePrice}}</strong> &mdash;
+            that's a <strong>{{savingsPercentage}}%</strong> saving!</p>
+        <p>Don't miss out &mdash; this offer is available for a limited time.</p>
+        <div style="text-align: center; margin: 25px 0;">
+            <a href="#"
+               style="display: inline-block; background-color: #4CAF50; color: white; padding: 14px 35px; text-decoration: none; border-radius: 5px; font-size: 16px; font-weight: bold;">
+                Grab the Deal Now
+            </a>
+        </div>
+        <p style="text-align: center; color: #666; font-size: 14px; margin-top: 30px;">
+            This is an automated notification. You received this because you liked this product.
+        </p>
+    </div>
+</div>
+</body>
+</html>
+

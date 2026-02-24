@@ -1,6 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.commandservices;
 
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
+import com.finalproject.ecommerce.ecommerce.notifications.interfaces.acl.NotificationContextFacade;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.acl.OrdersContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.CategoryNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.DuplicateCategoryAssignmentException;
@@ -14,12 +15,11 @@ import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductCategoryRepository;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductSalePriceLogRepository;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.*;
 
 @Service
 public class ProductCommandServiceImpl implements ProductCommandService {
@@ -29,15 +29,17 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     private final ProductCategoryRepository productCategoryRepository;
     private final IamContextFacade iamContextFacade;
     private final OrdersContextFacade ordersContextFacade;
+    private final NotificationContextFacade notificationContextFacade;
     private final ProductSalePriceLogRepository productSalePriceLogRepository;
 
-    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository, ProductSalePriceLogRepository productSalePriceLogRepository, IamContextFacade iamContextFacade, OrdersContextFacade ordersContextFacade) {
+    public ProductCommandServiceImpl(ProductRepository productRepository, CategoryRepository categoryRepository, ProductCategoryRepository productCategoryRepository, ProductSalePriceLogRepository productSalePriceLogRepository, IamContextFacade iamContextFacade, OrdersContextFacade ordersContextFacade, NotificationContextFacade notificationContextFacade) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.productSalePriceLogRepository = productSalePriceLogRepository;
         this.iamContextFacade = iamContextFacade;
         this.ordersContextFacade = ordersContextFacade;
+        this.notificationContextFacade = notificationContextFacade;
     }
 
     @Override
@@ -244,17 +246,53 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             product.setSalePrice(command.salePrice(), command.salePriceExpireDate());
             var updatedProduct = productRepository.save(product);
 
-            var log = new ProductSalePriceLog(
+            var salePriceLog = new ProductSalePriceLog(
                     product.getId(),
                     product.getPrice(),
                     command.salePrice(),
                     command.salePriceExpireDate()
             );
-            productSalePriceLogRepository.save(log);
+            productSalePriceLogRepository.save(salePriceLog);
+
+            if (command.salePrice() != null) {
+                notifyUsersOfDiscount(updatedProduct, command.salePrice(), command.salePriceExpireDate());
+            }
 
             return Optional.of(updatedProduct);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error while setting product sale price: %s".formatted(e.getMessage()));
         }
+    }
+
+    private void notifyUsersOfDiscount(Product product, BigDecimal salePrice, java.time.Instant salePriceExpireDate) {
+        List<Long> userIds = product.getLikedByUserIds();
+        if (userIds.isEmpty()) {
+            return;
+        }
+
+        Map<Long, String> userEmails = iamContextFacade.getUserEmails(userIds);
+        if (userEmails.isEmpty()) {
+            return;
+        }
+
+        Set<String> recipientEmails = new HashSet<>(userEmails.values());
+
+        BigDecimal originalPrice = product.getPrice();
+        BigDecimal savings = originalPrice.subtract(salePrice);
+        BigDecimal savingsPercent = savings.multiply(BigDecimal.valueOf(100))
+                .divide(originalPrice, 0, RoundingMode.HALF_UP);
+
+        String expireDateStr = salePriceExpireDate != null
+                ? salePriceExpireDate.toString()
+                : "Limited time";
+
+        notificationContextFacade.sendDiscountAlertBatch(
+                recipientEmails,
+                product.getName(),
+                originalPrice.toPlainString(),
+                salePrice.toPlainString(),
+                savingsPercent.toPlainString(),
+                expireDateStr
+        );
     }
 }

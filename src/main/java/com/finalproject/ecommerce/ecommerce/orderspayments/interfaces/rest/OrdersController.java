@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
@@ -48,11 +50,13 @@ public class OrdersController {
             @RequestParam(defaultValue = "desc") String sortDirection,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String deliveryStatus,
-            @RequestParam(required = false) Long userId) {
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Instant dateFrom,
+            @RequestParam(required = false) Instant dateTo) {
 
         if (size != 20 && size != 50 && size != 100) throw new InvalidPageSizeException(size);
         return ResponseEntity.ok(OrderRestMapper.toPaginatedResponse(
-                orderQueryService.handle(new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, userId))));
+                orderQueryService.handle(new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, userId, dateFrom, dateTo))));
     }
 
     @GetMapping("/user/{userId}")

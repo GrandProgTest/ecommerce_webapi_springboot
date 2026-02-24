@@ -62,6 +62,8 @@ extend type Query {
         status: String
         deliveryStatus: String
         userId: String
+        dateFrom: String
+        dateTo: String
     ): [Order!]!
 }
 

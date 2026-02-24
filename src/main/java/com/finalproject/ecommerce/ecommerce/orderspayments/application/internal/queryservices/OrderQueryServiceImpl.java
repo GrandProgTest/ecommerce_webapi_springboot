@@ -45,7 +45,9 @@ public class OrderQueryServiceImpl implements OrderQueryService {
                 OrderSpecification.withFilters(
                         query.status(),
                         query.deliveryStatus(),
-                        query.userId()
+                        query.userId(),
+                        query.dateFrom(),
+                        query.dateTo()
                 ),
                 pageable
         );
