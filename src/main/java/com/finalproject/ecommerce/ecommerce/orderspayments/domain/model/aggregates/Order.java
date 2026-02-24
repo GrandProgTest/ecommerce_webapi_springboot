@@ -83,7 +83,8 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         recalculateTotal();
     }
 
-    // Will be refactored following products discount codes and discount prices
+    // For the time being we will have a general discount for orders such as (30% off for your total order price)
+    // of course this discount will not be affecting already products that are on sale
     private void recalculateTotal() {
         BigDecimal subtotal = items.stream()
                 .map(OrderItem::getSubtotal)
