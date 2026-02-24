@@ -7,8 +7,8 @@ import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryCom
 import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryQueryService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.resources.*;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.transform.*;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -27,31 +27,27 @@ public class ProductMutationResolver {
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
     public ProductGraphQLResource createProduct(@Argument CreateProductGraphQLInput input) {
-        var command = CreateProductCommandFromGraphQLInputAssembler.toCommandFromInput(input);
+        var command = ProductGraphQLMapper.toCreateProductCommand(input);
         var productId = productCommandService.handle(command);
-
         var product = productQueryService.handle(new GetProductByIdQuery(productId))
                 .orElseThrow(() -> new ProductNotFoundException(productId));
-
-        return ProductGraphQLResourceFromEntityAssembler.toResourceFromEntity(product);
+        return ProductGraphQLMapper.toResource(product);
     }
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
     public CategoryGraphQLResource createCategory(@Argument CreateCategoryGraphQLInput input) {
-        var command = CreateCategoryCommandFromGraphQLInputAssembler.toCommandFromInput(input);
+        var command = ProductGraphQLMapper.toCreateCategoryCommand(input);
         Long categoryId = categoryCommandService.handle(command);
-
         var category = categoryQueryService.findById(categoryId)
                 .orElseThrow(() -> new CategoryNotFoundException(categoryId));
-
-        return CategoryGraphQLResourceFromEntityAssembler.toResourceFromEntity(category);
+        return ProductGraphQLMapper.toResource(category);
     }
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
     public DeleteProductGraphQLResponse deleteProduct(@Argument Long id) {
-        var command = ProductCommandFromGraphQLResourceAssembler.toDeleteCommandFromId(id);
+        var command = ProductGraphQLMapper.toDeleteCommand(id);
         productCommandService.handle(command);
         return new DeleteProductGraphQLResponse(true, "Product deleted successfully");
     }
@@ -59,54 +55,47 @@ public class ProductMutationResolver {
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
     public ProductGraphQLResource activateProduct(@Argument Long id) {
-        var command = ProductCommandFromGraphQLResourceAssembler.toActivateCommandFromId(id);
+        var command = ProductGraphQLMapper.toActivateCommand(id);
         var product = productCommandService.handle(command)
                 .orElseThrow(() -> new ProductNotFoundException(id));
-        return ProductGraphQLResourceFromEntityAssembler.toResourceFromEntity(product);
+        return ProductGraphQLMapper.toResource(product);
     }
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
     public ProductGraphQLResource deactivateProduct(@Argument Long id) {
-        var command = ProductCommandFromGraphQLResourceAssembler.toDeactivateCommandFromId(id);
+        var command = ProductGraphQLMapper.toDeactivateCommand(id);
         var product = productCommandService.handle(command)
                 .orElseThrow(() -> new ProductNotFoundException(id));
-        return ProductGraphQLResourceFromEntityAssembler.toResourceFromEntity(product);
+        return ProductGraphQLMapper.toResource(product);
     }
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
     public LikeProductGraphQLResponse likeProduct(@Argument Long productId, @Argument Long userId) {
-        var command = LikeCommandFromGraphQLResourceAssembler.toCommandFromIds(userId, productId);
+        var command = ProductGraphQLMapper.toLikeCommand(userId, productId);
         boolean isLiked = productCommandService.handle(command);
-
         var product = productQueryService.handle(new GetProductByIdQuery(productId))
                 .orElseThrow(() -> new ProductNotFoundException(productId));
-
-        return LikeResponseFromEntityAssembler.toResponseFromEntity(product, userId, isLiked);
+        return ProductGraphQLMapper.toLikeResponse(product, isLiked);
     }
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
     public LikeProductGraphQLResponse unlikeProduct(@Argument Long productId, @Argument Long userId) {
-        var command = LikeCommandFromGraphQLResourceAssembler.toCommandFromIds(userId, productId);
+        var command = ProductGraphQLMapper.toLikeCommand(userId, productId);
         boolean isLiked = productCommandService.handle(command);
-
         var product = productQueryService.handle(new GetProductByIdQuery(productId))
                 .orElseThrow(() -> new ProductNotFoundException(productId));
-
-        return LikeResponseFromEntityAssembler.toResponseFromEntity(product, userId, isLiked);
+        return ProductGraphQLMapper.toLikeResponse(product, isLiked);
     }
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
     public ProductGraphQLResource setProductSalePrice(@Argument Long productId, @Argument SetProductSalePriceGraphQLInput input) {
-        var command = SetProductSalePriceCommandFromGraphQLInputAssembler.toCommandFromInput(productId, input);
+        var command = ProductGraphQLMapper.toSetSalePriceCommand(productId, input);
         var product = productCommandService.handle(command)
                 .orElseThrow(() -> new ProductNotFoundException(productId));
-        return ProductGraphQLResourceFromEntityAssembler.toResourceFromEntity(product);
+        return ProductGraphQLMapper.toResource(product);
     }
 }
-
-
-

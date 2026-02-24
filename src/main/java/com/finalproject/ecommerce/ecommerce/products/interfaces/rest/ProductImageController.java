@@ -4,8 +4,8 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Delet
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UploadMultipleProductImagesCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductImage;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductImageCommandService;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UploadMultipleImagesResponse;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.UploadMultipleImagesResponseFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper.UploadMultipleImagesResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,13 +28,9 @@ public class ProductImageController {
         this.productImageCommandService = productImageCommandService;
     }
 
-
     @PostMapping(value = "/{productId}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    @Operation(
-            summary = "Upload multiple product images",
-            description = "Uploads multiple images (up to 10 total per product) to Cloudinary. Supports JPEG and PNG files up to 5MB each."
-    )
+    @Operation(summary = "Upload multiple product images")
     public ResponseEntity<UploadMultipleImagesResponse> uploadMultipleProductImages(
             @PathVariable Long productId,
             @Parameter(description = "Image files to upload (3-10 files)", required = true)
@@ -43,44 +39,25 @@ public class ProductImageController {
             @RequestParam(value = "primaryImageIndex", required = false) Integer primaryImageIndex) {
 
         if (files == null || files.isEmpty()) {
-            return ResponseEntity.badRequest()
-                    .body(UploadMultipleImagesResponse.failure("No files provided", 0));
+            return ResponseEntity.badRequest().body(UploadMultipleImagesResponse.failure("No files provided", 0));
         }
-
         if (files.size() < 3) {
-            return ResponseEntity.badRequest()
-                    .body(UploadMultipleImagesResponse.failure("At least 3 images are required", files.size()));
+            return ResponseEntity.badRequest().body(UploadMultipleImagesResponse.failure("At least 3 images are required", files.size()));
         }
-
         try {
-            UploadMultipleProductImagesCommand command = new UploadMultipleProductImagesCommand(
-                    productId,
-                    files,
-                    primaryImageIndex
-            );
-
+            var command = new UploadMultipleProductImagesCommand(productId, files, primaryImageIndex);
             List<ProductImage> uploadedImages = productImageCommandService.uploadMultipleProductImages(command);
-
-            UploadMultipleImagesResponse response = UploadMultipleImagesResponseFromEntityAssembler
-                    .toResourceFromEntityList(uploadedImages, files.size());
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-
+            return ResponseEntity.status(HttpStatus.CREATED).body(ProductRestMapper.toUploadResponse(uploadedImages, files.size()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(UploadMultipleImagesResponse.failure(e.getMessage(), files.size()));
+            return ResponseEntity.badRequest().body(UploadMultipleImagesResponse.failure(e.getMessage(), files.size()));
         }
     }
 
     @DeleteMapping("/{imageId}")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    @Operation(summary = "Delete product image", description = "Deletes a product image from database and Cloudinary")
-    public ResponseEntity<String> deleteProductImage(
-            @Parameter(description = "Image ID to delete", required = true)
-            @PathVariable Long imageId) {
-
-        DeleteProductImageCommand command = new DeleteProductImageCommand(imageId);
-        productImageCommandService.deleteProductImage(command);
+    @Operation(summary = "Delete product image")
+    public ResponseEntity<String> deleteProductImage(@Parameter(description = "Image ID to delete", required = true) @PathVariable Long imageId) {
+        productImageCommandService.deleteProductImage(new DeleteProductImageCommand(imageId));
         return ResponseEntity.ok("Image deleted successfully");
     }
 }

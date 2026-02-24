@@ -5,10 +5,9 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetAllUsers
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.queries.GetUserByIdQuery;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserQueryService;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.UpdateUserResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.resources.UserResource;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.UpdateUserCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.transform.UserResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.mapper.IamRestMapper;
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.mapper.IamRestMapper.UpdateUserResource;
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.rest.mapper.IamRestMapper.UserResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -34,58 +33,36 @@ public class UsersController {
 
 
     @GetMapping
-    @Operation(summary = "Get all users", description = "Get all the users available in the system")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Users retrieved successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")})
+    @Operation(summary = "Get all users")
     public ResponseEntity<List<UserResource>> getAllUsers() {
-        var getAllUsersQuery = new GetAllUsersQuery();
-        var users = userQueryService.handle(getAllUsersQuery);
-        var userResources = users.stream()
-                .map(UserResourceFromEntityAssembler::toResourceFromEntity)
-                .toList();
-        return ResponseEntity.ok(userResources);
+        var users = userQueryService.handle(new GetAllUsersQuery());
+        return ResponseEntity.ok(users.stream().map(IamRestMapper::toResource).toList());
     }
 
 
     @GetMapping("/{userId}")
-    @Operation(summary = "Get user by id", description = "Get the user with the given id")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized")})
+    @Operation(summary = "Get user by id")
     public ResponseEntity<UserResource> getUserById(@PathVariable Long userId) {
-        var getUserByIdQuery = new GetUserByIdQuery(userId);
-        var user = userQueryService.handle(getUserByIdQuery);
+        var user = userQueryService.handle(new GetUserByIdQuery(userId));
         if (user.isEmpty()) return ResponseEntity.notFound().build();
-        var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(user.get());
-        return ResponseEntity.ok(userResource);
+        return ResponseEntity.ok(IamRestMapper.toResource(user.get()));
     }
 
 
     @PutMapping("/{userId}")
-    @Operation(summary = "Update user", description = "Update user information")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User updated successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found"),
-            @ApiResponse(responseCode = "400", description = "Invalid input")})
+    @Operation(summary = "Update user")
     public ResponseEntity<UserResource> updateUser(@PathVariable Long userId, @RequestBody UpdateUserResource resource) {
-        var updateUserCommand = UpdateUserCommandFromResourceAssembler.toCommandFromResource(userId, resource);
-        var updatedUser = userCommandService.handle(updateUserCommand);
+        var command = IamRestMapper.toUpdateCommand(userId, resource);
+        var updatedUser = userCommandService.handle(command);
         if (updatedUser.isEmpty()) return ResponseEntity.notFound().build();
-        var userResource = UserResourceFromEntityAssembler.toResourceFromEntity(updatedUser.get());
-        return ResponseEntity.ok(userResource);
+        return ResponseEntity.ok(IamRestMapper.toResource(updatedUser.get()));
     }
 
 
     @DeleteMapping("/{userId}")
-    @Operation(summary = "Delete user", description = "Delete a user from the system")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "User not found")})
+    @Operation(summary = "Delete user")
     public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
-        var deleteUserCommand = new DeleteUserCommand(userId);
-        userCommandService.handle(deleteUserCommand);
+        userCommandService.handle(new DeleteUserCommand(userId));
         return ResponseEntity.ok("User with id " + userId + " successfully deleted");
     }
 }

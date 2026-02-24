@@ -9,8 +9,8 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetPro
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.*;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.*;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper.*;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
 import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.resources.PageMetadata;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +34,6 @@ public class ProductsController {
     private final ProductCommandService productCommandService;
     private final ProductQueryService productQueryService;
 
-
     public ProductsController(ProductCommandService productCommandService, ProductQueryService productQueryService) {
         this.productCommandService = productCommandService;
         this.productQueryService = productQueryService;
@@ -49,19 +48,13 @@ public class ProductsController {
             @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductResource> createProduct(@RequestBody CreateProductResource resource) {
-        var createProductCommand = CreateProductCommandFromResourceAssembler.toCommandFromResource(resource);
+        var createProductCommand = ProductRestMapper.toCreateCommand(resource);
         var productId = productCommandService.handle(createProductCommand);
-
         if (productId == null || productId == 0L) return ResponseEntity.badRequest().build();
-        var getProductByIdQuery = new GetProductByIdQuery(productId);
-        var product = productQueryService.handle(getProductByIdQuery);
-
+        var product = productQueryService.handle(new GetProductByIdQuery(productId));
         if (product.isEmpty()) return ResponseEntity.notFound().build();
-        var productEntity = product.get();
-        var productResource = ProductResourceFromEntityAssembler.toResourceFromEntity(productEntity);
-        return new ResponseEntity<>(productResource, HttpStatus.CREATED);
+        return new ResponseEntity<>(ProductRestMapper.toResource(product.get()), HttpStatus.CREATED);
     }
-
 
     @PutMapping("/{productId}")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
@@ -71,14 +64,11 @@ public class ProductsController {
             @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductResource> updateProduct(@PathVariable Long productId, @RequestBody UpdateProductResource resource) {
-        var updateProductCommand = UpdateProductCommandFromResourceAssembler.toCommandFromResource(productId, resource);
-        var updatedProduct = productCommandService.handle(updateProductCommand);
+        var command = ProductRestMapper.toUpdateCommand(productId, resource);
+        var updatedProduct = productCommandService.handle(command);
         if (updatedProduct.isEmpty()) return ResponseEntity.notFound().build();
-        var updatedProductEntity = updatedProduct.get();
-        var updatedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(updatedProductEntity);
-        return ResponseEntity.ok(updatedProductResource);
+        return ResponseEntity.ok(ProductRestMapper.toResource(updatedProduct.get()));
     }
-
 
     @DeleteMapping("/{productId}")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
@@ -88,8 +78,7 @@ public class ProductsController {
             @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<?> deleteProduct(@PathVariable Long productId) {
-        var deleteProductCommand = new DeleteProductCommand(productId);
-        productCommandService.handle(deleteProductCommand);
+        productCommandService.handle(new DeleteProductCommand(productId));
         return ResponseEntity.ok("Product with given id successfully deleted");
     }
 
@@ -101,12 +90,10 @@ public class ProductsController {
             @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductResource> softDeleteProduct(@PathVariable Long productId) {
-        var softDeleteCommand = SoftDeleteProductCommandFromResourceAssembler.toCommandFromResource(productId);
-        var softDeletedProduct = productCommandService.handle(softDeleteCommand);
-        if (softDeletedProduct.isEmpty()) return ResponseEntity.notFound().build();
-        var softDeletedProductEntity = softDeletedProduct.get();
-        var softDeletedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(softDeletedProductEntity);
-        return ResponseEntity.ok(softDeletedProductResource);
+        var command = ProductRestMapper.toSoftDeleteCommand(productId);
+        var result = productCommandService.handle(command);
+        if (result.isEmpty()) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(ProductRestMapper.toResource(result.get()));
     }
 
     @PostMapping("/{productId}/category")
@@ -117,15 +104,11 @@ public class ProductsController {
             @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product or category not found"),
             @ApiResponse(responseCode = "400", description = "Category already assigned to product")})
-    public ResponseEntity<ProductResource> assignCategoryToProduct(
-            @PathVariable Long productId,
-            @RequestParam Long categoryId) {
-        var assignCategoryCommand = new AssignCategoryToProductCommand(productId, categoryId);
-        var updatedProduct = productCommandService.handle(assignCategoryCommand);
+    public ResponseEntity<ProductResource> assignCategoryToProduct(@PathVariable Long productId, @RequestParam Long categoryId) {
+        var command = new AssignCategoryToProductCommand(productId, categoryId);
+        var updatedProduct = productCommandService.handle(command);
         if (updatedProduct.isEmpty()) return ResponseEntity.notFound().build();
-        var updatedProductEntity = updatedProduct.get();
-        var updatedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(updatedProductEntity);
-        return ResponseEntity.ok(updatedProductResource);
+        return ResponseEntity.ok(ProductRestMapper.toResource(updatedProduct.get()));
     }
 
     @GetMapping("/{productId}")
@@ -134,131 +117,86 @@ public class ProductsController {
             @ApiResponse(responseCode = "200", description = "Product found"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductDetailResource> getProductById(@PathVariable Long productId) {
-        var getProductByIdQuery = new GetProductByIdQuery(productId);
-        var product = productQueryService.handle(getProductByIdQuery);
+        var product = productQueryService.handle(new GetProductByIdQuery(productId));
         if (product.isEmpty()) return ResponseEntity.notFound().build();
-        var productEntity = product.get();
-        var productDetailResource = ProductDetailResourceFromEntityAssembler.toResourceFromEntity(productEntity);
-        return ResponseEntity.ok(productDetailResource);
+        return ResponseEntity.ok(ProductRestMapper.toDetailResource(product.get()));
     }
 
     @PostMapping("/users/{userId}/products/{productId}/like")
     @PreAuthorize("hasAuthority('ROLE_CLIENT')")
-    @Operation(summary = "Toggle like on a product",
-            description = "Like or unlike a product. If the user hasn't liked the product, it will add a like. If the user has already liked it, it will remove the like. Only users with ROLE_CLIENT can like products. Users can only like products for themselves.")
+    @Operation(summary = "Toggle like on a product", description = "Like or unlike a product. Only users with ROLE_CLIENT can like products.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Like toggled successfully"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_CLIENT or user can only like for themselves"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_CLIENT"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
-    public ResponseEntity<ToggleProductLikeResource> toggleProductLike(
-            @PathVariable Long userId,
-            @PathVariable Long productId) {
-        var toggleCommand = ToggleProductLikeCommandFromResourceAssembler.toCommandFromResource(userId, productId);
-        boolean isLiked = productCommandService.handle(toggleCommand);
-
+    public ResponseEntity<ToggleProductLikeResource> toggleProductLike(@PathVariable Long userId, @PathVariable Long productId) {
+        var command = ProductRestMapper.toLikeCommand(userId, productId);
+        boolean isLiked = productCommandService.handle(command);
         var product = productQueryService.handle(new GetProductByIdQuery(productId))
                 .orElseThrow(() -> new ProductNotFoundException(productId));
-
         String message = isLiked ? "Product liked successfully" : "Product like removed successfully";
-        var response = new ToggleProductLikeResource(
-                productId,
-                isLiked,
-                product.getLikesCount(),
-                message
-        );
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ToggleProductLikeResource(productId, isLiked, product.getLikesCount(), message));
     }
 
     @PatchMapping("/{productId}")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    @Operation(summary = "Toggle product active status",
-            description = "Toggle a product's active status. If active, it will be deactivated. If inactive, it will be activated. Only ROLE_MANAGER can toggle product status.")
+    @Operation(summary = "Toggle product active status", description = "Toggle a product's active status.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Product status toggled successfully"),
-            @ApiResponse(responseCode = "400", description = "Cannot activate product (e.g., product has no stock)"),
+            @ApiResponse(responseCode = "400", description = "Cannot activate product"),
             @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductResource> toggleProductActiveStatus(@PathVariable Long productId) {
         var product = productQueryService.handle(new GetProductByIdQuery(productId));
         if (product.isEmpty()) return ResponseEntity.notFound().build();
-
         var currentProduct = product.get();
         var updatedProduct = currentProduct.isActive()
                 ? productCommandService.handle(new DeactivateProductCommand(productId))
                 : productCommandService.handle(new ActivateProductCommand(productId));
-
         if (updatedProduct.isEmpty()) return ResponseEntity.notFound().build();
-        var updatedProductEntity = updatedProduct.get();
-        var updatedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(updatedProductEntity);
-        return ResponseEntity.ok(updatedProductResource);
+        return ResponseEntity.ok(ProductRestMapper.toResource(updatedProduct.get()));
     }
 
     @GetMapping
-    @Operation(summary = "Get all products with pagination and filtering",
-            description = "Get paginated list of products with sorting options and optional category filter. Public endpoint - No authentication required. " +
-                    "Regular users and unauthenticated users will only see active products. Managers can see all products (active and inactive).")
+    @Operation(summary = "Get all products with pagination and filtering", description = "Get paginated list of products.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Products retrieved successfully with pagination metadata (may be empty list if no products or category has no products)"),
+            @ApiResponse(responseCode = "200", description = "Products retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid page size - Allowed values are: 20, 50, 100")})
     public ResponseEntity<PaginatedProductResponse> getAllProducts(
-            @Parameter(description = "Category ID for filtering (optional)", example = "1")
-            @RequestParam(required = false) Long categoryId,
-            @Parameter(description = "Page number (0-indexed)", example = "0")
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Number of products per page (allowed: 20, 50, 100)", example = "20")
-            @RequestParam(defaultValue = "20") int size,
-            @Parameter(description = "Field to sort by (name, price, createdAt)", example = "name")
-            @RequestParam(defaultValue = "id") String sortBy,
-            @Parameter(description = "Sort direction (asc or desc)", example = "asc")
-            @RequestParam(defaultValue = "asc") String sortDirection) {
+            @Parameter(description = "Category ID for filtering (optional)") @RequestParam(required = false) Long categoryId,
+            @Parameter(description = "Page number (0-indexed)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Number of products per page (allowed: 20, 50, 100)") @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Field to sort by") @RequestParam(defaultValue = "id") String sortBy,
+            @Parameter(description = "Sort direction (asc or desc)") @RequestParam(defaultValue = "asc") String sortDirection) {
 
-        if (size != 20 && size != 50 && size != 100) {
-            throw new InvalidPageSizeException(size);
-        }
+        if (size != 20 && size != 50 && size != 100) throw new InvalidPageSizeException(size);
 
         var productPageResponse = productQueryService.handle(
                 new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
         );
 
         var productResources = productPageResponse.products().stream()
-                .map(p -> new ProductResource(
-                        p.id(), p.name(), p.description(), p.price(),
-                        p.salePrice(), p.salePriceExpireDate(),
-                        p.effectivePrice(), p.hasActiveSalePrice(),
-                        p.stock(), p.isActive(), p.isDeleted(),
-                        p.categoryIds(), p.createdByUserId(), p.primaryImageUrl()
-                ))
+                .map(p -> new ProductResource(p.id(), p.name(), p.description(), p.price(), p.salePrice(), p.salePriceExpireDate(), p.effectivePrice(), p.hasActiveSalePrice(), p.stock(), p.isActive(), p.isDeleted(), p.categoryIds(), p.createdByUserId(), p.primaryImageUrl()))
                 .toList();
 
         var meta = productPageResponse.pageMetadata();
-        var pageMetadata = new PageMetadata(
-                meta.currentPage(),
-                meta.pageSize(),
-                meta.totalElements(),
-                meta.totalPages(),
-                meta.hasNext(),
-                meta.hasPrevious()
-        );
+        var pageMetadata = new PageMetadata(meta.currentPage(), meta.pageSize(), meta.totalElements(), meta.totalPages(), meta.hasNext(), meta.hasPrevious());
 
-        var response = new PaginatedProductResponse(productResources, pageMetadata);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new PaginatedProductResponse(productResources, pageMetadata));
     }
 
     @PatchMapping("/{productId}/sale-price")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    @Operation(summary = "Set product sale price", description = "Set a temporary sale price for a product. Only ROLE_MANAGER can set sale prices.")
+    @Operation(summary = "Set product sale price", description = "Set a temporary sale price for a product.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Sale price set successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input"),
             @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Product not found")})
     public ResponseEntity<ProductResource> setProductSalePrice(@PathVariable Long productId, @RequestBody SetProductSalePriceResource resource) {
-        var command = SetProductSalePriceCommandFromResourceAssembler.toCommandFromResource(productId, resource);
+        var command = ProductRestMapper.toSetSalePriceCommand(productId, resource);
         var updatedProduct = productCommandService.handle(command);
         if (updatedProduct.isEmpty()) return ResponseEntity.notFound().build();
-        var updatedProductEntity = updatedProduct.get();
-        var updatedProductResource = ProductResourceFromEntityAssembler.toResourceFromEntity(updatedProductEntity);
-        return ResponseEntity.ok(updatedProductResource);
+        return ResponseEntity.ok(ProductRestMapper.toResource(updatedProduct.get()));
     }
 }

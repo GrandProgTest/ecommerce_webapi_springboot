@@ -5,10 +5,10 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.Updat
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetAllCategoriesQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryCommandService;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.CategoryQueryService;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.CreateCategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.resources.UpdateCategoryResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.transform.CategoryResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper.CategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper.CreateCategoryResource;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.rest.mapper.ProductRestMapper.UpdateCategoryResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -40,61 +40,37 @@ public class CategoriesController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    @Operation(summary = "Create a new category", description = "Create a new category. Only ROLE_MANAGER can create categories.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Category created"),
-            @ApiResponse(responseCode = "400", description = "Invalid input"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
-            @ApiResponse(responseCode = "404", description = "Category not found")})
+    @Operation(summary = "Create a new category")
+    @ApiResponses(value = {@ApiResponse(responseCode = "201"), @ApiResponse(responseCode = "400"), @ApiResponse(responseCode = "403")})
     public ResponseEntity<CategoryResource> createCategory(@RequestBody CreateCategoryResource resource) {
-        var createCategoryCommand = new CreateCategoryCommand(resource.name());
-        var categoryId = categoryCommandService.handle(createCategoryCommand);
+        var categoryId = categoryCommandService.handle(new CreateCategoryCommand(resource.name()));
         if (categoryId == null || categoryId == 0L) return ResponseEntity.badRequest().build();
         var category = categoryQueryService.findById(categoryId);
         if (category.isEmpty()) return ResponseEntity.notFound().build();
-        var categoryEntity = category.get();
-        var categoryResource = CategoryResourceFromEntityAssembler.toResourceFromEntity(categoryEntity);
-        return new ResponseEntity<>(categoryResource, HttpStatus.CREATED);
+        return new ResponseEntity<>(ProductRestMapper.toResource(category.get()), HttpStatus.CREATED);
     }
 
     @GetMapping("/{categoryId}")
-    @Operation(summary = "Get category by id", description = "Get category by id. Public endpoint - No authentication required.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Category found"),
-            @ApiResponse(responseCode = "404", description = "Category not found")})
+    @Operation(summary = "Get category by id")
     public ResponseEntity<CategoryResource> getCategoryById(@PathVariable Long categoryId) {
         var category = categoryQueryService.findById(categoryId);
         if (category.isEmpty()) return ResponseEntity.notFound().build();
-        var categoryEntity = category.get();
-        var categoryResource = CategoryResourceFromEntityAssembler.toResourceFromEntity(categoryEntity);
-        return ResponseEntity.ok(categoryResource);
+        return ResponseEntity.ok(ProductRestMapper.toResource(category.get()));
     }
 
     @GetMapping
-    @Operation(summary = "Get all categories", description = "Get all categories. Public endpoint - No authentication required.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Categories retrieved successfully (may be empty list)")})
+    @Operation(summary = "Get all categories")
     public ResponseEntity<List<CategoryResource>> getAllCategories() {
         var categories = categoryQueryService.handle(new GetAllCategoriesQuery());
-        var categoryResources = categories.stream()
-                .map(CategoryResourceFromEntityAssembler::toResourceFromEntity)
-                .toList();
-        return ResponseEntity.ok(categoryResources);
+        return ResponseEntity.ok(categories.stream().map(ProductRestMapper::toResource).toList());
     }
 
     @PutMapping("/{categoryId}")
     @PreAuthorize("hasAuthority('ROLE_MANAGER')")
-    @Operation(summary = "Update category", description = "Update category. Only ROLE_MANAGER can update categories.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Category updated"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - Requires ROLE_MANAGER"),
-            @ApiResponse(responseCode = "404", description = "Category not found")})
+    @Operation(summary = "Update category")
     public ResponseEntity<CategoryResource> updateCategory(@PathVariable Long categoryId, @RequestBody UpdateCategoryResource resource) {
-        var updateCategoryCommand = new UpdateCategoryCommand(categoryId, resource.name());
-        var updatedCategory = categoryCommandService.handle(updateCategoryCommand);
+        var updatedCategory = categoryCommandService.handle(new UpdateCategoryCommand(categoryId, resource.name()));
         if (updatedCategory.isEmpty()) return ResponseEntity.notFound().build();
-        var updatedCategoryEntity = updatedCategory.get();
-        var updatedCategoryResource = CategoryResourceFromEntityAssembler.toResourceFromEntity(updatedCategoryEntity);
-        return ResponseEntity.ok(updatedCategoryResource);
+        return ResponseEntity.ok(ProductRestMapper.toResource(updatedCategory.get()));
     }
 }

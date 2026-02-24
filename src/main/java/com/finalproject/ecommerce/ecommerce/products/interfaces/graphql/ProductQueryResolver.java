@@ -4,10 +4,8 @@ import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNo
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.resources.PageMetadataGraphQLResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.resources.ProductGraphQLResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.resources.ProductPageGraphQLResource;
-import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.transform.ProductGraphQLResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper;
+import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper.*;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -25,7 +23,7 @@ public class ProductQueryResolver {
         var query = new GetProductByIdQuery(id);
         var product = productQueryService.handle(query)
                 .orElseThrow(() -> new ProductNotFoundException(id));
-        return ProductGraphQLResourceFromEntityAssembler.toResourceFromEntity(product);
+        return ProductGraphQLMapper.toResource(product);
     }
 
     @QueryMapping
@@ -61,26 +59,19 @@ public class ProductQueryResolver {
                         p.isActive(),
                         p.categoryIds(),
                         p.createdByUserId(),
-                        null,
-                        null,
+                        null, null,
                         p.stock() != null && p.stock() > 0,
                         p.primaryImageUrl(),
-                        null,
-                        null
+                        null, null
                 ))
                 .toList();
 
         var meta = productPageResponse.pageMetadata();
         var pageMetadata = new PageMetadataGraphQLResource(
-                meta.currentPage(),
-                meta.pageSize(),
-                meta.totalElements(),
-                meta.totalPages(),
-                meta.hasNext(),
-                meta.hasPrevious()
+                meta.currentPage(), meta.pageSize(), meta.totalElements(),
+                meta.totalPages(), meta.hasNext(), meta.hasPrevious()
         );
 
         return new ProductPageGraphQLResource(productResources, pageMetadata);
     }
 }
-

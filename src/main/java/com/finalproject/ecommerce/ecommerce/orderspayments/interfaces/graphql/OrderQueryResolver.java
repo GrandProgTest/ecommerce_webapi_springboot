@@ -6,10 +6,9 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrderByIdQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetUserOrdersWithPaginationQuery;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.resources.OrderGraphQLResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.resources.OrderUserGraphQLResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.transform.OrderGraphQLResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.transform.OrderUserGraphQLResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper.OrderGraphQLResource;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper.OrderUserGraphQLResource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -30,60 +29,30 @@ public class OrderQueryResolver {
     @QueryMapping
     @PreAuthorize("isAuthenticated()")
     public OrderGraphQLResource order(@Argument String id) {
-        Long orderId = Long.parseLong(id);
-        var query = new GetOrderByIdQuery(orderId);
-        return orderQueryService.handle(query)
-                .map(OrderGraphQLResourceFromEntityAssembler::toResourceFromEntity)
+        return orderQueryService.handle(new GetOrderByIdQuery(Long.parseLong(id)))
+                .map(OrderGraphQLMapper::toResource)
                 .orElse(null);
     }
 
     @QueryMapping
     @PreAuthorize("isAuthenticated()")
-    public List<OrderGraphQLResource> getUserOrders(
-            @Argument String userId,
-            @Argument Integer page,
-            @Argument Integer size,
-            @Argument String sortBy,
-            @Argument String sortDirection) {
-
-        Long parsedUserId = Long.parseLong(userId);
-
-        return orderQueryService.handle(
-                        new GetUserOrdersWithPaginationQuery(parsedUserId, page, size, sortBy, sortDirection))
-                .getContent()
-                .stream()
-                .map(OrderGraphQLResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
+    public List<OrderGraphQLResource> getUserOrders(@Argument String userId, @Argument Integer page, @Argument Integer size, @Argument String sortBy, @Argument String sortDirection) {
+        return orderQueryService.handle(new GetUserOrdersWithPaginationQuery(Long.parseLong(userId), page, size, sortBy, sortDirection))
+                .getContent().stream().map(OrderGraphQLMapper::toResource).collect(Collectors.toList());
     }
 
     @QueryMapping
     @PreAuthorize("hasRole('MANAGER')")
-    public List<OrderGraphQLResource> getAllOrders(
-            @Argument Integer page,
-            @Argument Integer size,
-            @Argument String sortBy,
-            @Argument String sortDirection,
-            @Argument String status,
-            @Argument String deliveryStatus,
-            @Argument String userId) {
-
+    public List<OrderGraphQLResource> getAllOrders(@Argument Integer page, @Argument Integer size, @Argument String sortBy, @Argument String sortDirection, @Argument String status, @Argument String deliveryStatus, @Argument String userId) {
         Long parsedUserId = userId != null ? Long.parseLong(userId) : null;
-
-        return orderQueryService.handle(
-                        new GetAllOrdersWithPaginationQuery(
-                                page, size, sortBy, sortDirection, status, deliveryStatus, parsedUserId))
-                .getContent()
-                .stream()
-                .map(OrderGraphQLResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
+        return orderQueryService.handle(new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, parsedUserId))
+                .getContent().stream().map(OrderGraphQLMapper::toResource).collect(Collectors.toList());
     }
 
     @SchemaMapping(typeName = "Order", field = "user")
     public OrderUserGraphQLResource user(OrderGraphQLResource order) {
-        Long userId = Long.parseLong(order.userId());
-        return userQueryService.handle(new GetUserByIdQuery(userId))
-                .map(OrderUserGraphQLResourceFromEntityAssembler::toResourceFromEntity)
+        return userQueryService.handle(new GetUserByIdQuery(Long.parseLong(order.userId())))
+                .map(OrderGraphQLMapper::toResource)
                 .orElse(null);
     }
 }
-

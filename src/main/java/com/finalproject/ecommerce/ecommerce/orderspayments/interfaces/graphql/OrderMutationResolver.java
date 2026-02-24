@@ -1,8 +1,8 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.resources.*;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.transform.*;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper.OrderGraphQLResource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -17,54 +17,30 @@ public class OrderMutationResolver {
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
-    public OrderGraphQLResource createOrder(
-            @Argument String userId,
-            @Argument String cartId,
-            @Argument String addressId,
-            @Argument String discountCode) {
-
-        var command = CreateOrderCommandFromGraphQLAssembler.toCommandFromArguments(
-                userId, cartId, addressId, discountCode
-        );
+    public OrderGraphQLResource createOrder(@Argument String userId, @Argument String cartId, @Argument String addressId, @Argument String discountCode) {
+        var command = OrderGraphQLMapper.toCreateOrderCommand(userId, cartId, addressId, discountCode);
         var order = orderCommandService.handle(command);
-
-        return OrderGraphQLResourceFromEntityAssembler.toResourceFromEntity(order);
+        return OrderGraphQLMapper.toResource(order);
     }
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
     public OrderGraphQLResource cancelOrder(@Argument String orderId) {
-        var command = CancelOrderCommandFromGraphQLAssembler.toCommandFromArguments(orderId);
-        var cancelledOrder = orderCommandService.handle(command);
-
-        return OrderGraphQLResourceFromEntityAssembler.toResourceFromEntity(cancelledOrder);
+        var command = OrderGraphQLMapper.toCancelCommand(orderId);
+        return OrderGraphQLMapper.toResource(orderCommandService.handle(command));
     }
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
-    public OrderGraphQLResource updateOrderDeliveryStatus(
-            @Argument String orderId,
-            @Argument String deliveryStatus) {
-
-        var command = UpdateOrderDeliveryStatusCommandFromGraphQLAssembler.toCommandFromArguments(
-                orderId, deliveryStatus
-        );
-        var updatedOrder = orderCommandService.handle(command);
-
-        return OrderGraphQLResourceFromEntityAssembler.toResourceFromEntity(updatedOrder);
+    public OrderGraphQLResource updateOrderDeliveryStatus(@Argument String orderId, @Argument String deliveryStatus) {
+        var command = OrderGraphQLMapper.toUpdateDeliveryCommand(orderId, deliveryStatus);
+        return OrderGraphQLMapper.toResource(orderCommandService.handle(command));
     }
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
-    public OrderGraphQLResource confirmPayment(
-            @Argument String orderId,
-            @Argument String paymentMethodId) {
-
-        var command = ConfirmPaymentCommandFromGraphQLAssembler.toCommandFromArguments(
-                orderId, paymentMethodId
-        );
-        var paidOrder = orderCommandService.handle(command);
-
-        return OrderGraphQLResourceFromEntityAssembler.toResourceFromEntity(paidOrder);
+    public OrderGraphQLResource confirmPayment(@Argument String orderId, @Argument String paymentMethodId) {
+        var command = OrderGraphQLMapper.toConfirmPaymentCommand(orderId, paymentMethodId);
+        return OrderGraphQLMapper.toResource(orderCommandService.handle(command));
     }
 }
