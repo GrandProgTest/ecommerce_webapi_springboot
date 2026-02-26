@@ -1,6 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.iam.domain.model.entities;
 
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates.User;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.valueobjects.TokenType;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -32,12 +33,17 @@ public class UserToken extends AuditableModel {
     @Column(nullable = false)
     private Boolean isUsed;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private TokenType tokenType;
+
 
     public UserToken() {
         this.isUsed = false;
     }
 
-    public UserToken(User user, String hashedToken, Date expiresAt) {
+    public UserToken(User user, String hashedToken, Date expiresAt, TokenType tokenType) {
         this();
         if (user == null) {
             throw new IllegalArgumentException("User cannot be null");
@@ -48,9 +54,13 @@ public class UserToken extends AuditableModel {
         if (expiresAt == null) {
             throw new IllegalArgumentException("Expiration date cannot be null");
         }
+        if (tokenType == null) {
+            throw new IllegalArgumentException("Token type cannot be null");
+        }
         this.user = user;
         this.hashedToken = hashedToken;
         this.expiresAt = expiresAt;
+        this.tokenType = tokenType;
     }
 
     public boolean isExpired() {
