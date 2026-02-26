@@ -27,7 +27,7 @@ public class OrderItem {
     @Column(nullable = false)
     private Integer quantity;
 
-    protected OrderItem() {
+    public OrderItem() {
     }
 
     public OrderItem(Order order, Long productId, BigDecimal priceAtPurchase, Integer quantity) {

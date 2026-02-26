@@ -4,19 +4,19 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Pro
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
 
-    List<Product> findByIsActive(Boolean isActive);
+    List<Product> findByIsDeleted(Boolean isDeleted);
 
-    Optional<Product> findByIdAndIsActive(Long id, Boolean isActive);
+    List<Product> findByIsDeletedAndIsActive(Boolean isDeleted, Boolean isActive);
 
-    Page<Product> findDistinctByProductCategories_Category_Id(Long categoryId, Pageable pageable);
+    Page<Product> findDistinctByIsDeletedAndProductCategories_Category_Id(Boolean isDeleted, Long categoryId, Pageable pageable);
+
+    Page<Product> findDistinctByIsDeletedAndIsActiveAndProductCategories_Category_Id(Boolean isDeleted, Boolean isActive, Long categoryId, Pageable pageable);
 }

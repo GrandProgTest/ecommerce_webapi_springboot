@@ -1,14 +1,12 @@
 package com.finalproject.ecommerce.ecommerce.carts.interfaces.rest;
 
-import com.finalproject.ecommerce.ecommerce.carts.domain.model.commands.*;
 import com.finalproject.ecommerce.ecommerce.carts.domain.model.queries.GetCartByUserIdQuery;
 import com.finalproject.ecommerce.ecommerce.carts.domain.services.CartCommandService;
 import com.finalproject.ecommerce.ecommerce.carts.domain.services.CartQueryService;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.AddItemToCartResource;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.CartResource;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.resources.UpdateCartItemQuantityResource;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.transform.AddItemToCartCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.transform.CartResourceFromEntityAssembler;
+import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.mapper.CartRestMapper;
+import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.mapper.CartRestMapper.AddItemToCartResource;
+import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.mapper.CartRestMapper.CartResource;
+import com.finalproject.ecommerce.ecommerce.carts.interfaces.rest.mapper.CartRestMapper.UpdateCartItemQuantityResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -43,7 +41,7 @@ public class CartsController {
         var query = new GetCartByUserIdQuery(userId);
         var cart = cartQueryService.handle(query);
 
-        return cart.map(c -> ResponseEntity.ok(CartResourceFromEntityAssembler.toResourceFromEntity(c)))
+        return cart.map(c -> ResponseEntity.ok(CartRestMapper.toResource(c)))
                 .orElseGet(() -> ResponseEntity.ok(null));
     }
 
@@ -60,11 +58,9 @@ public class CartsController {
             @PathVariable Long userId,
             @RequestBody AddItemToCartResource resource) {
 
-        var command = AddItemToCartCommandFromResourceAssembler.toCommandFromResource(userId, resource);
+        var command = CartRestMapper.toAddItemCommand(userId, resource);
         var cart = cartCommandService.handle(command);
-        var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
-
-        return ResponseEntity.ok(cartResource);
+        return ResponseEntity.ok(CartRestMapper.toResource(cart));
     }
 
     @PutMapping("/{userId}/items/{cartItemId}")
@@ -81,11 +77,9 @@ public class CartsController {
             @PathVariable Long cartItemId,
             @RequestBody UpdateCartItemQuantityResource resource) {
 
-        var command = new UpdateCartItemQuantityByCartItemIdCommand(userId, cartItemId, resource.quantity());
+        var command = CartRestMapper.toUpdateQuantityCommand(userId, cartItemId, resource);
         var cart = cartCommandService.handle(command);
-        var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
-
-        return ResponseEntity.ok(cartResource);
+        return ResponseEntity.ok(CartRestMapper.toResource(cart));
     }
 
     @DeleteMapping("/{userId}/items/{cartItemId}")
@@ -100,10 +94,22 @@ public class CartsController {
             @PathVariable Long userId,
             @PathVariable Long cartItemId) {
 
-        var command = new RemoveCartItemCommand(userId, cartItemId);
+        var command = CartRestMapper.toRemoveItemCommand(userId, cartItemId);
         var cart = cartCommandService.handle(command);
-        var cartResource = CartResourceFromEntityAssembler.toResourceFromEntity(cart);
+        return ResponseEntity.ok(CartRestMapper.toResource(cart));
+    }
 
-        return ResponseEntity.ok(cartResource);
+    @DeleteMapping("/{userId}")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Clear cart", description = "Removes all items from the user's cart. Managers can clear any cart, clients can only clear their own cart")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Cart cleared successfully"),
+            @ApiResponse(responseCode = "401", description = "User not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Access denied - user can only modify their own cart"),
+            @ApiResponse(responseCode = "404", description = "Cart not found")})
+    public ResponseEntity<CartResource> clearCart(@PathVariable Long userId) {
+        var command = CartRestMapper.toClearCartCommand(userId);
+        var cart = cartCommandService.handle(command);
+        return ResponseEntity.ok(CartRestMapper.toResource(cart));
     }
 }

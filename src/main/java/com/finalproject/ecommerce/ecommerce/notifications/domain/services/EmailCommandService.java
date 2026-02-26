@@ -4,7 +4,7 @@ import com.finalproject.ecommerce.ecommerce.notifications.domain.model.commands.
 
 public interface EmailCommandService {
 
-    boolean handle(SendEmailCommand command);
+    void handle(SendEmailCommand command);
 }
 
 

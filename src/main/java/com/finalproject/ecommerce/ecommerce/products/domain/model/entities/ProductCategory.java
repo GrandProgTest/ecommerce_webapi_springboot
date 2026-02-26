@@ -1,10 +1,11 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import jakarta.persistence.*;
 import lombok.Getter;
 
-import java.util.Date;
+import java.time.Instant;
 
 @Getter
 @Entity
@@ -14,6 +15,7 @@ public class ProductCategory {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", referencedColumnName = "id", nullable = false)
     private Product product;
@@ -23,7 +25,7 @@ public class ProductCategory {
     private Category category;
 
     @Column(nullable = false, updatable = false)
-    private Date assignedAt;
+    private Instant assignedAt;
 
     public ProductCategory() {
     }
@@ -37,7 +39,7 @@ public class ProductCategory {
         }
         this.product = product;
         this.category = category;
-        this.assignedAt = new Date();
+        this.assignedAt = Instant.now();
     }
 
     public Long getProductId() {

@@ -34,11 +34,22 @@ public class PermissionValidationServiceImpl implements PermissionValidationServ
             throw new AccessDeniedException("User not authenticated");
         }
 
-        if (currentUserHasRole("ROLE_MANAGER")) {
-            return;
+        if (!currentUserId.get().equals(resourceUserId)) {
+            throw new AccessDeniedException("You don't have permission to access this resource");
+        }
+    }
+
+    @Override
+    public void validateManagerOrUserCanAccessResource(Long resourceUserId) {
+        Optional<Long> currentUserId = getCurrentUserId();
+
+        if (currentUserId.isEmpty()) {
+            throw new AccessDeniedException("User not authenticated");
         }
 
-        if (!currentUserId.get().equals(resourceUserId)) {
+        boolean isManager = currentUserHasRole("ROLE_MANAGER");
+
+        if (!isManager && !currentUserId.get().equals(resourceUserId)) {
             throw new AccessDeniedException("You don't have permission to access this resource");
         }
     }

@@ -1,27 +1,20 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest;
 
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetAllOrdersQuery;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.commands.CancelOrderCommand;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderCommandService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.CreateOrderResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.resources.OrderResource;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.CreateOrderCommandFromResourceAssembler;
-import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.transform.OrderResourceFromEntityAssembler;
-import com.finalproject.ecommerce.ecommerce.shared.interfaces.rest.dto.ErrorResponse;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.mapper.OrderRestMapper;
+import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.rest.mapper.OrderRestMapper.*;
+import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.Instant;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -40,54 +33,72 @@ public class OrdersController {
 
     @PostMapping("/{userId}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Create order (checkout)", description = "Creates an order from the user's active cart. This completes the checkout process.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Order created successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid request or cart is empty", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "Access denied", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
-
+    @Operation(summary = "Create order (checkout)")
     public ResponseEntity<OrderResource> createOrder(@PathVariable Long userId, @RequestBody CreateOrderResource resource) {
-        var command = CreateOrderCommandFromResourceAssembler.toCommandFromResource(userId, resource);
+        var command = OrderRestMapper.toCreateCommand(userId, resource);
         var order = orderCommandService.handle(command);
-        var orderResource = OrderResourceFromEntityAssembler.toResourceFromEntity(order);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderResource);
+        return ResponseEntity.status(HttpStatus.CREATED).body(OrderRestMapper.toResource(order));
     }
 
     @GetMapping
     @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "List all orders", description = "Returns all orders in the system. Only accessible by managers.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
-            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "Access denied - manager role required", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+    @Operation(summary = "Get all orders with pagination and filtering (Manager)")
+    public ResponseEntity<PaginatedOrderResponse> getAllOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String deliveryStatus,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) Instant dateFrom,
+            @RequestParam(required = false) Instant dateTo) {
 
-    public ResponseEntity<List<OrderResource>> getAllOrders() {
-        var query = new GetAllOrdersQuery();
-        var orders = orderQueryService.handle(query);
-        var orderResources = orders.stream()
-                .map(OrderResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(orderResources);
+        if (size != 20 && size != 50 && size != 100) throw new InvalidPageSizeException(size);
+        return ResponseEntity.ok(OrderRestMapper.toPaginatedResponse(
+                orderQueryService.handle(new GetAllOrdersWithPaginationQuery(page, size, sortBy, sortDirection, status, deliveryStatus, userId, dateFrom, dateTo))));
     }
 
     @GetMapping("/user/{userId}")
     @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get user's orders", description = "Returns all orders for the specified user. Managers can view any user's orders, clients can only view their own.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully", content = @Content(schema = @Schema(implementation = OrderResource.class))),
-            @ApiResponse(responseCode = "401", description = "User not authenticated", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "403", description = "Access denied - user can only access their own orders", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))})
+    @Operation(summary = "Get user orders with pagination and sorting")
+    public ResponseEntity<PaginatedOrderResponse> getUserOrders(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDirection) {
 
-    public ResponseEntity<List<OrderResource>> getOrdersByUserId(@PathVariable Long userId) {
-        var query = new GetOrdersByUserIdQuery(userId);
-        var orders = orderQueryService.handle(query);
-        var orderResources = orders.stream()
-                .map(OrderResourceFromEntityAssembler::toResourceFromEntity)
-                .collect(Collectors.toList());
+        if (size != 20 && size != 50 && size != 100) throw new InvalidPageSizeException(size);
+        return ResponseEntity.ok(OrderRestMapper.toPaginatedResponse(
+                orderQueryService.handle(new GetUserOrdersWithPaginationQuery(userId, page, size, sortBy, sortDirection))));
+    }
 
-        return ResponseEntity.ok(orderResources);
+    @PatchMapping("/{orderId}/delivery-status")
+    @PreAuthorize("hasRole('ROLE_MANAGER')")
+    @Operation(summary = "Update order delivery status")
+    public ResponseEntity<OrderResource> updateOrderDeliveryStatus(@PathVariable Long orderId, @RequestBody UpdateOrderDeliveryStatusResource resource) {
+        var command = OrderRestMapper.toUpdateDeliveryCommand(orderId, resource);
+        return ResponseEntity.ok(OrderRestMapper.toResource(orderCommandService.handle(command)));
+    }
+
+    @DeleteMapping("/{orderId}/cancel")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Cancel order")
+    public ResponseEntity<OrderResource> cancelOrder(@PathVariable Long orderId) {
+        return ResponseEntity.ok(OrderRestMapper.toResource(orderCommandService.handle(new CancelOrderCommand(orderId))));
+    }
+
+    @PostMapping("/{orderId}/confirm-payment")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Confirm payment for order (Backend only)")
+    public ResponseEntity<?> confirmPayment(@PathVariable Long orderId, @RequestBody(required = false) ConfirmPaymentResource resource) {
+        var command = OrderRestMapper.toConfirmPaymentCommand(orderId, resource);
+        var order = orderCommandService.handle(command);
+        return ResponseEntity.ok(java.util.Map.of(
+                "message", "Payment processed. Check order status.",
+                "order", OrderRestMapper.toResource(order),
+                "note", "If status is still PENDING, the payment may require additional authentication."
+        ));
     }
 }

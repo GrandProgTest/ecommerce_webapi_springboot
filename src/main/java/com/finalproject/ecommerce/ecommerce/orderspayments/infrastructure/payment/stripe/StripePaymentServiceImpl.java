@@ -1,19 +1,19 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.payment.stripe;
 
-import com.finalproject.ecommerce.ecommerce.orderspayments.application.dtos.PaymentSessionDto;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.payment.stripe.dto.PaymentIntentResponse;
 import com.finalproject.ecommerce.ecommerce.orderspayments.application.ports.out.PaymentProvider;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.acl.ProductContextFacade;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.StripeProperties;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.checkout.Session;
-import com.stripe.param.checkout.SessionCreateParams;
+import com.stripe.model.PaymentIntent;
+import com.stripe.param.PaymentIntentCreateParams;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,110 +23,92 @@ import java.util.stream.Collectors;
 public class StripePaymentServiceImpl implements PaymentProvider {
 
     private final ProductContextFacade productContextFacade;
+    private final StripeProperties stripeProperties;
 
-    @Value("${stripe.api.secret-key}")
-    private String secretKey;
-
-    @Value("${stripe.success.url}")
-    private String successUrl;
-
-    @Value("${stripe.cancel.url}")
-    private String cancelUrl;
-
-    @Value("${stripe.currency:usd}")
-    private String currency;
-
-    public StripePaymentServiceImpl(ProductContextFacade productContextFacade) {
+    public StripePaymentServiceImpl(ProductContextFacade productContextFacade, StripeProperties stripeProperties) {
         this.productContextFacade = productContextFacade;
+        this.stripeProperties = stripeProperties;
     }
 
     @Override
-    public PaymentSessionDto initiatePayment(Order order) {
-        Stripe.apiKey = secretKey;
+    public PaymentIntentResponse initiatePayment(Order order) {
+        Stripe.apiKey = stripeProperties.getApi().getSecretKey();
 
         try {
+            long amountInCents = order.getTotalAmount()
+                    .multiply(BigDecimal.valueOf(100))
+                    .longValue();
+
             List<Long> productIds = order.getItems().stream()
                     .map(orderItem -> orderItem.getProductId())
                     .collect(Collectors.toList());
 
             Map<Long, String> productNames = productContextFacade.getProductNames(productIds);
 
-            List<SessionCreateParams.LineItem> lineItems = new ArrayList<>();
+            String description = order.getItems().stream()
+                    .map(item -> {
+                        String productName = productNames.getOrDefault(
+                                item.getProductId(),
+                                "Product ID: " + item.getProductId()
+                        );
+                        return String.format("%s (x%d)", productName, item.getQuantity());
+                    })
+                    .collect(Collectors.joining(", "));
 
-            order.getItems().forEach(orderItem -> {
-                long unitAmountInCents = orderItem.getPriceAtPurchase()
-                        .multiply(BigDecimal.valueOf(100))
-                        .longValue();
+            Map<String, String> metadata = new HashMap<>();
+            metadata.put("order_id", order.getId().toString());
+            metadata.put("user_id", order.getUserId().toString());
+            metadata.put("cart_id", order.getCartId().toString());
 
-                String productName = productNames.getOrDefault(
-                        orderItem.getProductId(),
-                        "Product ID: " + orderItem.getProductId()
-                );
-
-                SessionCreateParams.LineItem.PriceData.ProductData productData =
-                        SessionCreateParams.LineItem.PriceData.ProductData.builder()
-                                .setName(productName)
-                                .build();
-
-                SessionCreateParams.LineItem.PriceData priceData =
-                        SessionCreateParams.LineItem.PriceData.builder()
-                                .setCurrency(currency)
-                                .setUnitAmount(unitAmountInCents)
-                                .setProductData(productData)
-                                .build();
-
-                SessionCreateParams.LineItem lineItem =
-                        SessionCreateParams.LineItem.builder()
-                                .setQuantity((long) orderItem.getQuantity())
-                                .setPriceData(priceData)
-                                .build();
-
-                lineItems.add(lineItem);
-            });
-
-            SessionCreateParams params = SessionCreateParams.builder()
-                    .setMode(SessionCreateParams.Mode.PAYMENT)
-                    .setSuccessUrl(successUrl + "?session_id={CHECKOUT_SESSION_ID}")
-                    .setCancelUrl(cancelUrl)
-                    .addAllLineItem(lineItems)
-                    .putMetadata("order_id", order.getId().toString())
-                    .putMetadata("user_id", order.getUserId().toString())
-                    .setClientReferenceId(order.getId().toString())
-                    .setExpiresAt(System.currentTimeMillis() / 1000 + 1800)
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                    .setAmount(amountInCents)
+                    .setCurrency(stripeProperties.getCurrency())
+                    .setDescription(description)
+                    .putAllMetadata(metadata)
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .build()
+                    )
                     .build();
 
-            Session session = Session.create(params);
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-            return new PaymentSessionDto(
-                    session.getId(),
-                    session.getUrl(),
-                    "SUCCESS",
-                    "Payment session created"
+            log.info("Payment Intent created successfully for Order {}: {}", order.getId(), paymentIntent.getId());
+
+            return new PaymentIntentResponse(
+                    paymentIntent.getId(),
+                    paymentIntent.getClientSecret(),
+                    paymentIntent.getStatus(),
+                    "Payment Intent created successfully"
             );
 
         } catch (StripeException e) {
-            log.error("Stripe error during checkout: {}", e.getMessage(), e);
-            throw new RuntimeException("Error creating Stripe checkout session: " + e.getMessage(), e);
+            log.error("Stripe error during payment intent creation: {}", e.getMessage(), e);
+            throw new RuntimeException("Error creating Stripe Payment Intent: " + e.getMessage(), e);
         }
     }
 
     @Override
-    public void cancelPayment(String sessionId) {
-        Stripe.apiKey = secretKey;
+    public void cancelPayment(String paymentIntentId) {
+        Stripe.apiKey = stripeProperties.getApi().getSecretKey();
 
         try {
-            Session session = Session.retrieve(sessionId);
-            String currentStatus = session.getStatus();
+            PaymentIntent paymentIntent = PaymentIntent.retrieve(paymentIntentId);
+            String currentStatus = paymentIntent.getStatus();
 
             switch (currentStatus) {
-                case "open" -> session.expire();
-                case "complete" -> throw new IllegalStateException("Cannot cancel a completed payment session");
-                case "expired" -> log.info("Stripe session {} is already expired", sessionId);
-                default -> log.warn("Cannot cancel session {} - current status: {}", sessionId, currentStatus);
+                case "requires_payment_method", "requires_confirmation", "requires_action" -> {
+                    paymentIntent.cancel();
+                    log.info("Payment Intent {} cancelled successfully", paymentIntentId);
+                }
+                case "succeeded" -> throw new IllegalStateException("Cannot cancel a succeeded payment intent");
+                case "canceled" -> log.info("Payment Intent {} is already cancelled", paymentIntentId);
+                default -> log.warn("Cannot cancel payment intent {} - current status: {}", paymentIntentId, currentStatus);
             }
         } catch (StripeException e) {
-            log.error("Error cancelling payment session ID: {}", sessionId, e);
-            throw new RuntimeException("Failed to cancel payment session: " + e.getMessage(), e);
+            log.error("Error cancelling payment intent ID: {}", paymentIntentId, e);
+            throw new RuntimeException("Failed to cancel payment intent: " + e.getMessage(), e);
         }
     }
 }

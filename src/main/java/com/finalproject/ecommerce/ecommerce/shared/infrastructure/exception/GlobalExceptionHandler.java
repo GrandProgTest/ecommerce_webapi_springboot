@@ -1,5 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.shared.infrastructure.exception;
 
+import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.AccountNotActivatedException;
+import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.InvalidActivationTokenException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.InvalidImageTypeException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.MaximumImagesExceededException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductImageNotFoundException;
@@ -82,6 +84,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ProblemDetail> handleProductInOrders(ProductInOrdersException ex, HttpServletRequest request) {
         log.warn("Product in orders at {}: {}", request.getRequestURI(), ex.getMessage());
         return buildResponse(ex.getMessage(), HttpStatus.CONFLICT, request, "product-in-orders");
+    }
+
+    @ExceptionHandler(AccountNotActivatedException.class)
+    public ResponseEntity<ProblemDetail> handleAccountNotActivated(AccountNotActivatedException ex, HttpServletRequest request) {
+        log.warn("Account not activated at {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.FORBIDDEN, request, "account-not-activated");
+    }
+
+    @ExceptionHandler(InvalidActivationTokenException.class)
+    public ResponseEntity<ProblemDetail> handleInvalidActivationToken(InvalidActivationTokenException ex, HttpServletRequest request) {
+        log.warn("Invalid activation token at {}: {}", request.getRequestURI(), ex.getMessage());
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request, "invalid-activation-token");
     }
 
     @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})

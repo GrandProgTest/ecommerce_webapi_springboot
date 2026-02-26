@@ -1,13 +1,10 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.commandservices;
 
 import com.finalproject.ecommerce.ecommerce.products.application.ports.out.ImageStorageService;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.InvalidImageTypeException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.MaximumImagesExceededException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductImageNotFoundException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductImageCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UploadProductImageCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UploadMultipleProductImagesCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductImage;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.valueobjects.ImageUrl;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductImageCommandService;
@@ -15,7 +12,11 @@ import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -23,6 +24,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
 
     private static final int MAX_IMAGES_PER_PRODUCT = 10;
     private static final String[] ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/jpg", "image/png"};
+    private static final int MAX_IMAGE_SIZE_MB = 5;
 
     private final ProductImageRepository productImageRepository;
     private final ProductRepository productRepository;
@@ -38,26 +40,65 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
     }
 
     @Override
-    public ProductImage uploadProductImage(UploadProductImageCommand command) {
-        validateImageType(command.imageFile());
-        validateMaxImages(command.productId());
+    @Transactional
+    public List<ProductImage> uploadMultipleProductImages(UploadMultipleProductImagesCommand command) {
+        List<MultipartFile> files = command.imageFiles();
+        Long productId = command.productId();
+        Integer primaryIndex = command.primaryImageIndex();
 
-        Product product = productRepository.findById(command.productId())
-                .orElseThrow(() -> new ProductNotFoundException(command.productId()));
-        String imageUrl = imageStorageService.uploadImage(command.imageFile(), command.productId());
-        if (command.isPrimary()) {
-            productImageRepository.findByProductId(command.productId())
+        for (MultipartFile file : files) {
+            validateImageType(file);
+            validateImageSize(file);
+        }
+
+        int currentImageCount = productImageRepository.findByProduct_Id(productId).size();
+        int totalAfterUpload = currentImageCount + files.size();
+
+        if (totalAfterUpload > MAX_IMAGES_PER_PRODUCT) {
+            log.warn("Maximum images exceeded for product {}: current={}, new={}, max={}",
+                    productId, currentImageCount, files.size(), MAX_IMAGES_PER_PRODUCT);
+            throw new MaximumImagesExceededException(
+                    productId,
+                    totalAfterUpload,
+                    MAX_IMAGES_PER_PRODUCT
+            );
+        }
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+
+        List<ProductImage> uploadedImages = new ArrayList<>();
+
+        if (primaryIndex != null) {
+            productImageRepository.findByProduct_Id(productId)
                     .forEach(ProductImage::unsetAsPrimary);
         }
-        ProductImage productImage = new ProductImage(
-                product,
-                new ImageUrl(imageUrl),
-                command.isPrimary()
-        );
-        ProductImage savedImage = productImageRepository.save(productImage);
-        log.info("Product image uploaded and saved: ID={}, ProductID={}, URL={}",
-                savedImage.getId(), command.productId(), imageUrl);
-        return savedImage;
+
+        for (int i = 0; i < files.size(); i++) {
+            MultipartFile file = files.get(i);
+            boolean isPrimary = primaryIndex != null && i == primaryIndex;
+
+            try {
+                String imageUrl = imageStorageService.uploadImage(file, productId);
+
+                ProductImage productImage = new ProductImage(
+                        product,
+                        new ImageUrl(imageUrl),
+                        isPrimary
+                );
+
+                ProductImage savedImage = productImageRepository.save(productImage);
+                uploadedImages.add(savedImage);
+
+                log.info("Product image {} of {} uploaded: ID={}, ProductID={}, URL={}, isPrimary={}",
+                        i + 1, files.size(), savedImage.getId(), productId, imageUrl, isPrimary);
+
+            } catch (Exception e) {
+                log.error("Failed to upload image {} of {} for product {}: {}",
+                        i + 1, files.size(), productId, e.getMessage(), e);
+            }
+        }
+        return uploadedImages;
     }
 
     @Override
@@ -94,8 +135,22 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
         }
     }
 
+    private void validateImageSize(MultipartFile file) {
+        long maxSizeBytes = MAX_IMAGE_SIZE_MB * 1024L * 1024L;
+
+        if (file.getSize() > maxSizeBytes) {
+            log.warn("Image size exceeds limit: {} bytes (max {} bytes)",
+                    file.getSize(), maxSizeBytes);
+
+            throw new InvalidImageSizeException(
+                    "Image size exceeds " + MAX_IMAGE_SIZE_MB + " MB"
+            );
+        }
+    }
+
+
     private void validateMaxImages(Long productId) {
-        int currentImageCount = productImageRepository.findByProductId(productId).size();
+        int currentImageCount = productImageRepository.findByProduct_Id(productId).size();
         if (currentImageCount >= MAX_IMAGES_PER_PRODUCT) {
             log.warn("Maximum images exceeded for product {}: current={}, max={}",
                     productId, currentImageCount, MAX_IMAGES_PER_PRODUCT);

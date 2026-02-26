@@ -16,7 +16,6 @@ import java.util.List;
 public class UserDetailsImpl implements UserDetails {
 
     private final String username;
-    @JsonIgnore
     private final String password;
     private final boolean accountNonExpired;
     private final boolean accountNonLocked;

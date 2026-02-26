@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-
+import java.time.Instant;
 
 @Entity
 @Getter
@@ -23,7 +22,7 @@ public class StripeWebhookEvent {
     private String eventType;
 
     @Column(nullable = false)
-    private Date processedAt;
+    private Instant processedAt;
 
     @Column(length = 200)
     private String stripeSessionId;
@@ -42,7 +41,7 @@ public class StripeWebhookEvent {
         this.eventType = eventType;
         this.stripeSessionId = stripeSessionId;
         this.orderId = orderId;
-        this.processedAt = new Date();
+        this.processedAt = Instant.now();
         this.successful = true;
     }
 

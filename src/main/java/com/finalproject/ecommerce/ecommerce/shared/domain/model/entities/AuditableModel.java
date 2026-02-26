@@ -8,7 +8,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.util.Date;
+import java.time.Instant;
 
 @EntityListeners(AuditingEntityListener.class)
 @MappedSuperclass
@@ -17,9 +17,9 @@ public class AuditableModel {
 
     @CreatedDate
     @Column(nullable = true, updatable = false)
-    private Date createdAt;
+    private Instant createdAt;
 
     @LastModifiedDate
     @Column(nullable = true)
-    private Date updatedAt;
+    private Instant updatedAt;
 }

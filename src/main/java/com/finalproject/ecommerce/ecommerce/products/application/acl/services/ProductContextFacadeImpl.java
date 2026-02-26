@@ -29,24 +29,6 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
     }
 
     @Override
-    public boolean productExists(Long productId) {
-        var query = new GetProductByIdQuery(productId);
-        return productQueryService.handle(query).isPresent();
-    }
-
-    @Override
-    public boolean hasAvailableStock(Long productId, Integer quantity) {
-        if (quantity == null || quantity <= 0) {
-            return false;
-        }
-
-        var query = new GetProductByIdQuery(productId);
-        var productOpt = productQueryService.handle(query);
-
-        return productOpt.map(product -> product.getStock() >= quantity).orElse(false);
-    }
-
-    @Override
     public Integer getProductStock(Long productId) {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
@@ -63,11 +45,19 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
     }
 
     @Override
+    public boolean isProductDeleted(Long productId) {
+        var query = new GetProductByIdQuery(productId);
+        var productOpt = productQueryService.handle(query);
+
+        return productOpt.map(Product::getIsDeleted).orElse(true);
+    }
+
+    @Override
     public BigDecimal getProductPrice(Long productId) {
         var query = new GetProductByIdQuery(productId);
         var productOpt = productQueryService.handle(query);
 
-        return productOpt.map(Product::getPrice).orElse(null);
+        return productOpt.map(Product::getEffectivePrice).orElse(null);
     }
 
     @Override
@@ -92,18 +82,6 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
                         AuditableAbstractAggregateRoot::getId,
                         Product::getName
                 ));
-    }
-
-    @Override
-    public boolean isProductAvailableForPurchase(Long productId, Integer quantity) {
-        if (quantity == null || quantity <= 0) {
-            return false;
-        }
-
-        var query = new GetProductByIdQuery(productId);
-        var productOpt = productQueryService.handle(query);
-
-        return productOpt.map(product -> product.getIsActive() && product.getStock() >= quantity).orElse(false);
     }
 
     @Override

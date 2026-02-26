@@ -36,14 +36,6 @@ public class IamContextFacadeImpl implements IamContextFacade {
     }
 
     @Override
-    public String fetchUsernameByUserId(Long userId) {
-        var getUserByIdQuery = new GetUserByIdQuery(userId);
-        var result = userQueryService.handle(getUserByIdQuery);
-        if (result.isEmpty()) return Strings.EMPTY;
-        return result.get().getUsername();
-    }
-
-    @Override
     public boolean userExists(Long userId) {
         var getUserByIdQuery = new GetUserByIdQuery(userId);
         var result = userQueryService.handle(getUserByIdQuery);
@@ -88,6 +80,11 @@ public class IamContextFacadeImpl implements IamContextFacade {
     }
 
     @Override
+    public void validateManagerOrUserCanAccessResource(Long resourceId) {
+        permissionValidationService.validateManagerOrUserCanAccessResource(resourceId);
+    }
+
+    @Override
     public void validateAddressBelongsToUser(Long addressId, Long userId) {
         permissionValidationService.validateAddressBelongsToUser(addressId, userId);
     }
@@ -97,6 +94,14 @@ public class IamContextFacadeImpl implements IamContextFacade {
         var getUserByIdQuery = new GetUserByIdQuery(userId);
         var result = userQueryService.handle(getUserByIdQuery);
         return result.map(User::getEmail).orElse(Strings.EMPTY);
+    }
+
+    @Override
+    public String getUsernameById(Long userId) {
+        var getUserByIdQuery = new GetUserByIdQuery(userId);
+        return userQueryService.handle(getUserByIdQuery)
+                .map(user -> user.getUsername())
+                .orElse(null);
     }
 
     @Override

@@ -1,17 +1,16 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.domain.services;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetAllOrdersQuery;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrderByIdQuery;
-import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.GetOrdersByUserIdQuery;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.*;
+import org.springframework.data.domain.Page;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface OrderQueryService {
-    List<Order> handle(GetAllOrdersQuery query);
-
-    List<Order> handle(GetOrdersByUserIdQuery query);
 
     Optional<Order> handle(GetOrderByIdQuery query);
+
+    Page<Order> handle(GetAllOrdersWithPaginationQuery query);
+
+    Page<Order> handle(GetUserOrdersWithPaginationQuery query);
 }

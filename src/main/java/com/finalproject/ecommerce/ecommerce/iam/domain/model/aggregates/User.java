@@ -2,6 +2,7 @@ package com.finalproject.ecommerce.ecommerce.iam.domain.model.aggregates;
 
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Address;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Role;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.UserToken;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -40,22 +41,37 @@ public class User extends AuditableAbstractAggregateRoot<User> {
     @JoinColumn(nullable = false)
     private Role role;
 
+    @NotNull
+    @Column(nullable = false)
+    private Boolean isActive;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Address> addresses = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<RefreshToken> refreshTokens = new ArrayList<>();
 
-    public User() {}
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<UserToken> userTokens = new ArrayList<>();
+
+    public User() {
+        this.isActive = false;
+    }
 
     public User(String username, String email, String password, Role role) {
+        this();
         this.username = username;
         this.email = email;
         this.password = password;
         this.role = role;
     }
 
-    public void changeRole(Role newRole) {
-        this.role = newRole;
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
     }
 }

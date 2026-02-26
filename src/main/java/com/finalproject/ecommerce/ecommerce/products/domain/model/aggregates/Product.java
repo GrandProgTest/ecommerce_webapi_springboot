@@ -1,8 +1,9 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductAlreadyLikedException;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotLikedException;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.annotations.ValidPrice;
+import com.finalproject.ecommerce.ecommerce.shared.domain.model.annotations.ValidPrice;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.Category;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.entities.ProductCategory;
@@ -16,8 +17,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
 
 @Getter
 @Setter
@@ -38,6 +41,13 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @ValidPrice
+    @Column(precision = 10, scale = 2)
+    private BigDecimal salePrice;
+
+    @Column
+    private Instant salePriceExpireDate;
+
     @NotNull
     @Min(value = 0)
     @Column(nullable = false)
@@ -46,6 +56,10 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
     @NotNull
     @Column(nullable = false)
     private Boolean isActive;
+
+    @NotNull
+    @Column(nullable = false)
+    private Boolean isDeleted = false;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
@@ -108,20 +122,21 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.isActive = false;
     }
 
+    public void softDelete() {
+        this.isDeleted = true;
+        this.isActive = false;
+    }
+
+    public void restore() {
+        this.isDeleted = false;
+    }
+
     public void addImage(ImageUrl imageUrl, Boolean isPrimary) {
         if (isPrimary != null && isPrimary) {
             images.forEach(ProductImage::unsetAsPrimary);
         }
         var image = new ProductImage(this, imageUrl, isPrimary);
         this.images.add(image);
-    }
-
-    public void setPrimaryImage(Long imageId) {
-        images.forEach(ProductImage::unsetAsPrimary);
-        images.stream()
-                .filter(img -> img.getId().equals(imageId))
-                .findFirst()
-                .ifPresent(ProductImage::setAsPrimary);
     }
 
     public boolean isActive() {
@@ -205,10 +220,6 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
         this.stock += quantity;
     }
 
-    public boolean isLowStock() {
-        return this.stock <= 3;
-    }
-
     public String getPrimaryImageUrl() {
         return images.stream()
                 .filter(ProductImage::getIsPrimary)
@@ -219,5 +230,36 @@ public class Product extends AuditableAbstractAggregateRoot<Product> {
 
     public List<ProductImage> getImages() {
         return new ArrayList<>(images);
+    }
+
+    public void setSalePrice(BigDecimal salePrice, java.time.Instant salePriceExpireDate) {
+        if (salePrice != null) {
+            if (salePrice.compareTo(this.price) >= 0) {
+                throw new IllegalArgumentException("Sale price must be less than the base price");
+            }
+            if (salePriceExpireDate == null) {
+                throw new IllegalArgumentException("Sale price expire date is required");
+            }
+            java.time.Instant minimumExpireDate = java.time.Instant.now().plus(java.time.Duration.ofHours(24));
+            if (salePriceExpireDate.isBefore(minimumExpireDate)) {
+                throw new IllegalArgumentException("Sale price expire date must be at least 24 hours from now");
+            }
+        }
+        this.salePrice = salePrice;
+        this.salePriceExpireDate = salePriceExpireDate;
+    }
+
+    public boolean hasActiveSalePrice() {
+        if (this.salePrice == null || this.salePriceExpireDate == null) {
+            return false;
+        }
+        return this.salePriceExpireDate.isAfter(java.time.Instant.now());
+    }
+
+    public BigDecimal getEffectivePrice() {
+        if (hasActiveSalePrice()) {
+            return this.salePrice;
+        }
+        return this.price;
     }
 }

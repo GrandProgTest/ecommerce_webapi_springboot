@@ -1,15 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.services;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ActivateProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeactivateProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DecreaseProductStockCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.DeleteProductCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.IncreaseProductStockCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ToggleProductLikeCommand;
-import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.UpdateProductCommand;
+import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.*;
 
 import java.util.Optional;
 
@@ -31,4 +23,8 @@ public interface ProductCommandService {
     Optional<Product> handle(ActivateProductCommand command);
 
     Optional<Product> handle(DeactivateProductCommand command);
+
+    Optional<Product> handle(SoftDeleteProductCommand command);
+
+    Optional<Product> handle(SetProductSalePriceCommand command);
 }

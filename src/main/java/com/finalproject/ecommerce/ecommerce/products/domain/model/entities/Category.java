@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.model.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.entities.AuditableModel;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -24,6 +25,7 @@ public class Category extends AuditableModel {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private final List<ProductCategory> productCategories = new ArrayList<>();
 

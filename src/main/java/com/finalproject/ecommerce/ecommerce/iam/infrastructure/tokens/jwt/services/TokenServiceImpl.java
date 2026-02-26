@@ -1,12 +1,12 @@
 package com.finalproject.ecommerce.ecommerce.iam.infrastructure.tokens.jwt.services;
 
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.tokens.jwt.BearerTokenService;
+import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.JwtProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -30,13 +30,11 @@ public class TokenServiceImpl implements BearerTokenService {
 
     private static final int TOKEN_BEGIN_INDEX = 7;
 
+    private final JwtProperties jwtProperties;
 
-    @Value("${authorization.jwt.secret}")
-    private String secret;
-
-    @Value("${authorization.jwt.access-token.expiration.minutes}")
-    private int expirationMinutes;
-
+    public TokenServiceImpl(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
     /**
      * This method generates a JWT token from an authentication object
      *
@@ -68,7 +66,7 @@ public class TokenServiceImpl implements BearerTokenService {
      */
     private String buildTokenWithDefaultParameters(String username) {
         var issuedAt = new Date();
-        var expiration = DateUtils.addMinutes(issuedAt, expirationMinutes);
+        var expiration = DateUtils.addMinutes(issuedAt, jwtProperties.getAccessToken().getExpirationMinutes());
         var key = getSigningKey();
         return Jwts.builder().subject(username).issuedAt(issuedAt).expiration(expiration).signWith(key).compact();
     }
@@ -131,7 +129,7 @@ public class TokenServiceImpl implements BearerTokenService {
      * @return SecretKey the signing key
      */
     private SecretKey getSigningKey() {
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
