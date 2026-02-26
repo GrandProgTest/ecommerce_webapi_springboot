@@ -18,16 +18,16 @@ public class ProductQueryResolver {
 
     private final ProductQueryService productQueryService;
 
-    @QueryMapping
-    public ProductGraphQLResource product(@Argument Long id) {
+    @QueryMapping(name = "getProductById")
+    public ProductGraphQLResource getProductById(@Argument Long id) {
         var query = new GetProductByIdQuery(id);
         var product = productQueryService.handle(query)
                 .orElseThrow(() -> new ProductNotFoundException(id));
         return ProductGraphQLMapper.toResource(product);
     }
 
-    @QueryMapping
-    public ProductPageGraphQLResource products(
+    @QueryMapping(name = "getAllProducts")
+    public ProductPageGraphQLResource getAllProducts(
             @Argument Integer page,
             @Argument Integer size,
             @Argument Long categoryId,

@@ -29,7 +29,7 @@ public class OrderQueryResolver {
 
     @QueryMapping
     @PreAuthorize("isAuthenticated()")
-    public OrderGraphQLResource order(@Argument String id) {
+    public OrderGraphQLResource getOrderById(@Argument String id) {
         return orderQueryService.handle(new GetOrderByIdQuery(Long.parseLong(id)))
                 .map(OrderGraphQLMapper::toResource)
                 .orElse(null);

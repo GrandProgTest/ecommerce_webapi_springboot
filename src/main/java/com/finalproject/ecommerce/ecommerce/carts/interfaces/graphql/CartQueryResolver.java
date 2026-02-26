@@ -19,7 +19,7 @@ public class CartQueryResolver {
 
     @QueryMapping
     @PreAuthorize("isAuthenticated()")
-    public CartGraphQLResource currentUserCart() {
+    public CartGraphQLResource getCurrentUserCart() {
         var query = new GetCurrentUserCartQuery();
         return cartQueryService.handle(query)
                 .map(CartGraphQLMapper::toResource)

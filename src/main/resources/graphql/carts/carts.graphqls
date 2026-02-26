@@ -29,7 +29,7 @@ input UpdateCartItemQuantityInput {
 
 
 extend type Query {
-    currentUserCart: Cart
+    getCurrentUserCart: Cart
 }
 
 extend type Mutation {

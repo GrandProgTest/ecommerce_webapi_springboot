@@ -44,8 +44,7 @@ enum DeliveryStatus {
 
 # Orders & Payments Queries
 extend type Query {
-    order(id: ID!): Order
-
+    getOrderById(id: ID!): Order
     getUserOrders(
         userId: ID!
         page: Int = 0
@@ -53,7 +52,6 @@ extend type Query {
         sortBy: String = "createdAt"
         sortDirection: String = "desc"
     ): [Order!]!
-
     getAllOrders(
         page: Int = 0
         size: Int = 20
@@ -67,12 +65,9 @@ extend type Query {
     ): [Order!]!
 }
 
-# Orders & Payments Mutations
 extend type Mutation {
-    createOrder(userId: ID!, cartId: ID!, addressId: ID!, discountCode: String): Order!
+    createOrderFromCart(userId: ID!, cartId: ID!, addressId: ID!, discountCode: String): Order!
     cancelOrder(orderId: ID!): Order!
-
     updateOrderDeliveryStatus(orderId: ID!, deliveryStatus: String!): Order!
-
     confirmPayment(orderId: ID!, paymentMethodId: String = "pm_card_visa"): Order!
 }

@@ -67,10 +67,16 @@ public class WebSecurityConfiguration {
         http.cors(configurer -> configurer.configurationSource(request -> {
             var cors = new CorsConfiguration();
             cors.setAllowedOrigins(List.of("*"));
-            cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+            cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
             cors.setAllowedHeaders(List.of("*"));
             return cors;
         }));
+        http.headers(headers -> headers
+                .contentTypeOptions(contentTypeOptions -> {})
+                .frameOptions(frameOptions -> frameOptions.deny())
+                .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'"))
+        );
         http.csrf(csrfConfigurer -> csrfConfigurer.disable()).exceptionHandling(exceptionHandling -> {
             exceptionHandling.authenticationEntryPoint(unauthorizedRequestHandler);
             exceptionHandling.accessDeniedHandler(forbiddenRequestHandler);
