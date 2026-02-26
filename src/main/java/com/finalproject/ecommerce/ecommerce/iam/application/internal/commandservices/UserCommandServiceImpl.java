@@ -17,6 +17,7 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.model.commands.UpdateUser
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.Role;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.entities.UserToken;
 import com.finalproject.ecommerce.ecommerce.iam.domain.model.validators.RavenEmailValidator;
+import com.finalproject.ecommerce.ecommerce.iam.domain.model.valueobjects.TokenType;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.RefreshTokenCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.UserCommandService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.AccountActivationTokenRepository;
@@ -48,6 +49,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final AccountActivationTokenRepository accountActivationTokenRepository;
     private final NotificationContextFacade notificationContextFacade;
     private final RateLimiterService rateLimiterService;
+    private final String appBaseUrl;
 
     public UserCommandServiceImpl(
             UserRepository userRepository,
@@ -57,7 +59,8 @@ public class UserCommandServiceImpl implements UserCommandService {
             RefreshTokenCommandService refreshTokenCommandService,
             AccountActivationTokenRepository accountActivationTokenRepository,
             NotificationContextFacade notificationContextFacade,
-            RateLimiterService rateLimiterService) {
+            RateLimiterService rateLimiterService,
+            @org.springframework.beans.factory.annotation.Value("${app.base-url}") String appBaseUrl) {
         this.userRepository = userRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
@@ -66,6 +69,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         this.accountActivationTokenRepository = accountActivationTokenRepository;
         this.notificationContextFacade = notificationContextFacade;
         this.rateLimiterService = rateLimiterService;
+        this.appBaseUrl = appBaseUrl;
     }
 
 
@@ -120,7 +124,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         String hashedToken = hashingService.encode(rawToken);
         Date expiresAt = Date.from(Instant.now().plus(24, ChronoUnit.HOURS));
 
-        var activationToken = new UserToken(user, hashedToken, expiresAt);
+        var activationToken = new UserToken(user, hashedToken, expiresAt, TokenType.ACCOUNT_ACTIVATION);
         accountActivationTokenRepository.save(activationToken);
 
         sendActivationEmail(user.getEmail(), user.getUsername(), rawToken);
@@ -130,7 +134,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     private void sendActivationEmail(String email, String username, String rawActivationToken) {
         try {
-            String activationLink = "http://localhost:8080/api/v1/auth/activate?token=" + rawActivationToken;
+            String activationLink = appBaseUrl + "/api/v1/auth/activate?token=" + rawActivationToken;
 
             notificationContextFacade.sendWelcomeEmail(email, username, activationLink);
         } catch (Exception e) {
@@ -182,8 +186,9 @@ public class UserCommandServiceImpl implements UserCommandService {
         try {
             String rawToken = command.activationToken();
 
-            var potentialToken = accountActivationTokenRepository.findAll().stream()
-                    .filter(token -> !token.getIsUsed() && !token.isExpired())
+            var potentialToken = accountActivationTokenRepository
+                    .findByTokenTypeAndIsUsedFalse(TokenType.ACCOUNT_ACTIVATION).stream()
+                    .filter(token -> !token.isExpired())
                     .filter(token -> hashingService.matches(rawToken, token.getHashedToken()))
                     .findFirst()
                     .orElseThrow(() -> new InvalidActivationTokenException("Token not found or invalid"));
@@ -218,9 +223,8 @@ public class UserCommandServiceImpl implements UserCommandService {
             throw new RuntimeException("Account is already activated");
         }
 
-        var existingTokens = accountActivationTokenRepository.findAll().stream()
-                .filter(token -> token.getUserId().equals(user.getId()) && !token.getIsUsed() && !token.isExpired())
-                .toList();
+        var existingTokens = accountActivationTokenRepository
+                .findByUser_IdAndTokenTypeAndIsUsedFalse(user.getId(), TokenType.ACCOUNT_ACTIVATION);
 
         existingTokens.forEach(token -> {
             token.forceMarkAsUsed();
@@ -232,7 +236,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         String hashedToken = hashingService.encode(rawToken);
         Date expiresAt = Date.from(Instant.now().plus(24, ChronoUnit.HOURS));
 
-        var activationToken = new UserToken(user, hashedToken, expiresAt);
+        var activationToken = new UserToken(user, hashedToken, expiresAt, TokenType.ACCOUNT_ACTIVATION);
         accountActivationTokenRepository.save(activationToken);
 
         log.info("New activation token generated for user: {}", user.getUsername());
@@ -255,8 +259,9 @@ public class UserCommandServiceImpl implements UserCommandService {
         var user = userRepository.findByEmail(command.email())
                 .orElseThrow(() -> new RuntimeException("User with email not found"));
 
-        var existingTokens = accountActivationTokenRepository.findByUser_IdAndIsUsedFalse(user.getId());
-        existingTokens.ifPresent(token -> {
+        var existingTokens = accountActivationTokenRepository
+                .findByUser_IdAndTokenTypeAndIsUsedFalse(user.getId(), TokenType.PASSWORD_RESET);
+        existingTokens.forEach(token -> {
             token.forceMarkAsUsed();
             accountActivationTokenRepository.save(token);
             log.info("Previous password reset token invalidated for user: {}", user.getUsername());
@@ -266,7 +271,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         String hashedToken = hashingService.encode(rawToken);
         Date expiresAt = Date.from(Instant.now().plus(15, ChronoUnit.MINUTES));
 
-        var resetToken = new UserToken(user, hashedToken, expiresAt);
+        var resetToken = new UserToken(user, hashedToken, expiresAt, TokenType.PASSWORD_RESET);
         accountActivationTokenRepository.save(resetToken);
 
         log.info("Password reset token generated for user: {}", user.getUsername());
@@ -286,8 +291,8 @@ public class UserCommandServiceImpl implements UserCommandService {
         try {
             String rawToken = command.token();
 
-            var potentialToken = accountActivationTokenRepository.findAll().stream()
-                    .filter(token -> !token.getIsUsed() && !token.isExpired())
+            var potentialToken = accountActivationTokenRepository.findByTokenTypeAndIsUsedFalse(TokenType.PASSWORD_RESET).stream()
+                    .filter(token -> !token.isExpired())
                     .filter(token -> hashingService.matches(rawToken, token.getHashedToken()))
                     .findFirst()
                     .orElseThrow(() -> new InvalidPasswordResetTokenException("Invalid or expired reset token"));

@@ -4,6 +4,7 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderItem;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.DeliveryStatuses;
 import com.finalproject.ecommerce.ecommerce.shared.domain.model.aggregates.AuditableAbstractAggregateRoot;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -125,6 +126,23 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
 
         if (this.deliveryStatus != null && this.deliveryStatus.isDelivered()) {
             throw new IllegalStateException("Cannot change delivery status. Order has already been delivered");
+        }
+
+        DeliveryStatuses targetStatus = newDeliveryStatus.toEnum();
+
+        if (this.deliveryStatus == null) {
+            if (!DeliveryStatuses.validInitialStatuses().contains(targetStatus)) {
+                throw new IllegalStateException(
+                        "Initial delivery status must be %s. Cannot set to %s directly".formatted(
+                                DeliveryStatuses.validInitialStatuses(), targetStatus));
+            }
+        } else {
+            DeliveryStatuses currentStatus = this.deliveryStatus.toEnum();
+            if (!currentStatus.canTransitionTo(targetStatus)) {
+                throw new IllegalStateException(
+                        "Invalid delivery status transition from %s to %s. Valid next statuses: %s".formatted(
+                                currentStatus, targetStatus, currentStatus.validNextStatuses()));
+            }
         }
 
         this.deliveryStatus = newDeliveryStatus;

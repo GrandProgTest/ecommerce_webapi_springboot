@@ -6,6 +6,7 @@ import com.finalproject.ecommerce.ecommerce.notifications.domain.model.valueobje
 import com.finalproject.ecommerce.ecommerce.notifications.domain.services.EmailCommandService;
 import com.finalproject.ecommerce.ecommerce.notifications.interfaces.acl.NotificationContextFacade;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -18,11 +19,14 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
 
     private final EmailCommandService emailCommandService;
     private final EmailCommandServiceImpl emailCommandServiceImpl;
+    private final String appBaseUrl;
 
     public NotificationContextFacadeImpl(EmailCommandService emailCommandService,
-                                         EmailCommandServiceImpl emailCommandServiceImpl) {
+                                         EmailCommandServiceImpl emailCommandServiceImpl,
+                                         @Value("${app.base-url}") String appBaseUrl) {
         this.emailCommandService = emailCommandService;
         this.emailCommandServiceImpl = emailCommandServiceImpl;
+        this.appBaseUrl = appBaseUrl;
     }
 
     @Override
@@ -131,7 +135,7 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
                     "statusMessage", statusMessage,
                     "totalAmount", totalAmount,
                     "orderDate", orderDate,
-                    "orderUrl", "http://localhost:8080/api/v1/orders/user/" + orderId
+                    "orderUrl", appBaseUrl + "/api/v1/orders/user/" + orderId
             );
 
             var command = new SendEmailCommand(toEmail, EmailTemplate.ORDER_STATUS_UPDATE, templateData);
