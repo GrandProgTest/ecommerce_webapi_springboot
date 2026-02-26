@@ -67,36 +67,30 @@ public class WebSecurityConfiguration {
         http.cors(configurer -> configurer.configurationSource(request -> {
             var cors = new CorsConfiguration();
             cors.setAllowedOrigins(List.of("*"));
-            cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+            cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH"));
             cors.setAllowedHeaders(List.of("*"));
             return cors;
         }));
-        http.headers(headers -> headers
-                .contentTypeOptions(contentTypeOptions -> {})
-                .frameOptions(frameOptions -> frameOptions.deny())
-                .xssProtection(xss -> xss.headerValue(org.springframework.security.web.header.writers.XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK))
-                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'"))
-        );
         http.csrf(csrfConfigurer -> csrfConfigurer.disable()).exceptionHandling(exceptionHandling -> {
             exceptionHandling.authenticationEntryPoint(unauthorizedRequestHandler);
             exceptionHandling.accessDeniedHandler(forbiddenRequestHandler);
         }).sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).authorizeHttpRequests(authorizeRequests -> authorizeRequests.requestMatchers(
-                "/api/v1/auth/sign-in",
-                "/api/v1/auth/sign-up",
-                "/api/v1/auth/refresh",
-                "/api/v1/auth/activate",
-                "/api/v1/auth/resend-activation",
-                "/api/v1/auth/forgot-password",
-                "/api/v1/auth/reset-password",
-                "/api/v1/webhooks/stripe",
-                "/graphql",
-                "/graphiql/**",
-                "/v3/api-docs/**",
-                "/v3/api-docs",
-                "/swagger-ui/index.html",
-                "/swagger-ui/**",
-                "/swagger-resources/**",
-                "/webjars/**").permitAll().
+                        "/api/v1/auth/sign-in",
+                        "/api/v1/auth/sign-up",
+                        "/api/v1/auth/refresh",
+                        "/api/v1/auth/activate",
+                        "/api/v1/auth/resend-activation",
+                        "/api/v1/auth/forgot-password",
+                        "/api/v1/auth/reset-password",
+                        "/api/v1/webhooks/stripe",
+                        "/graphql",
+                        "/graphiql/**",
+                        "/v3/api-docs/**",
+                        "/v3/api-docs",
+                        "/swagger-ui/index.html",
+                        "/swagger-ui/**",
+                        "/swagger-resources/**",
+                        "/webjars/**").permitAll().
                 requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/categories/**").permitAll()
                 .anyRequest().authenticated());

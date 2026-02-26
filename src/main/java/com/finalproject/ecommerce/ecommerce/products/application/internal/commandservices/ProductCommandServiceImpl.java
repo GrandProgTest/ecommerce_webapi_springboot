@@ -15,6 +15,8 @@ import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductCategoryRepository;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductPriceLogRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -211,15 +213,15 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
-    /*@Caching(evict = {
+    @Caching(evict = {
             @CacheEvict(value = "productById", key = "#command.productId()"),
             @CacheEvict(value = "allProducts", allEntries = true),
             @CacheEvict(value = "activeProducts", allEntries = true),
             @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
             @CacheEvict(value = "productsByCategory", allEntries = true),
             @CacheEvict(value = "productsByIds", allEntries = true)
     })
-    */
     public Optional<Product> handle(SoftDeleteProductCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
@@ -238,16 +240,15 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
-    /*
     @Caching(evict = {
             @CacheEvict(value = "productById", key = "#command.productId()"),
             @CacheEvict(value = "allProducts", allEntries = true),
             @CacheEvict(value = "activeProducts", allEntries = true),
             @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
             @CacheEvict(value = "productsByCategory", allEntries = true),
             @CacheEvict(value = "productsByIds", allEntries = true)
     })
-     */
     public Optional<Product> handle(SetProductSalePriceCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));

@@ -3,6 +3,7 @@ package com.finalproject.ecommerce.ecommerce.products.application.internal.query
 import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.application.dto.PageMetadataResponse;
 import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponse;
+import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponseGraphQL;
 import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductResponse;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
@@ -65,7 +66,7 @@ public class ProductQueryServiceImpl implements ProductQueryService {
 
     @Cacheable(
             value = "productsPage",
-            key = "'role_' + (#isManager ? 'manager' : 'customer')" +
+            key = "'role_' + (#isManager ? 'ROLE_MANAGER' : 'ROLE_CLIENT')" +
                   " + '_cat_' + (#categoryId != null ? #categoryId : 'all')" +
                   " + '_active_' + (#activeFilter != null ? #activeFilter : 'any')" +
                   " + '_page_' + #page" +
@@ -100,6 +101,55 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         );
 
         return new ProductPageResponse(products, metadata);
+    }
+
+    @Override
+    public ProductPageResponseGraphQL handleForGraphQL(GetProductsWithPaginationQuery query) {
+        boolean isManager = iamContextFacade.currentUserHasRole("ROLE_MANAGER");
+        Boolean activeFilter = isManager ? query.isActive() : true;
+
+        return findProductsCachedForGraphQL(
+                query.categoryId(), activeFilter, query.page(),
+                query.size(), query.sortBy(), query.sortDirection(), isManager
+        );
+    }
+
+    @Cacheable(
+            value = "productsPageGraphQL",
+            key = "'role_' + (#isManager ? 'ROLE_MANAGER' : 'ROLE_CLIENT')" +
+                  " + '_cat_' + (#categoryId != null ? #categoryId : 'all')" +
+                  " + '_active_' + (#activeFilter != null ? #activeFilter : 'any')" +
+                  " + '_page_' + #page" +
+                  " + '_size_' + #size" +
+                  " + '_sort_' + #sortBy + '_' + #sortDirection"
+    )
+    public com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponseGraphQL findProductsCachedForGraphQL(
+            Long categoryId, Boolean activeFilter, int page, int size, String sortBy, String sortDirection, boolean isManager) {
+        Sort sort = sortDirection.equalsIgnoreCase("desc")
+                ? Sort.by(sortBy).descending()
+                : Sort.by(sortBy).ascending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        var productPage = productRepository.findAll(
+                ProductSpecification.withFilters(categoryId, activeFilter, false),
+                pageable
+        );
+
+        var products = productPage.getContent().stream()
+                .map(com.finalproject.ecommerce.ecommerce.products.application.dto.ProductResponseGraphQL::fromEntity)
+                .toList();
+
+        var metadata = new com.finalproject.ecommerce.ecommerce.products.application.dto.PageMetadataResponse(
+                productPage.getNumber(),
+                productPage.getSize(),
+                productPage.getTotalElements(),
+                productPage.getTotalPages(),
+                productPage.hasNext(),
+                productPage.hasPrevious()
+        );
+
+        return new ProductPageResponseGraphQL(products, metadata);
     }
 }
 

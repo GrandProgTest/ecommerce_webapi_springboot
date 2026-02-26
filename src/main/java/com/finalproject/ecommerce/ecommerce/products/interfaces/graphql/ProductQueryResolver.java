@@ -43,7 +43,7 @@ public class ProductQueryResolver {
             throw new InvalidPageSizeException(size);
         }
 
-        var productPageResponse = productQueryService.handle(
+        var productPageResponse = productQueryService.handleForGraphQL(
                 new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
         );
 
@@ -59,10 +59,12 @@ public class ProductQueryResolver {
                         p.isActive(),
                         p.categoryIds(),
                         p.createdByUserId(),
-                        null, null,
+                        p.likeCount(),
+                        null,
                         p.stock() != null && p.stock() > 0,
                         p.primaryImageUrl(),
-                        null, null
+                        p.createdAt(),
+                        p.updatedAt()
                 ))
                 .toList();
 
