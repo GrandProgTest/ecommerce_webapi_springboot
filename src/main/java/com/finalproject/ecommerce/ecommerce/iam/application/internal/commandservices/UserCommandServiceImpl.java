@@ -49,6 +49,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final AccountActivationTokenRepository accountActivationTokenRepository;
     private final NotificationContextFacade notificationContextFacade;
     private final RateLimiterService rateLimiterService;
+    private final String appBaseUrl;
 
     public UserCommandServiceImpl(
             UserRepository userRepository,
@@ -58,7 +59,8 @@ public class UserCommandServiceImpl implements UserCommandService {
             RefreshTokenCommandService refreshTokenCommandService,
             AccountActivationTokenRepository accountActivationTokenRepository,
             NotificationContextFacade notificationContextFacade,
-            RateLimiterService rateLimiterService) {
+            RateLimiterService rateLimiterService,
+            @org.springframework.beans.factory.annotation.Value("${app.base-url}") String appBaseUrl) {
         this.userRepository = userRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
@@ -67,6 +69,7 @@ public class UserCommandServiceImpl implements UserCommandService {
         this.accountActivationTokenRepository = accountActivationTokenRepository;
         this.notificationContextFacade = notificationContextFacade;
         this.rateLimiterService = rateLimiterService;
+        this.appBaseUrl = appBaseUrl;
     }
 
 
@@ -131,7 +134,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
     private void sendActivationEmail(String email, String username, String rawActivationToken) {
         try {
-            String activationLink = "http://localhost:8080/api/v1/auth/activate?token=" + rawActivationToken;
+            String activationLink = appBaseUrl + "/api/v1/auth/activate?token=" + rawActivationToken;
 
             notificationContextFacade.sendWelcomeEmail(email, username, activationLink);
         } catch (Exception e) {
