@@ -24,4 +24,6 @@ public interface ProductContextFacade {
     void increaseProductStock(Long productId, Integer quantity);
 
     List<Long> getUsersWhoLikedProduct(Long productId);
+
+    boolean hasActiveSalePrice(Long productId);
 }

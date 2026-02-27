@@ -110,7 +110,8 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
 
             BigDecimal price = productContextFacade.getProductPrice(cartItem.productId());
-            order.addItem(cartItem.productId(), price, cartItem.quantity());
+            boolean isPurchasedWithSalePrice = productContextFacade.hasActiveSalePrice(cartItem.productId());
+            order.addItem(cartItem.productId(), price, cartItem.quantity(), isPurchasedWithSalePrice);
 
             productContextFacade.decreaseProductStock(cartItem.productId(), cartItem.quantity());
 

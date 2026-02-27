@@ -103,4 +103,12 @@ public class ProductContextFacadeImpl implements ProductContextFacade {
 
         return productOpt.map(Product::getLikedByUserIds).orElse(List.of());
     }
+
+    @Override
+    public boolean hasActiveSalePrice(Long productId) {
+        var query = new GetProductByIdQuery(productId);
+        var productOpt = productQueryService.handle(query);
+
+        return productOpt.map(Product::hasActiveSalePrice).orElse(false);
+    }
 }

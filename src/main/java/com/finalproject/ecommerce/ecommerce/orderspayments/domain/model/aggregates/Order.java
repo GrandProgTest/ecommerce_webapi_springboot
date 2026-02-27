@@ -67,8 +67,8 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         this.totalAmount = BigDecimal.ZERO;
     }
 
-    public void addItem(Long productId, BigDecimal price, Integer quantity) {
-        OrderItem item = new OrderItem(this, productId, price, quantity);
+    public void addItem(Long productId, BigDecimal price, Integer quantity, Boolean isPurchasedWithSalePrice) {
+        OrderItem item = new OrderItem(this, productId, price, quantity, isPurchasedWithSalePrice);
         this.items.add(item);
         recalculateTotal();
     }
@@ -84,14 +84,24 @@ public class Order extends AuditableAbstractAggregateRoot<Order> {
         recalculateTotal();
     }
 
-    // For the time being we will have a general discount for orders such as (30% off for your total order price)
-    // of course this discount will not be affecting already products that are on sale
     private void recalculateTotal() {
         BigDecimal subtotal = items.stream()
                 .map(OrderItem::getSubtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        this.totalAmount = subtotal;
+        BigDecimal eligibleForDiscountSubtotal = items.stream()
+                .filter(item -> !item.getIsPurchasedWithSalePrice())
+                .map(OrderItem::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (this.discount != null && this.discount.isValid()) {
+            BigDecimal discountPercentage = BigDecimal.valueOf(this.discount.getPercentage())
+                    .divide(BigDecimal.valueOf(100));
+            discountAmount = eligibleForDiscountSubtotal.multiply(discountPercentage);
+        }
+
+        this.totalAmount = subtotal.subtract(discountAmount);
     }
 
     public void markAsPaid(OrderStatus paidStatus) {
