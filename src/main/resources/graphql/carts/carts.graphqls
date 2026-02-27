@@ -28,10 +28,13 @@ input UpdateCartItemQuantityInput {
 }
 
 
+# Carts Queries
 extend type Query {
     getCurrentUserCart: Cart
+    getCartByUserId(userId: ID!): Cart
 }
 
+# Carts Mutations
 extend type Mutation {
     addItemToCart(userId: ID!, productId: ID!, quantity: Int!): Cart!
     updateCartItemQuantity(userId: ID!, cartItemId: ID!, input: UpdateCartItemQuantityInput!): Cart!

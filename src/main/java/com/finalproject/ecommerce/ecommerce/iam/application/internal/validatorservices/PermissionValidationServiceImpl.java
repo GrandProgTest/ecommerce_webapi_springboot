@@ -28,13 +28,14 @@ public class PermissionValidationServiceImpl implements PermissionValidationServ
 
     @Override
     public void validateUserCanAccessResource(Long resourceUserId) {
+        // This method is only accesible for users with ROLE_CLIENT;
         Optional<Long> currentUserId = getCurrentUserId();
 
         if (currentUserId.isEmpty()) {
             throw new AccessDeniedException("User not authenticated");
         }
 
-        if (!currentUserId.get().equals(resourceUserId)) {
+        if (!currentUserId.get().equals(resourceUserId) || currentUserHasRole("ROLE_MANAGER")) {
             throw new AccessDeniedException("You don't have permission to access this resource");
         }
     }
