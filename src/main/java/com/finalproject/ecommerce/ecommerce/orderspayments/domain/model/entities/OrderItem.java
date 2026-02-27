@@ -1,0 +1,60 @@
+package com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities;
+
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
+import jakarta.persistence.*;
+import lombok.Getter;
+
+import java.math.BigDecimal;
+
+@Entity
+@Getter
+public class OrderItem {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
+    private Order order;
+
+    @Column(nullable = false)
+    private Long productId;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal priceAtPurchase;
+
+    @Column(nullable = false)
+    private Integer quantity;
+
+    @Column(nullable = false)
+    private Boolean isPurchasedWithSalePrice = false;
+
+    public OrderItem() {
+    }
+
+    public OrderItem(Order order, Long productId, BigDecimal priceAtPurchase, Integer quantity, Boolean isPurchasedWithSalePrice) {
+        this.order = order;
+        this.productId = productId;
+        this.priceAtPurchase = priceAtPurchase;
+        this.quantity = quantity;
+        this.isPurchasedWithSalePrice = isPurchasedWithSalePrice != null ? isPurchasedWithSalePrice : false;
+        validateOrderItem();
+    }
+
+    private void validateOrderItem() {
+        if (productId == null) {
+            throw new IllegalArgumentException("Product ID cannot be null");
+        }
+        if (priceAtPurchase == null || priceAtPurchase.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Price must be non-negative");
+        }
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+    }
+
+    public BigDecimal getSubtotal() {
+        return priceAtPurchase.multiply(BigDecimal.valueOf(quantity));
+    }
+}

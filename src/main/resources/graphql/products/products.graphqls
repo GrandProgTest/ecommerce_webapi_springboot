@@ -1,0 +1,96 @@
+type Product implements AuditableEntity {
+    id: ID!
+    name: String!
+    description: String
+    price: Float!
+    salePrice: Float
+    salePriceExpireDate: DateTime
+    effectivePrice: Float!
+    hasActiveSalePrice: Boolean!
+    stock: Int!
+    isActive: Boolean!
+    categoryIds: [ID!]!
+    createdByUserId: ID!
+    likeCount: Int!
+    isLikedByCurrentUser: Boolean
+    isInStock: Boolean!
+    primaryImageUrl: String
+    createdAt: DateTime!
+    updatedAt: DateTime!
+}
+
+type ProductPage {
+    products: [Product!]!
+    pageMetadata: PageMetadata!
+}
+
+type PageMetadata {
+    currentPage: Int!
+    pageSize: Int!
+    totalElements: Int!
+    totalPages: Int!
+    hasNext: Boolean!
+    hasPrevious: Boolean!
+}
+
+
+type Category {
+    id: ID!
+    name: String!
+    createdAt: DateTime!
+}
+
+type DeleteProductResponse {
+    success: Boolean!
+    message: String!
+}
+
+type LikeProductResponse {
+    success: Boolean!
+    isLiked: Boolean!
+    likeCount: Int!
+    message: String!
+}
+
+
+input CreateProductInput {
+    name: String!
+    description: String
+    price: Float!
+    stock: Int!
+    categoryIds: [ID!]
+}
+
+
+input CreateCategoryInput {
+    name: String!
+}
+
+input SetProductSalePriceInput {
+    salePrice: Float!
+    salePriceExpireDate: DateTime!
+}
+
+# Products Queries
+extend type Query {
+    getProductById(id: ID!): Product
+    getAllProducts(
+        page: Int = 0
+        size: Int = 20
+        categoryId: ID
+        sortBy: String = "id"
+        sortDirection: String = "asc"
+    ): ProductPage!
+}
+
+# Products Mutations
+extend type Mutation {
+    createProduct(input: CreateProductInput!): Product!
+    deleteProduct(id: ID!): DeleteProductResponse!
+    activateProduct(id: ID!): Product!
+    deactivateProduct(id: ID!): Product!
+    createCategory(input: CreateCategoryInput!): Category!
+    likeProduct(productId: ID!, userId: ID!): LikeProductResponse!
+    unlikeProduct(productId: ID!, userId: ID!): LikeProductResponse!
+    setProductSalePrice(productId: ID!, input: SetProductSalePriceInput!): Product!
+}

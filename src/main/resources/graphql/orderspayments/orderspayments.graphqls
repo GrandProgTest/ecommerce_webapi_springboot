@@ -1,0 +1,73 @@
+type Order implements AuditableEntity {
+    id: ID!
+    userId: ID!
+    user: OrderUser
+    cartId: ID
+    addressId: ID!
+    discountCode: String
+    status: OrderStatus!
+    deliveryStatus: DeliveryStatus
+    totalAmount: Float!
+    clientSecret: String
+    items: [OrderItem!]!
+    createdAt: DateTime!
+    updatedAt: DateTime
+    paidAt: DateTime
+}
+
+type OrderUser {
+    id: ID!
+    username: String!
+    email: String!
+}
+
+type OrderItem {
+    id: ID!
+    orderId: ID!
+    productId: ID!
+    priceAtPurchase: Float!
+    quantity: Int!
+}
+
+enum OrderStatus {
+    PENDING
+    PAID
+    CANCELLED
+}
+
+enum DeliveryStatus {
+    PACKED
+    SHIPPED
+    IN_TRANSIT
+    DELIVERED
+}
+
+# Orders & Payments Queries
+extend type Query {
+    getOrderById(id: ID!): Order
+    getUserOrders(
+        userId: ID!
+        page: Int = 0
+        size: Int = 20
+        sortBy: String = "createdAt"
+        sortDirection: String = "desc"
+    ): [Order!]!
+    getAllOrders(
+        page: Int = 0
+        size: Int = 20
+        sortBy: String = "createdAt"
+        sortDirection: String = "desc"
+        status: String
+        deliveryStatus: String
+        userId: String
+        dateFrom: String
+        dateTo: String
+    ): [Order!]!
+}
+
+extend type Mutation {
+    createOrderFromCart(userId: ID!, cartId: ID!, addressId: ID!, discountCode: String): Order!
+    cancelOrder(orderId: ID!): Order!
+    updateOrderDeliveryStatus(orderId: ID!, deliveryStatus: String!): Order!
+    confirmPayment(orderId: ID!, paymentMethodId: String = "pm_card_visa"): Order!
+}
