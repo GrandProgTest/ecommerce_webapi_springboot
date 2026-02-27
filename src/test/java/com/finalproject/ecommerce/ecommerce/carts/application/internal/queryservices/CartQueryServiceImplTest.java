@@ -73,51 +73,41 @@ class CartQueryServiceImplTest {
     class GetCartByUserIdTests {
 
         @Test
-        @DisplayName("should return any cart for manager")
-        void shouldReturnAnyCartForManager() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(true);
-            when(cartRepository.findByUserId(1L)).thenReturn(Optional.of(sampleCart));
-
-            var result = service.handle(new GetCartByUserIdQuery(1L));
-
-            assertThat(result).isPresent();
-            verify(cartRepository).findByUserId(1L);
-            verify(cartRepository, never()).findByUserIdAndStatus(anyLong(), any());
-        }
-
-        @Test
-        @DisplayName("should return only active cart for non-manager")
-        void shouldReturnActiveCartForNonManager() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(false);
+        @DisplayName("should return active cart for user")
+        void shouldReturnActiveCartForUser() {
             when(cartStatusRepository.findByName(CartStatuses.ACTIVE.name())).thenReturn(Optional.of(activeStatus));
             when(cartRepository.findByUserIdAndStatus(1L, activeStatus)).thenReturn(Optional.of(sampleCart));
 
             var result = service.handle(new GetCartByUserIdQuery(1L));
 
             assertThat(result).isPresent();
+            assertThat(result.get().getUserId()).isEqualTo(1L);
+            verify(iamContextFacade).validateManagerOrUserCanAccessResource(1L);
             verify(cartRepository).findByUserIdAndStatus(1L, activeStatus);
         }
 
         @Test
-        @DisplayName("should throw when active status not found for non-manager")
+        @DisplayName("should return empty when no active cart found")
+        void shouldReturnEmptyWhenNoActiveCart() {
+            when(cartStatusRepository.findByName(CartStatuses.ACTIVE.name())).thenReturn(Optional.of(activeStatus));
+            when(cartRepository.findByUserIdAndStatus(1L, activeStatus)).thenReturn(Optional.empty());
+
+            var result = service.handle(new GetCartByUserIdQuery(1L));
+
+            assertThat(result).isEmpty();
+            verify(iamContextFacade).validateManagerOrUserCanAccessResource(1L);
+        }
+
+        @Test
+        @DisplayName("should throw when active status not found")
         void shouldThrowWhenActiveStatusNotFound() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(false);
             when(cartStatusRepository.findByName(CartStatuses.ACTIVE.name())).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.handle(new GetCartByUserIdQuery(1L)))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("Active cart status not found");
-        }
 
-        @Test
-        @DisplayName("should validate user access")
-        void shouldValidateUserAccess() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(true);
-            when(cartRepository.findByUserId(1L)).thenReturn(Optional.empty());
-
-            service.handle(new GetCartByUserIdQuery(1L));
-
-            verify(iamContextFacade).validateUserCanAccessResource(1L);
+            verify(iamContextFacade).validateManagerOrUserCanAccessResource(1L);
         }
     }
 
