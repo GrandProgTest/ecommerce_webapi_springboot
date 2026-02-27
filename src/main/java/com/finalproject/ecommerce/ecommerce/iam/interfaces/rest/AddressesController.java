@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/v1/users/{userId}/addresses", produces = MediaType.APPLICATION_JSON_VALUE)
-@Tag(name = "Addresses", description = "Address management endpoints")
+@Tag(name = "User Addresses", description = "Address management endpoints")
 public class AddressesController {
 
     private final AddressCommandService addressCommandService;

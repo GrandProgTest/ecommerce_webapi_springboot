@@ -49,6 +49,7 @@ public class RedisCacheConfig {
                 .withCacheConfiguration("productById", productByIdConfig)
                 .withCacheConfiguration("allProducts", allProductsConfig)
                 .withCacheConfiguration("productsPage", productsPageConfig)
+                .withCacheConfiguration("productsPageGraphQL", productsPageConfig)
                 .withCacheConfiguration("activeProducts", allProductsConfig)
                 .withCacheConfiguration("productsByIds", productByIdConfig)
                 .withCacheConfiguration("productsByCategory", productsPageConfig)

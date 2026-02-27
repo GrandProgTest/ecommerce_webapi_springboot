@@ -1,6 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.DeliveryStatus;
+import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.Discount;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.entities.OrderStatus;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.DeliveryStatuses;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.valueobjects.OrderStatuses;
@@ -10,6 +11,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -54,7 +57,7 @@ class OrderTest {
         @Test
         @DisplayName("should add item and recalculate total")
         void shouldAddItemAndRecalculate() {
-            order.addItem(200L, new BigDecimal("25.00"), 2);
+            order.addItem(200L, new BigDecimal("25.00"), 2, false);
 
             assertThat(order.getItems()).hasSize(1);
             assertThat(order.getTotalAmount()).isEqualByComparingTo("50.00");
@@ -63,8 +66,8 @@ class OrderTest {
         @Test
         @DisplayName("should add multiple items and sum totals")
         void shouldAddMultipleItems() {
-            order.addItem(200L, new BigDecimal("10.00"), 2);
-            order.addItem(300L, new BigDecimal("5.00"), 3);
+            order.addItem(200L, new BigDecimal("10.00"), 2, false);
+            order.addItem(300L, new BigDecimal("5.00"), 3, false);
 
             assertThat(order.getItems()).hasSize(2);
             assertThat(order.getTotalAmount()).isEqualByComparingTo("35.00");
@@ -303,6 +306,96 @@ class OrderTest {
 
             assertThat(order.isCancelled()).isTrue();
             assertThat(order.isPending()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Discount Application")
+    class DiscountApplicationTests {
+
+        @Test
+        @DisplayName("should apply discount only to items without sale price")
+        void shouldApplyDiscountOnlyToItemsWithoutSalePrice() {
+            order.addItem(200L, new BigDecimal("100.00"), 1, false);
+
+            order.addItem(300L, new BigDecimal("50.00"), 1, true);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("150.00");
+
+            Discount discount = new Discount("SAVE20", 20,
+                    Instant.now(),
+                    Instant.now().plus(7, ChronoUnit.DAYS));
+            order.applyDiscount(discount);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("130.00");
+        }
+
+        @Test
+        @DisplayName("should not apply discount when all items have sale price")
+        void shouldNotApplyDiscountWhenAllItemsHaveSalePrice() {
+            order.addItem(200L, new BigDecimal("50.00"), 2, true);
+            order.addItem(300L, new BigDecimal("30.00"), 1, true);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("130.00");
+
+            Discount discount = new Discount("SAVE30", 30,
+                    Instant.now(),
+                    Instant.now().plus(7, ChronoUnit.DAYS));
+            order.applyDiscount(discount);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("130.00");
+        }
+
+        @Test
+        @DisplayName("should apply full discount when no items have sale price")
+        void shouldApplyFullDiscountWhenNoItemsHaveSalePrice() {
+            order.addItem(200L, new BigDecimal("100.00"), 1, false);
+            order.addItem(300L, new BigDecimal("50.00"), 2, false);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("200.00");
+
+            Discount discount = new Discount("SAVE25", 25,
+                    Instant.now(),
+                    Instant.now().plus(7, ChronoUnit.DAYS));
+            order.applyDiscount(discount);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("150.00");
+        }
+
+        @Test
+        @DisplayName("should handle multiple items with mixed sale status correctly")
+        void shouldHandleMixedItemsCorrectly() {
+            order.addItem(100L, new BigDecimal("20.00"), 3, false);
+            order.addItem(200L, new BigDecimal("30.00"), 2, false);
+
+            order.addItem(300L, new BigDecimal("15.00"), 4, true);
+            order.addItem(400L, new BigDecimal("25.00"), 2, true);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("230.00");
+
+            Discount discount = new Discount("SAVE10", 10,
+                    Instant.now(),
+                    Instant.now().plus(7, ChronoUnit.DAYS));
+            order.applyDiscount(discount);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("218.00");
+        }
+
+        @Test
+        @DisplayName("should recalculate discount when adding more items")
+        void shouldRecalculateDiscountWhenAddingMoreItems() {
+            order.addItem(100L, new BigDecimal("100.00"), 1, false);
+
+            Discount discount = new Discount("SAVE20", 20,
+                    Instant.now(),
+                    Instant.now().plus(7, ChronoUnit.DAYS));
+            order.applyDiscount(discount);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("80.00");
+
+            order.addItem(200L, new BigDecimal("50.00"), 1, false);
+
+            assertThat(order.getTotalAmount()).isEqualByComparingTo("120.00");
         }
     }
 }

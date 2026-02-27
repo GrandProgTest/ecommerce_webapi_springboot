@@ -12,10 +12,6 @@ public interface NotificationContextFacade {
 
     void sendWelcomeEmail(String toEmail, String userName, String activationUrl);
 
-    void sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData);
-
-    void sendLowStockAlert(String toEmail, String productName, int currentStock);
-
     void sendLowStockAlertBatch(Set<String> recipientEmails, String productName, int currentStock);
 
     void sendOrderStatusUpdate(String toEmail, String username, Long orderId, String orderStatus,

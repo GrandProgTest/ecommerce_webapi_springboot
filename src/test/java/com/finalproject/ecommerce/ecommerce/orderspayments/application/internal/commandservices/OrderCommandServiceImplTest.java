@@ -100,6 +100,7 @@ class OrderCommandServiceImplTest {
             when(productContextFacade.isProductActive(anyLong())).thenReturn(true);
             when(productContextFacade.getProductPrice(100L)).thenReturn(new BigDecimal("25.00"));
             when(productContextFacade.getProductPrice(200L)).thenReturn(new BigDecimal("15.00"));
+            when(productContextFacade.hasActiveSalePrice(anyLong())).thenReturn(false);
             when(productContextFacade.getProductStock(anyLong())).thenReturn(10);
             when(orderRepository.save(any(Order.class))).thenAnswer(i -> i.getArgument(0));
             when(paymentProvider.initiatePayment(any())).thenReturn(
@@ -218,7 +219,7 @@ class OrderCommandServiceImplTest {
         @DisplayName("should cancel pending order and restore stock")
         void shouldCancelAndRestoreStock() {
             Order order = createOrderWithAuditFields(1L, 10L, 100L, pendingStatus);
-            order.addItem(200L, new BigDecimal("25.00"), 2);
+            order.addItem(200L, new BigDecimal("25.00"), 2, false);
             order.setStripePaymentInfo("pi_123", "secret");
             when(orderRepository.findById(1L)).thenReturn(Optional.of(order));
             when(orderStatusRepository.findByName(OrderStatuses.CANCELLED.name())).thenReturn(Optional.of(cancelledStatus));

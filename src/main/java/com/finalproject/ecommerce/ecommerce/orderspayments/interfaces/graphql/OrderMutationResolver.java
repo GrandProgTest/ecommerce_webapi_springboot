@@ -17,7 +17,7 @@ public class OrderMutationResolver {
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
-    public OrderGraphQLResource createOrder(@Argument String userId, @Argument String cartId, @Argument String addressId, @Argument String discountCode) {
+    public OrderGraphQLResource createOrderFromCart(@Argument String userId, @Argument String cartId, @Argument String addressId, @Argument String discountCode) {
         var command = OrderGraphQLMapper.toCreateOrderCommand(userId, cartId, addressId, discountCode);
         var order = orderCommandService.handle(command);
         return OrderGraphQLMapper.toResource(order);

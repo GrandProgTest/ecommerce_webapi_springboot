@@ -73,8 +73,8 @@ input SetProductSalePriceInput {
 
 # Products Queries
 extend type Query {
-    product(id: ID!): Product
-    products(
+    getProductById(id: ID!): Product
+    getAllProducts(
         page: Int = 0
         size: Int = 20
         categoryId: ID
@@ -89,11 +89,8 @@ extend type Mutation {
     deleteProduct(id: ID!): DeleteProductResponse!
     activateProduct(id: ID!): Product!
     deactivateProduct(id: ID!): Product!
-
     createCategory(input: CreateCategoryInput!): Category!
-
     likeProduct(productId: ID!, userId: ID!): LikeProductResponse!
     unlikeProduct(productId: ID!, userId: ID!): LikeProductResponse!
-
     setProductSalePrice(productId: ID!, input: SetProductSalePriceInput!): Product!
 }

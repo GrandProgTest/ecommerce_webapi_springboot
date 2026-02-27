@@ -1,6 +1,7 @@
 package com.finalproject.ecommerce.ecommerce.products.domain.services;
 
 import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponse;
+import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponseGraphQL;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
 
@@ -15,4 +16,6 @@ public interface ProductQueryService {
     List<Product> handle(GetProductsByIdsQuery query);
 
     ProductPageResponse handle(GetProductsWithPaginationQuery query);
+
+    ProductPageResponseGraphQL handleForGraphQL(GetProductsWithPaginationQuery query);
 }

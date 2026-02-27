@@ -18,16 +18,16 @@ public class ProductQueryResolver {
 
     private final ProductQueryService productQueryService;
 
-    @QueryMapping
-    public ProductGraphQLResource product(@Argument Long id) {
+    @QueryMapping(name = "getProductById")
+    public ProductGraphQLResource getProductById(@Argument Long id) {
         var query = new GetProductByIdQuery(id);
         var product = productQueryService.handle(query)
                 .orElseThrow(() -> new ProductNotFoundException(id));
         return ProductGraphQLMapper.toResource(product);
     }
 
-    @QueryMapping
-    public ProductPageGraphQLResource products(
+    @QueryMapping(name = "getAllProducts")
+    public ProductPageGraphQLResource getAllProducts(
             @Argument Integer page,
             @Argument Integer size,
             @Argument Long categoryId,
@@ -43,7 +43,7 @@ public class ProductQueryResolver {
             throw new InvalidPageSizeException(size);
         }
 
-        var productPageResponse = productQueryService.handle(
+        var productPageResponse = productQueryService.handleForGraphQL(
                 new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
         );
 
@@ -59,10 +59,12 @@ public class ProductQueryResolver {
                         p.isActive(),
                         p.categoryIds(),
                         p.createdByUserId(),
-                        null, null,
+                        p.likeCount(),
+                        null,
                         p.stock() != null && p.stock() > 0,
                         p.primaryImageUrl(),
-                        null, null
+                        p.createdAt(),
+                        p.updatedAt()
                 ))
                 .toList();
 

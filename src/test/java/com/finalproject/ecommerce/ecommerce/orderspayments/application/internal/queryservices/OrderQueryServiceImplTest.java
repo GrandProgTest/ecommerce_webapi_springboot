@@ -128,7 +128,7 @@ class OrderQueryServiceImplTest {
             Page<Order> result = service.handle(query);
 
             assertThat(result.getContent()).hasSize(1);
-            verify(iamContextFacade).validateUserCanAccessResource(1L);
+            verify(iamContextFacade).validateManagerOrUserCanAccessResource(1L);
         }
 
         @Test

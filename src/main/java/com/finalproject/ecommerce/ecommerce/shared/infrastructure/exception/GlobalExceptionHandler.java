@@ -2,10 +2,7 @@ package com.finalproject.ecommerce.ecommerce.shared.infrastructure.exception;
 
 import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.AccountNotActivatedException;
 import com.finalproject.ecommerce.ecommerce.iam.domain.exceptions.InvalidActivationTokenException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.InvalidImageTypeException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.MaximumImagesExceededException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductImageNotFoundException;
-import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductInOrdersException;
+import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.*;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.BusinessRuleException;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidOperationException;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.ResourceNotFoundException;

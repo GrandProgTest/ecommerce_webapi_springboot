@@ -55,7 +55,7 @@ public class OrderQueryServiceImpl implements OrderQueryService {
 
     @Override
     public Page<Order> handle(GetUserOrdersWithPaginationQuery query) {
-        iamContextFacade.validateUserCanAccessResource(query.userId());
+        iamContextFacade.validateManagerOrUserCanAccessResource(query.userId());
 
         Sort sort = query.sortDirection().equalsIgnoreCase("desc")
                 ? Sort.by(query.sortBy()).descending()

@@ -34,10 +34,7 @@ public class CartQueryServiceImpl implements CartQueryService {
 
     @Override
     public Optional<Cart> handle(GetCartByUserIdQuery query) {
-        iamContextFacade.validateUserCanAccessResource(query.userId());
-        if (iamContextFacade.currentUserHasRole("ROLE_MANAGER")) {
-            return cartRepository.findByUserId(query.userId());
-        }
+        iamContextFacade.validateManagerOrUserCanAccessResource(query.userId());
         CartStatus activeStatus = cartStatusRepository.findByName(CartStatuses.ACTIVE.name()).orElseThrow(() -> new IllegalStateException("Active cart status not found"));
         return cartRepository.findByUserIdAndStatus(query.userId(), activeStatus);
     }

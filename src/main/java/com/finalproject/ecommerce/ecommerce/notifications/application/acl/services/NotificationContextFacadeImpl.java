@@ -74,32 +74,6 @@ public class NotificationContextFacadeImpl implements NotificationContextFacade 
             log.error("Failed to send welcome email to {}: {}", toEmail, e.getMessage());
         }
     }
-
-    @Override
-    public void sendOrderConfirmationEmail(String toEmail, Map<String, Object> orderData) {
-        try {
-            var command = new SendEmailCommand(toEmail, EmailTemplate.ORDER_CONFIRMATION, orderData);
-            emailCommandService.handle(command);
-        } catch (Exception e) {
-            log.error("Failed to send order confirmation email to {}: {}", toEmail, e.getMessage());
-        }
-    }
-
-    @Override
-    public void sendLowStockAlert(String toEmail, String productName, int currentStock) {
-        try {
-            Map<String, Object> templateData = Map.of(
-                    "productName", productName,
-                    "currentStock", String.valueOf(currentStock)
-            );
-
-            var command = new SendEmailCommand(toEmail, EmailTemplate.LOW_STOCK_ALERT, templateData);
-            emailCommandService.handle(command);
-        } catch (Exception e) {
-            log.error("Failed to send low stock alert email to {}: {}", toEmail, e.getMessage());
-        }
-    }
-
     @Override
     public void sendLowStockAlertBatch(Set<String> recipientEmails,
                                        String productName,

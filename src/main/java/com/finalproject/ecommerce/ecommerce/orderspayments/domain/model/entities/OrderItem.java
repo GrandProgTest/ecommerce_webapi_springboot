@@ -27,14 +27,18 @@ public class OrderItem {
     @Column(nullable = false)
     private Integer quantity;
 
+    @Column(nullable = false)
+    private Boolean isPurchasedWithSalePrice = false;
+
     public OrderItem() {
     }
 
-    public OrderItem(Order order, Long productId, BigDecimal priceAtPurchase, Integer quantity) {
+    public OrderItem(Order order, Long productId, BigDecimal priceAtPurchase, Integer quantity, Boolean isPurchasedWithSalePrice) {
         this.order = order;
         this.productId = productId;
         this.priceAtPurchase = priceAtPurchase;
         this.quantity = quantity;
+        this.isPurchasedWithSalePrice = isPurchasedWithSalePrice != null ? isPurchasedWithSalePrice : false;
         validateOrderItem();
     }
 
