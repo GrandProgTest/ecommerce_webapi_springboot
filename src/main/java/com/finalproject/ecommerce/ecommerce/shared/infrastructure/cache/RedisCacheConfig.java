@@ -49,7 +49,7 @@ public class RedisCacheConfig {
                 .withCacheConfiguration("productById", productByIdConfig)
                 .withCacheConfiguration("allProducts", allProductsConfig)
                 .withCacheConfiguration("productsPage", productsPageConfig)
-                .withCacheConfiguration("productsPageGraphQL", productsPageConfig)  // Same TTL as REST
+                .withCacheConfiguration("productsPageGraphQL", productsPageConfig)
                 .withCacheConfiguration("activeProducts", allProductsConfig)
                 .withCacheConfiguration("productsByIds", productByIdConfig)
                 .withCacheConfiguration("productsByCategory", productsPageConfig)

@@ -31,18 +31,37 @@ class OrderItemTest {
         void shouldCreateOrderItem() {
             BigDecimal price = new BigDecimal("25.50");
 
-            OrderItem item = new OrderItem(order, 200L, price, 3);
+            OrderItem item = new OrderItem(order, 200L, price, 3, false);
 
             assertThat(item.getOrder()).isEqualTo(order);
             assertThat(item.getProductId()).isEqualTo(200L);
             assertThat(item.getPriceAtPurchase()).isEqualByComparingTo("25.50");
             assertThat(item.getQuantity()).isEqualTo(3);
+            assertThat(item.getIsPurchasedWithSalePrice()).isFalse();
+        }
+
+        @Test
+        @DisplayName("should create order item with sale price flag")
+        void shouldCreateOrderItemWithSalePriceFlag() {
+            BigDecimal price = new BigDecimal("15.00");
+
+            OrderItem item = new OrderItem(order, 200L, price, 2, true);
+
+            assertThat(item.getIsPurchasedWithSalePrice()).isTrue();
+        }
+
+        @Test
+        @DisplayName("should default isPurchasedWithSalePrice to false when null")
+        void shouldDefaultSalePriceFlagToFalse() {
+            OrderItem item = new OrderItem(order, 200L, new BigDecimal("10.00"), 1, null);
+
+            assertThat(item.getIsPurchasedWithSalePrice()).isFalse();
         }
 
         @Test
         @DisplayName("should throw when productId is null")
         void shouldThrowWhenProductIdNull() {
-            assertThatThrownBy(() -> new OrderItem(order, null, BigDecimal.TEN, 1))
+            assertThatThrownBy(() -> new OrderItem(order, null, BigDecimal.TEN, 1, false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Product ID cannot be null");
         }
@@ -50,7 +69,7 @@ class OrderItemTest {
         @Test
         @DisplayName("should throw when price is null")
         void shouldThrowWhenPriceNull() {
-            assertThatThrownBy(() -> new OrderItem(order, 200L, null, 1))
+            assertThatThrownBy(() -> new OrderItem(order, 200L, null, 1, false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Price must be non-negative");
         }
@@ -58,7 +77,7 @@ class OrderItemTest {
         @Test
         @DisplayName("should throw when price is negative")
         void shouldThrowWhenPriceNegative() {
-            assertThatThrownBy(() -> new OrderItem(order, 200L, new BigDecimal("-1"), 1))
+            assertThatThrownBy(() -> new OrderItem(order, 200L, new BigDecimal("-1"), 1, false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Price must be non-negative");
         }
@@ -66,7 +85,7 @@ class OrderItemTest {
         @Test
         @DisplayName("should throw when quantity is null")
         void shouldThrowWhenQuantityNull() {
-            assertThatThrownBy(() -> new OrderItem(order, 200L, BigDecimal.TEN, null))
+            assertThatThrownBy(() -> new OrderItem(order, 200L, BigDecimal.TEN, null, false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Quantity must be positive");
         }
@@ -74,7 +93,7 @@ class OrderItemTest {
         @Test
         @DisplayName("should throw when quantity is zero")
         void shouldThrowWhenQuantityZero() {
-            assertThatThrownBy(() -> new OrderItem(order, 200L, BigDecimal.TEN, 0))
+            assertThatThrownBy(() -> new OrderItem(order, 200L, BigDecimal.TEN, 0, false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Quantity must be positive");
         }
@@ -82,7 +101,7 @@ class OrderItemTest {
         @Test
         @DisplayName("should accept price of zero")
         void shouldAcceptZeroPrice() {
-            OrderItem item = new OrderItem(order, 200L, BigDecimal.ZERO, 1);
+            OrderItem item = new OrderItem(order, 200L, BigDecimal.ZERO, 1, false);
 
             assertThat(item.getPriceAtPurchase()).isEqualByComparingTo(BigDecimal.ZERO);
         }
@@ -95,7 +114,7 @@ class OrderItemTest {
         @Test
         @DisplayName("should calculate subtotal as price * quantity")
         void shouldCalculateSubtotal() {
-            OrderItem item = new OrderItem(order, 200L, new BigDecimal("15.00"), 4);
+            OrderItem item = new OrderItem(order, 200L, new BigDecimal("15.00"), 4, false);
 
             BigDecimal subtotal = item.getSubtotal();
 
@@ -105,11 +124,22 @@ class OrderItemTest {
         @Test
         @DisplayName("should return zero subtotal when price is zero")
         void shouldReturnZeroSubtotal() {
-            OrderItem item = new OrderItem(order, 200L, BigDecimal.ZERO, 5);
+            OrderItem item = new OrderItem(order, 200L, BigDecimal.ZERO, 5, false);
 
             BigDecimal subtotal = item.getSubtotal();
 
             assertThat(subtotal).isEqualByComparingTo(BigDecimal.ZERO);
+        }
+
+        @Test
+        @DisplayName("should calculate subtotal correctly for item with sale price")
+        void shouldCalculateSubtotalForSalePrice() {
+            OrderItem item = new OrderItem(order, 200L, new BigDecimal("12.50"), 3, true);
+
+            BigDecimal subtotal = item.getSubtotal();
+
+            assertThat(subtotal).isEqualByComparingTo("37.50");
+            assertThat(item.getIsPurchasedWithSalePrice()).isTrue();
         }
     }
 }
