@@ -1,6 +1,5 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.queryservices;
 
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponse;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.CreateProductCommand;
@@ -31,7 +30,6 @@ import static org.mockito.Mockito.*;
 class ProductQueryServiceImplTest {
 
     @Mock private ProductRepository productRepository;
-    @Mock private IamContextFacade iamContextFacade;
 
     @InjectMocks private ProductQueryServiceImpl service;
 
@@ -142,12 +140,13 @@ class ProductQueryServiceImplTest {
         @Test
         @DisplayName("should apply isActive=true for non-manager users")
         void shouldFilterActiveForClient() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(false);
             var page = new PageImpl<>(List.of(sampleProduct));
             when(productRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+            when(productRepository.findDistinctByIdIn(anyList())).thenReturn(List.of(sampleProduct));
+            when(productRepository.findByIdIn(anyList())).thenReturn(List.of(sampleProduct));
 
             var query = new GetProductsWithPaginationQuery(null, null, 0, 20, "id", "asc");
-            ProductPageResponse result = service.handle(query);
+            ProductPageResponse result = service.handle(query, false);
 
             assertThat(result.products()).hasSize(1);
             assertThat(result.pageMetadata().currentPage()).isEqualTo(0);
@@ -157,12 +156,13 @@ class ProductQueryServiceImplTest {
         @Test
         @DisplayName("should allow manager to see all products including inactive")
         void shouldAllowManagerInactive() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(true);
             var page = new PageImpl<>(List.of(sampleProduct));
             when(productRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+            when(productRepository.findDistinctByIdIn(anyList())).thenReturn(List.of(sampleProduct));
+            when(productRepository.findByIdIn(anyList())).thenReturn(List.of(sampleProduct));
 
             var query = new GetProductsWithPaginationQuery(null, false, 0, 20, "id", "asc");
-            ProductPageResponse result = service.handle(query);
+            ProductPageResponse result = service.handle(query, true);
 
             assertThat(result.products()).hasSize(1);
         }
@@ -170,12 +170,13 @@ class ProductQueryServiceImplTest {
         @Test
         @DisplayName("should return correct page metadata")
         void shouldReturnCorrectMetadata() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(false);
             var page = new PageImpl<>(List.of(sampleProduct), org.springframework.data.domain.PageRequest.of(0, 20), 1);
             when(productRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+            when(productRepository.findDistinctByIdIn(anyList())).thenReturn(List.of(sampleProduct));
+            when(productRepository.findByIdIn(anyList())).thenReturn(List.of(sampleProduct));
 
             var query = new GetProductsWithPaginationQuery(null, null, 0, 20, "id", "asc");
-            ProductPageResponse result = service.handle(query);
+            ProductPageResponse result = service.handle(query, false);
 
             assertThat(result.pageMetadata().totalElements()).isEqualTo(1);
             assertThat(result.pageMetadata().totalPages()).isEqualTo(1);
@@ -186,12 +187,11 @@ class ProductQueryServiceImplTest {
         @Test
         @DisplayName("should return empty products list when no products match")
         void shouldReturnEmptyPage() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(false);
             var emptyPage = new PageImpl<Product>(List.of());
             when(productRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(emptyPage);
 
             var query = new GetProductsWithPaginationQuery(null, null, 0, 20, "id", "asc");
-            ProductPageResponse result = service.handle(query);
+            ProductPageResponse result = service.handle(query, false);
 
             assertThat(result.products()).isEmpty();
             assertThat(result.pageMetadata().totalElements()).isEqualTo(0);
@@ -200,12 +200,13 @@ class ProductQueryServiceImplTest {
         @Test
         @DisplayName("should support desc sort direction")
         void shouldSupportDescSort() {
-            when(iamContextFacade.currentUserHasRole("ROLE_MANAGER")).thenReturn(false);
             var page = new PageImpl<>(List.of(sampleProduct));
             when(productRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(page);
+            when(productRepository.findDistinctByIdIn(anyList())).thenReturn(List.of(sampleProduct));
+            when(productRepository.findByIdIn(anyList())).thenReturn(List.of(sampleProduct));
 
             var query = new GetProductsWithPaginationQuery(null, null, 0, 20, "price", "desc");
-            ProductPageResponse result = service.handle(query);
+            ProductPageResponse result = service.handle(query, false);
 
             assertThat(result.products()).hasSize(1);
         }
