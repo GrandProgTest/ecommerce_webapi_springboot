@@ -31,8 +31,8 @@ public class Discount extends AuditableAbstractAggregateRoot<Discount> {
     public Discount(String code, Integer percentage, Instant startDate, Instant endDate) {
         this.code = code;
         this.percentage = percentage;
-        this.startDate = Instant.now();
-        this.endDate = Instant.now();
+        this.startDate = startDate;
+        this.endDate = endDate;
         this.isActive = true;
         validateDiscount();
     }
