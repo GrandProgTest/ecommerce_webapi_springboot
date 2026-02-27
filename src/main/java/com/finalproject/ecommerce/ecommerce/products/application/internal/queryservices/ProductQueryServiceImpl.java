@@ -1,10 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.application.internal.queryservices;
 
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
-import com.finalproject.ecommerce.ecommerce.products.application.dto.PageMetadataResponse;
-import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponse;
-import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponseGraphQL;
-import com.finalproject.ecommerce.ecommerce.products.application.dto.ProductResponse;
+import com.finalproject.ecommerce.ecommerce.products.application.dto.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
@@ -23,15 +19,13 @@ import java.util.Optional;
 public class ProductQueryServiceImpl implements ProductQueryService {
 
     private final ProductRepository productRepository;
-    private final IamContextFacade iamContextFacade;
 
-    public ProductQueryServiceImpl(ProductRepository productRepository, IamContextFacade iamContextFacade) {
+    public ProductQueryServiceImpl(ProductRepository productRepository) {
         this.productRepository = productRepository;
-        this.iamContextFacade = iamContextFacade;
     }
 
     @Override
-    //@Cacheable(value = "productById", key = "#query.productId()")
+    @Cacheable(value = "productById", key = "#query.productId()")
     public Optional<Product> handle(GetProductByIdQuery query) {
         return productRepository.findById(query.productId());
     }
@@ -43,7 +37,6 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    //@Cacheable(value = "productsByIds", key = "#query.productIds().toString()")
     public List<Product> handle(GetProductsByIdsQuery query) {
         if (query.productIds() == null || query.productIds().isEmpty()) {
             return List.of();
@@ -54,38 +47,39 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    public ProductPageResponse handle(GetProductsWithPaginationQuery query) {
-        boolean isManager = iamContextFacade.currentUserHasRole("ROLE_MANAGER");
-        Boolean activeFilter = isManager ? query.isActive() : true;
-
-        return findProductsCached(
-                query.categoryId(), activeFilter, query.page(),
-                query.size(), query.sortBy(), query.sortDirection(), isManager
-        );
-    }
-
     @Cacheable(
             value = "productsPage",
             key = "'role_' + (#isManager ? 'ROLE_MANAGER' : 'ROLE_CLIENT')" +
-                  " + '_cat_' + (#categoryId != null ? #categoryId : 'all')" +
-                  " + '_active_' + (#activeFilter != null ? #activeFilter : 'any')" +
-                  " + '_page_' + #page" +
-                  " + '_size_' + #size" +
-                  " + '_sort_' + #sortBy + '_' + #sortDirection"
+                  " + '_cat_' + (#query.categoryId() != null ? #query.categoryId() : 'all')" +
+                  " + '_active_' + (#query.isActive() != null ? #query.isActive() : 'any')" +
+                  " + '_page_' + #query.page()" +
+                  " + '_size_' + #query.size()" +
+                  " + '_sort_' + #query.sortBy() + '_' + #query.sortDirection()"
     )
-    public ProductPageResponse findProductsCached(Long categoryId, Boolean activeFilter, int page,
-                                                   int size, String sortBy, String sortDirection,
-                                                   boolean isManager) {
-        Sort sort = sortDirection.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+    public ProductPageResponse handle(GetProductsWithPaginationQuery query, boolean isManager) {
+        Boolean activeFilter = isManager ? query.isActive() : Boolean.TRUE;
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        System.out.println("DB WAS HIT 🚨");
+
+        Sort sort = query.sortDirection().equalsIgnoreCase("desc")
+                ? Sort.by(query.sortBy()).descending()
+                : Sort.by(query.sortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
 
         var productPage = productRepository.findAll(
-                ProductSpecification.withFilters(categoryId, activeFilter, false),
+                ProductSpecification.withFilters(query.categoryId(), activeFilter, false),
                 pageable
         );
+
+        List<Long> productIds = productPage.getContent().stream()
+                .map(Product::getId)
+                .toList();
+
+        if (!productIds.isEmpty()) {
+            productRepository.findDistinctByIdIn(productIds);
+            productRepository.findByIdIn(productIds);
+        }
 
         var products = productPage.getContent().stream()
                 .map(ProductResponse::fromEntity)
@@ -104,43 +98,43 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    public ProductPageResponseGraphQL handleForGraphQL(GetProductsWithPaginationQuery query) {
-        boolean isManager = iamContextFacade.currentUserHasRole("ROLE_MANAGER");
-        Boolean activeFilter = isManager ? query.isActive() : true;
-
-        return findProductsCachedForGraphQL(
-                query.categoryId(), activeFilter, query.page(),
-                query.size(), query.sortBy(), query.sortDirection(), isManager
-        );
-    }
-
     @Cacheable(
             value = "productsPageGraphQL",
             key = "'role_' + (#isManager ? 'ROLE_MANAGER' : 'ROLE_CLIENT')" +
-                  " + '_cat_' + (#categoryId != null ? #categoryId : 'all')" +
-                  " + '_active_' + (#activeFilter != null ? #activeFilter : 'any')" +
-                  " + '_page_' + #page" +
-                  " + '_size_' + #size" +
-                  " + '_sort_' + #sortBy + '_' + #sortDirection"
+                  " + '_cat_' + (#query.categoryId() != null ? #query.categoryId() : 'all')" +
+                  " + '_active_' + (#query.isActive() != null ? #query.isActive() : 'any')" +
+                  " + '_page_' + #query.page()" +
+                  " + '_size_' + #query.size()" +
+                  " + '_sort_' + #query.sortBy() + '_' + #query.sortDirection()"
     )
-    public com.finalproject.ecommerce.ecommerce.products.application.dto.ProductPageResponseGraphQL findProductsCachedForGraphQL(
-            Long categoryId, Boolean activeFilter, int page, int size, String sortBy, String sortDirection, boolean isManager) {
-        Sort sort = sortDirection.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
+    public ProductPageResponseGraphQL handleForGraphQL(GetProductsWithPaginationQuery query, boolean isManager) {
+        Boolean activeFilter = isManager ? query.isActive() : Boolean.TRUE;
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Sort sort = query.sortDirection().equalsIgnoreCase("desc")
+                ? Sort.by(query.sortBy()).descending()
+                : Sort.by(query.sortBy()).ascending();
+
+        Pageable pageable = PageRequest.of(query.page(), query.size(), sort);
 
         var productPage = productRepository.findAll(
-                ProductSpecification.withFilters(categoryId, activeFilter, false),
+                ProductSpecification.withFilters(query.categoryId(), activeFilter, false),
                 pageable
         );
 
-        var products = productPage.getContent().stream()
-                .map(com.finalproject.ecommerce.ecommerce.products.application.dto.ProductResponseGraphQL::fromEntity)
+        List<Long> productIds = productPage.getContent().stream()
+                .map(Product::getId)
                 .toList();
 
-        var metadata = new com.finalproject.ecommerce.ecommerce.products.application.dto.PageMetadataResponse(
+        if (!productIds.isEmpty()) {
+            productRepository.findDistinctByIdIn(productIds);
+            productRepository.findByIdIn(productIds);
+        }
+
+        var products = productPage.getContent().stream()
+                .map(ProductResponseGraphQL::fromEntity)
+                .toList();
+
+        var metadata = new PageMetadataResponse(
                 productPage.getNumber(),
                 productPage.getSize(),
                 productPage.getTotalElements(),
@@ -152,5 +146,4 @@ public class ProductQueryServiceImpl implements ProductQueryService {
         return new ProductPageResponseGraphQL(products, metadata);
     }
 }
-
 

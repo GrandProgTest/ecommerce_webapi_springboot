@@ -45,6 +45,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true)
+    })
     public Long handle(CreateProductCommand command) {
         var userId = iamContextFacade.getCurrentUserId().orElseThrow(() -> new IllegalStateException("User not authenticated"));
 
@@ -69,6 +76,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#command.productId()"),
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true)
+    })
     public Optional<Product> handle(UpdateProductCommand command) {
         var result = productRepository.findById(command.productId());
         if (result.isEmpty()) throw new ProductNotFoundException(command.productId());
@@ -93,6 +108,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#command.productId()"),
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true)
+    })
     public void handle(DeleteProductCommand command) {
         if (!productRepository.existsById(command.productId())) {
             throw new ProductNotFoundException(command.productId());
@@ -110,6 +133,15 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#command.productId()"),
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true),
+            @CacheEvict(value = "productsByIds", allEntries = true)
+    })
     public Optional<Product> handle(AssignCategoryToProductCommand command) {
         if (!productRepository.existsById(command.productId())) {
             throw new ProductNotFoundException(command.productId());
@@ -134,6 +166,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @CacheEvict(value = "productById", key = "#command.productId()")
     public boolean handle(ToggleProductLikeCommand command) {
         final Long userId;
         if (command.userId() == null) {
@@ -157,6 +190,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#command.productId()"),
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true)
+    })
     public Optional<Product> handle(DecreaseProductStockCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
@@ -171,6 +211,13 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#command.productId()"),
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true)
+    })
     public Optional<Product> handle(IncreaseProductStockCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
@@ -185,6 +232,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#command.productId()"),
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true)
+    })
     public Optional<Product> handle(ActivateProductCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
@@ -199,6 +254,14 @@ public class ProductCommandServiceImpl implements ProductCommandService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "productById", key = "#command.productId()"),
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true)
+    })
     public Optional<Product> handle(DeactivateProductCommand command) {
         var product = productRepository.findById(command.productId())
                 .orElseThrow(() -> new ProductNotFoundException(command.productId()));
@@ -219,8 +282,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             @CacheEvict(value = "activeProducts", allEntries = true),
             @CacheEvict(value = "productsPage", allEntries = true),
             @CacheEvict(value = "productsPageGraphQL", allEntries = true),
-            @CacheEvict(value = "productsByCategory", allEntries = true),
-            @CacheEvict(value = "productsByIds", allEntries = true)
+            @CacheEvict(value = "productsByCategory", allEntries = true)
     })
     public Optional<Product> handle(SoftDeleteProductCommand command) {
         var product = productRepository.findById(command.productId())
@@ -246,8 +308,7 @@ public class ProductCommandServiceImpl implements ProductCommandService {
             @CacheEvict(value = "activeProducts", allEntries = true),
             @CacheEvict(value = "productsPage", allEntries = true),
             @CacheEvict(value = "productsPageGraphQL", allEntries = true),
-            @CacheEvict(value = "productsByCategory", allEntries = true),
-            @CacheEvict(value = "productsByIds", allEntries = true)
+            @CacheEvict(value = "productsByCategory", allEntries = true)
     })
     public Optional<Product> handle(SetProductSalePriceCommand command) {
         var product = productRepository.findById(command.productId())

@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.interfaces.rest;
 
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.ActivateProductCommand;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.commands.AssignCategoryToProductCommand;
@@ -33,10 +34,12 @@ public class ProductsController {
 
     private final ProductCommandService productCommandService;
     private final ProductQueryService productQueryService;
+    private final IamContextFacade iamContextFacade;
 
-    public ProductsController(ProductCommandService productCommandService, ProductQueryService productQueryService) {
+    public ProductsController(ProductCommandService productCommandService, ProductQueryService productQueryService, IamContextFacade iamContextFacade) {
         this.productCommandService = productCommandService;
         this.productQueryService = productQueryService;
+        this.iamContextFacade = iamContextFacade;
     }
 
     @PostMapping
@@ -171,8 +174,11 @@ public class ProductsController {
 
         if (size != 20 && size != 50 && size != 100) throw new InvalidPageSizeException(size);
 
+        boolean isManager = iamContextFacade.currentUserHasRole("ROLE_MANAGER");
+
         var productPageResponse = productQueryService.handle(
-                new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
+                new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection),
+                isManager
         );
 
         var productResources = productPageResponse.products().stream()

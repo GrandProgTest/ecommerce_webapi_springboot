@@ -1,5 +1,6 @@
 package com.finalproject.ecommerce.ecommerce.products.interfaces.graphql;
 
+import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.products.domain.exceptions.ProductNotFoundException;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductByIdQuery;
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.GetProductsWithPaginationQuery;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Controller;
 public class ProductQueryResolver {
 
     private final ProductQueryService productQueryService;
+    private final IamContextFacade iamContextFacade;
 
     @QueryMapping(name = "getProductById")
     public ProductGraphQLResource getProductById(@Argument Long id) {
@@ -43,8 +45,11 @@ public class ProductQueryResolver {
             throw new InvalidPageSizeException(size);
         }
 
+        boolean isManager = iamContextFacade.currentUserHasRole("ROLE_MANAGER");
+
         var productPageResponse = productQueryService.handleForGraphQL(
-                new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection)
+                new GetProductsWithPaginationQuery(categoryId, null, page, size, sortBy, sortDirection),
+                isManager
         );
 
         var productResources = productPageResponse.products().stream()

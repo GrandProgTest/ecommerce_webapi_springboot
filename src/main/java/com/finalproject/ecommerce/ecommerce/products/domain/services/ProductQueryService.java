@@ -15,7 +15,7 @@ public interface ProductQueryService {
 
     List<Product> handle(GetProductsByIdsQuery query);
 
-    ProductPageResponse handle(GetProductsWithPaginationQuery query);
+    ProductPageResponse handle(GetProductsWithPaginationQuery query, boolean isManager);
 
-    ProductPageResponseGraphQL handleForGraphQL(GetProductsWithPaginationQuery query);
+    ProductPageResponseGraphQL handleForGraphQL(GetProductsWithPaginationQuery query, boolean isManager);
 }
