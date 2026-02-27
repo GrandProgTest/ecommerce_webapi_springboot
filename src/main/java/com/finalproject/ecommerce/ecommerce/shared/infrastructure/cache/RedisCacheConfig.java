@@ -26,12 +26,6 @@ public class RedisCacheConfig {
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
                 .disableCachingNullValues();
 
-        RedisCacheConfiguration productByIdConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(30))
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
-                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
-                .disableCachingNullValues();
-
         RedisCacheConfiguration allProductsConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(15))
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
@@ -46,7 +40,6 @@ public class RedisCacheConfig {
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withCacheConfiguration("productById", productByIdConfig)
                 .withCacheConfiguration("allProducts", allProductsConfig)
                 .withCacheConfiguration("productsPage", productsPageConfig)
                 .withCacheConfiguration("productsPageGraphQL", productsPageConfig)

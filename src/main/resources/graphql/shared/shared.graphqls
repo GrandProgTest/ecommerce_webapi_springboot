@@ -1,6 +1,6 @@
 interface AuditableEntity {
     id: ID!
     createdAt: DateTime!
-    updatedAt: DateTime!
+    updatedAt: DateTime
 }
 
