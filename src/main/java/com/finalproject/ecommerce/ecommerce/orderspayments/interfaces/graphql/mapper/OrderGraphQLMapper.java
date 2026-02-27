@@ -15,7 +15,7 @@ public class OrderGraphQLMapper {
     public record OrderGraphQLResource(String id, String userId, OrderUserGraphQLResource user, String cartId,
                                        String addressId, String discountCode, String status, String deliveryStatus,
                                        Double totalAmount, String clientSecret, List<OrderItemGraphQLResource> items,
-                                       Instant createdAt, Instant paidAt) {
+                                       Instant createdAt, Instant updatedAt, Instant paidAt) {
     }
 
     public record OrderItemGraphQLResource(String id, String orderId, String productId, Double priceAtPurchase, Integer quantity) {
@@ -25,16 +25,27 @@ public class OrderGraphQLMapper {
     }
 
     public static OrderGraphQLResource toResource(Order order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+
         return new OrderGraphQLResource(
-                order.getId().toString(), order.getUserId().toString(), null,
+                order.getId() != null ? order.getId().toString() : null,
+                order.getUserId() != null ? order.getUserId().toString() : null,
+                null,
                 order.getCartId() != null ? order.getCartId().toString() : null,
-                order.getAddressId().toString(),
+                order.getAddressId() != null ? order.getAddressId().toString() : null,
                 order.getDiscount() != null ? order.getDiscount().getCode() : null,
-                order.getStatus().getName(),
+                order.getStatus() != null ? order.getStatus().getName() : null,
                 order.getDeliveryStatus() != null ? order.getDeliveryStatus().getName() : null,
-                order.getTotalAmount().doubleValue(), order.getStripeClientSecret(),
-                order.getItems().stream().map(OrderGraphQLMapper::toResource).collect(Collectors.toList()),
-                order.getCreatedAt(), order.getPaidAt()
+                order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0,
+                order.getStripeClientSecret(),
+                order.getItems() != null ? order.getItems().stream()
+                        .map(OrderGraphQLMapper::toResource)
+                        .collect(Collectors.toList()) : List.of(),
+                order.getCreatedAt(),
+                order.getUpdatedAt(),
+                order.getPaidAt()
         );
     }
 

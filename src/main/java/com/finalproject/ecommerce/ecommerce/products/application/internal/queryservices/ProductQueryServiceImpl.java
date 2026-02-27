@@ -25,13 +25,11 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     }
 
     @Override
-    @Cacheable(value = "productById", key = "#query.productId()")
     public Optional<Product> handle(GetProductByIdQuery query) {
         return productRepository.findById(query.productId());
     }
 
     @Override
-    //@Cacheable(value = "activeProducts", key = "'active'")
     public List<Product> handle(GetActiveProductsQuery query) {
         return productRepository.findByIsDeletedAndIsActive(false, true);
     }

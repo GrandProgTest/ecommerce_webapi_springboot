@@ -11,7 +11,7 @@ type Order implements AuditableEntity {
     clientSecret: String
     items: [OrderItem!]!
     createdAt: DateTime!
-    updatedAt: DateTime!
+    updatedAt: DateTime
     paidAt: DateTime
 }
 

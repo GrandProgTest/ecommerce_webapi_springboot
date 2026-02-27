@@ -77,7 +77,6 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "productById", key = "#command.productId()"),
             @CacheEvict(value = "allProducts", allEntries = true),
             @CacheEvict(value = "activeProducts", allEntries = true),
             @CacheEvict(value = "productsPage", allEntries = true),
@@ -109,7 +108,6 @@ public class ProductCommandServiceImpl implements ProductCommandService {
 
     @Override
     @Caching(evict = {
-            @CacheEvict(value = "productById", key = "#command.productId()"),
             @CacheEvict(value = "allProducts", allEntries = true),
             @CacheEvict(value = "activeProducts", allEntries = true),
             @CacheEvict(value = "productsPage", allEntries = true),

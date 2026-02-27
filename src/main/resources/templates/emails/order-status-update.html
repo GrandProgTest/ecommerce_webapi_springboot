@@ -15,25 +15,6 @@
             <h2 style="margin-top: 0; color: #4CAF50;">Current Status: {{orderStatus}}</h2>
             <p style="margin: 0; font-size: 14px; color: #666;">{{statusMessage}}</p>
         </div>
-
-        {{#if trackingInfo}}
-        <div style="background-color: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 14px;">
-                <strong>📦 Tracking Information:</strong><br>
-                {{trackingInfo}}
-            </p>
-        </div>
-        {{/if}}
-
-        {{#if estimatedDelivery}}
-        <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 14px;">
-                <strong>📅 Estimated Delivery:</strong><br>
-                {{estimatedDelivery}}
-            </p>
-        </div>
-        {{/if}}
-
         <div style="margin: 30px 0; text-align: center;">
             <a href="{{orderUrl}}"
                style="background-color: #4CAF50; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">

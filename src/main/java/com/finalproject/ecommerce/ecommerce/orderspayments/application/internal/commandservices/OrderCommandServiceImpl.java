@@ -363,7 +363,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             case DELIVERED -> "Your order has been delivered! We hope you enjoy your purchase.";
         };
 
-        sendOrderStatusNotification(savedOrder, message);
+        sendDeliveryStatusNotification(savedOrder, command.newDeliveryStatus().name(), message);
 
         return savedOrder;
     }
@@ -435,6 +435,39 @@ public class OrderCommandServiceImpl implements OrderCommandService {
         }
     }
 
+    private void sendDeliveryStatusNotification(Order order, String deliveryStatus, String statusMessage) {
+        try {
+            String userEmail = iamContextFacade.getUserEmail(order.getUserId());
+            if (userEmail == null || userEmail.isBlank()) {
+                log.warn("No email found for user {} - skipping delivery status notification for order {}",
+                        order.getUserId(), order.getId());
+                return;
+            }
+
+            String username = iamContextFacade.getUsernameById(order.getUserId());
+
+            String totalAmount = String.format("%.2f", order.getTotalAmount());
+            String orderDate = order.getCreatedAt().toString();
+
+            // Send delivery status instead of order status
+            notificationContextFacade.sendOrderStatusUpdate(
+                    userEmail,
+                    username != null ? username : "Customer",
+                    order.getId(),
+                    deliveryStatus,  // Use delivery status (PACKED, SHIPPED, IN_TRANSIT, DELIVERED)
+                    statusMessage,
+                    totalAmount,
+                    orderDate
+            );
+
+            log.info("Delivery status notification sent for order {} to user {} with status {}",
+                    order.getId(), order.getUserId(), deliveryStatus);
+
+        } catch (Exception e) {
+            log.error("Failed to send delivery status notification for order {}: {}",
+                    order.getId(), e.getMessage());
+        }
+    }
 
     private PaymentIntentStatuses mapStripeStatusToEnum(String stripeStatus) {
         if (stripeStatus == null) {
