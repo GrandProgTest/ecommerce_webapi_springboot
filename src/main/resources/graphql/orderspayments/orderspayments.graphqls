@@ -15,6 +15,17 @@ type Order implements AuditableEntity {
     paidAt: DateTime
 }
 
+type Discount {
+    id: ID!
+    code: String!
+    percentage: Int!
+    startDate: DateTime!
+    endDate: DateTime!
+    isActive: Boolean!
+    isValid: Boolean!
+    createdAt: DateTime!
+}
+
 type OrderUser {
     id: ID!
     username: String!
@@ -44,6 +55,7 @@ enum DeliveryStatus {
 
 # Orders & Payments Queries
 extend type Query {
+    # Order Queries
     getOrderById(id: ID!): Order
     getUserOrders(
         userId: ID!
@@ -63,11 +75,37 @@ extend type Query {
         dateFrom: String
         dateTo: String
     ): [Order!]!
+
+    # Discount Queries
+    getAllDiscounts: [Discount!]!
+    getDiscountByCode(code: String!): Discount
+    getDiscountById(id: ID!): Discount
 }
 
 extend type Mutation {
+    # Order Mutations
     createOrderFromCart(userId: ID!, cartId: ID!, addressId: ID!, discountCode: String): Order!
     cancelOrder(orderId: ID!): Order!
     updateOrderDeliveryStatus(orderId: ID!, deliveryStatus: String!): Order!
     confirmPayment(orderId: ID!, paymentMethodId: String = "pm_card_visa"): Order!
+
+    # Discount Mutations
+    createDiscount(input: CreateDiscountInput!): Discount!
+    toggleDiscountStatus(discountId: ID!): ToggleDiscountStatusResponse!
+}
+
+# Input types
+input CreateDiscountInput {
+    code: String!
+    percentage: Int!
+    startDate: DateTime!
+    endDate: DateTime!
+}
+
+# Response types
+type ToggleDiscountStatusResponse {
+    discountId: ID!
+    code: String!
+    isActive: Boolean!
+    message: String!
 }

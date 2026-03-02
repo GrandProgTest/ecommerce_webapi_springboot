@@ -26,11 +26,11 @@ public class CategoryCommandServiceImpl implements CategoryCommandService {
         if (categoryRepository.existsByName(command.name())) throw new DuplicateCategoryException(command.name());
         var category = new Category(command.name());
         try {
-            categoryRepository.save(category);
+            var savedCategory = categoryRepository.save(category);
+            return savedCategory.getId();
         } catch (Exception e) {
             throw new IllegalArgumentException("Error saving category: %s".formatted(e.getMessage()));
         }
-        return category.getId();
     }
 
     @Override

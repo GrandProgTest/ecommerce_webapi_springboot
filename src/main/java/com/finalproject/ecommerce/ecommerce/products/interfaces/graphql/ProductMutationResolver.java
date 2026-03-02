@@ -36,6 +36,15 @@ public class ProductMutationResolver {
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
+    public ProductGraphQLResource updateProduct(@Argument Long productId, @Argument UpdateProductGraphQLInput input) {
+        var command = ProductGraphQLMapper.toUpdateProductCommand(productId, input);
+        var updatedProduct = productCommandService.handle(command)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+        return ProductGraphQLMapper.toResource(updatedProduct);
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('MANAGER')")
     public CategoryGraphQLResource createCategory(@Argument CreateCategoryGraphQLInput input) {
         var command = ProductGraphQLMapper.toCreateCategoryCommand(input);
         Long categoryId = categoryCommandService.handle(command);
@@ -46,10 +55,28 @@ public class ProductMutationResolver {
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
+    public ProductGraphQLResource assignCategoryToProduct(@Argument Long productId, @Argument Long categoryId) {
+        var command = ProductGraphQLMapper.toAssignCategoryCommand(productId, categoryId);
+        var updatedProduct = productCommandService.handle(command)
+                .orElseThrow(() -> new ProductNotFoundException(productId));
+        return ProductGraphQLMapper.toResource(updatedProduct);
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('MANAGER')")
     public DeleteProductGraphQLResponse deleteProduct(@Argument Long id) {
         var command = ProductGraphQLMapper.toDeleteCommand(id);
         productCommandService.handle(command);
         return new DeleteProductGraphQLResponse(true, "Product deleted successfully");
+    }
+
+    @MutationMapping
+    @PreAuthorize("hasRole('MANAGER')")
+    public ProductGraphQLResource softDeleteProduct(@Argument Long id) {
+        var command = ProductGraphQLMapper.toSoftDeleteCommand(id);
+        var product = productCommandService.handle(command)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+        return ProductGraphQLMapper.toResource(product);
     }
 
     @MutationMapping
@@ -72,17 +99,7 @@ public class ProductMutationResolver {
 
     @MutationMapping
     @PreAuthorize("isAuthenticated()")
-    public LikeProductGraphQLResponse likeProduct(@Argument Long productId, @Argument Long userId) {
-        var command = ProductGraphQLMapper.toLikeCommand(userId, productId);
-        boolean isLiked = productCommandService.handle(command);
-        var product = productQueryService.handle(new GetProductByIdQuery(productId))
-                .orElseThrow(() -> new ProductNotFoundException(productId));
-        return ProductGraphQLMapper.toLikeResponse(product, isLiked);
-    }
-
-    @MutationMapping
-    @PreAuthorize("isAuthenticated()")
-    public LikeProductGraphQLResponse unlikeProduct(@Argument Long productId, @Argument Long userId) {
+    public LikeProductGraphQLResponse toggleProductLike(@Argument Long productId, @Argument Long userId) {
         var command = ProductGraphQLMapper.toLikeCommand(userId, productId);
         boolean isLiked = productCommandService.handle(command);
         var product = productQueryService.handle(new GetProductByIdQuery(productId))

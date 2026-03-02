@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories;
+package com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.specifications;
 
 import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Product;
 import jakarta.persistence.criteria.Predicate;
