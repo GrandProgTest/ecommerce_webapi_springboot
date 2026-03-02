@@ -454,7 +454,7 @@ public class OrderCommandServiceImpl implements OrderCommandService {
                     userEmail,
                     username != null ? username : "Customer",
                     order.getId(),
-                    deliveryStatus,  // Use delivery status (PACKED, SHIPPED, IN_TRANSIT, DELIVERED)
+                    deliveryStatus,
                     statusMessage,
                     totalAmount,
                     orderDate
