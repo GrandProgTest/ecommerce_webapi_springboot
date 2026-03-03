@@ -147,14 +147,4 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
             );
         }
     }
-
-
-    private void validateMaxImages(Long productId) {
-        int currentImageCount = productImageRepository.findByProduct_Id(productId).size();
-        if (currentImageCount >= MAX_IMAGES_PER_PRODUCT) {
-            log.warn("Maximum images exceeded for product {}: current={}, max={}",
-                    productId, currentImageCount, MAX_IMAGES_PER_PRODUCT);
-            throw new MaximumImagesExceededException(productId, currentImageCount, MAX_IMAGES_PER_PRODUCT);
-        }
-    }
 }
