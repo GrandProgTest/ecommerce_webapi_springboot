@@ -11,6 +11,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductImag
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductImageRepository;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +42,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
 
     @Override
     @Transactional
+    @CacheEvict(value = {"allProducts", "activeProducts", "productsPage", "productsPageGraphQL", "productsByCategory"}, allEntries = true)
     public List<ProductImage> uploadMultipleProductImages(UploadMultipleProductImagesCommand command) {
         List<MultipartFile> files = command.imageFiles();
         Long productId = command.productId();
@@ -102,6 +104,7 @@ public class ProductImageCommandServiceImpl implements ProductImageCommandServic
     }
 
     @Override
+    @CacheEvict(value = {"allProducts", "activeProducts", "productsPage", "productsPageGraphQL", "productsByCategory"}, allEntries = true)
     public void deleteProductImage(DeleteProductImageCommand command) {
         ProductImage productImage = productImageRepository.findById(command.imageId())
                 .orElseThrow(() -> new ProductImageNotFoundException(command.imageId()));

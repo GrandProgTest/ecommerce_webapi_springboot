@@ -22,6 +22,8 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.param.PaymentIntentConfirmParams;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,6 +69,15 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true),
+            @CacheEvict(value = "productById", allEntries = true),
+            @CacheEvict(value = "productsByIds", allEntries = true)
+    })
     public Order handle(CreateOrderFromCartCommand command) {
         iamContextFacade.validateUserCanAccessResource(command.userId());
 
@@ -161,6 +172,15 @@ public class OrderCommandServiceImpl implements OrderCommandService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "allProducts", allEntries = true),
+            @CacheEvict(value = "activeProducts", allEntries = true),
+            @CacheEvict(value = "productsPage", allEntries = true),
+            @CacheEvict(value = "productsPageGraphQL", allEntries = true),
+            @CacheEvict(value = "productsByCategory", allEntries = true),
+            @CacheEvict(value = "productById", allEntries = true),
+            @CacheEvict(value = "productsByIds", allEntries = true)
+    })
     public Order handle(CancelOrderCommand command) {
         Order order = orderRepository.findById(command.orderId()).orElseThrow(() -> new OrderNotFoundException("Order not found with ID: " + command.orderId()));
 
