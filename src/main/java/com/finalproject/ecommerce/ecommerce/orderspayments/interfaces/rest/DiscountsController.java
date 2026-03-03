@@ -35,7 +35,8 @@ public class DiscountsController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Create discount", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<DiscountResource> createDiscount(@RequestBody CreateDiscountResource resource) {
         CreateDiscountCommand command = DiscountRestMapper.toCreateCommand(resource);
         Discount discount = discountCommandService.handle(command);
@@ -43,14 +44,16 @@ public class DiscountsController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Get all discounts", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<List<DiscountResource>> getAllDiscounts() {
         List<Discount> discounts = discountQueryService.handle(new GetAllDiscountsQuery());
         return ResponseEntity.ok(DiscountRestMapper.toResourceList(discounts));
     }
 
     @GetMapping("/code/{code}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Get discount by code", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<DiscountResource> getDiscountByCode(@PathVariable String code) {
         return discountQueryService.handle(new GetDiscountByCodeQuery(code))
                 .map(discount -> ResponseEntity.ok(DiscountRestMapper.toResource(discount)))
@@ -58,8 +61,8 @@ public class DiscountsController {
     }
 
     @PatchMapping("/{discountId}/toggle-activate")
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "Toggle discount status (activate/deactivate)", description = "Activate or deactivate a discount code. Only managers can toggle discount status.")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Toggle discount status (activate/deactivate)", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<DiscountRestMapper.ToggleDiscountStatusResponse> toggleDiscountStatus(@PathVariable Long discountId) {
         var command = DiscountRestMapper.toToggleCommand(discountId);
         boolean isActive = discountCommandService.handle(command);

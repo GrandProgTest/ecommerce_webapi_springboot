@@ -15,6 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.Map;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -32,8 +33,8 @@ public class OrdersController {
     }
 
     @PostMapping("/{userId}")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Create order (checkout)")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Create order (checkout)", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<OrderResource> createOrder(@PathVariable Long userId, @RequestBody CreateOrderResource resource) {
         var command = OrderRestMapper.toCreateCommand(userId, resource);
         var order = orderCommandService.handle(command);
@@ -41,8 +42,8 @@ public class OrdersController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "Get all orders with pagination and filtering (Manager)")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Get all orders with pagination and filtering (Manager)", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<PaginatedOrderResponse> getAllOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -60,8 +61,8 @@ public class OrdersController {
     }
 
     @GetMapping("/user/{userId}")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Get user orders with pagination and sorting")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Get user orders with pagination and sorting", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<PaginatedOrderResponse> getUserOrders(
             @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
@@ -75,27 +76,27 @@ public class OrdersController {
     }
 
     @PatchMapping("/{orderId}/delivery-status")
-    @PreAuthorize("hasRole('ROLE_MANAGER')")
-    @Operation(summary = "Update order delivery status")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Update order delivery status", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<OrderResource> updateOrderDeliveryStatus(@PathVariable Long orderId, @RequestBody UpdateOrderDeliveryStatusResource resource) {
         var command = OrderRestMapper.toUpdateDeliveryCommand(orderId, resource);
         return ResponseEntity.ok(OrderRestMapper.toResource(orderCommandService.handle(command)));
     }
 
     @DeleteMapping("/{orderId}/cancel")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Cancel order")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Cancel order", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<OrderResource> cancelOrder(@PathVariable Long orderId) {
         return ResponseEntity.ok(OrderRestMapper.toResource(orderCommandService.handle(new CancelOrderCommand(orderId))));
     }
 
     @PostMapping("/{orderId}/confirm-payment")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(summary = "Confirm payment for order (Backend only)")
+    @PreAuthorize("denyAll()")
+    @Operation(summary = "[DISABLED] Confirm payment for order (Backend only)", description = "This REST endpoint is disabled. Please use GraphQL API instead")
     public ResponseEntity<?> confirmPayment(@PathVariable Long orderId, @RequestBody(required = false) ConfirmPaymentResource resource) {
         var command = OrderRestMapper.toConfirmPaymentCommand(orderId, resource);
         var order = orderCommandService.handle(command);
-        return ResponseEntity.ok(java.util.Map.of(
+        return ResponseEntity.ok(Map.of(
                 "message", "Payment processed. Check order status.",
                 "order", OrderRestMapper.toResource(order),
                 "note", "If status is still PENDING, the payment may require additional authentication."

@@ -449,12 +449,11 @@ public class OrderCommandServiceImpl implements OrderCommandService {
             String totalAmount = String.format("%.2f", order.getTotalAmount());
             String orderDate = order.getCreatedAt().toString();
 
-            // Send delivery status instead of order status
             notificationContextFacade.sendOrderStatusUpdate(
                     userEmail,
                     username != null ? username : "Customer",
                     order.getId(),
-                    deliveryStatus,  // Use delivery status (PACKED, SHIPPED, IN_TRANSIT, DELIVERED)
+                    deliveryStatus,
                     statusMessage,
                     totalAmount,
                     orderDate

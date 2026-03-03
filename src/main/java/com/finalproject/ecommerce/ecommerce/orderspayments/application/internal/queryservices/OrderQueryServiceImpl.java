@@ -5,13 +5,12 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregat
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.OrderQueryService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderRepository;
-import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories.OrderSpecification;
+import com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.specifications.OrderSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 

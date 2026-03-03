@@ -41,6 +41,9 @@ public class ProductGraphQLMapper {
                                             List<Long> categoryIds) {
     }
 
+    public record UpdateProductGraphQLInput(String name, String description, Double price, Integer stock) {
+    }
+
     public record CreateCategoryGraphQLInput(String name) {
     }
 
@@ -97,12 +100,27 @@ public class ProductGraphQLMapper {
         );
     }
 
+    public static UpdateProductCommand toUpdateProductCommand(Long productId, UpdateProductGraphQLInput input) {
+        return new UpdateProductCommand(
+                productId, input.name(), input.description(),
+                BigDecimal.valueOf(input.price()), input.stock()
+        );
+    }
+
     public static CreateCategoryCommand toCreateCategoryCommand(CreateCategoryGraphQLInput input) {
         return new CreateCategoryCommand(input.name());
     }
 
+    public static AssignCategoryToProductCommand toAssignCategoryCommand(Long productId, Long categoryId) {
+        return new AssignCategoryToProductCommand(productId, categoryId);
+    }
+
     public static DeleteProductCommand toDeleteCommand(Long id) {
         return new DeleteProductCommand(id);
+    }
+
+    public static SoftDeleteProductCommand toSoftDeleteCommand(Long id) {
+        return new SoftDeleteProductCommand(id);
     }
 
     public static ActivateProductCommand toActivateCommand(Long id) {
