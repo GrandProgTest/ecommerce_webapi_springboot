@@ -5,7 +5,7 @@ import com.finalproject.ecommerce.ecommerce.products.domain.model.aggregates.Pro
 import com.finalproject.ecommerce.ecommerce.products.domain.model.queries.*;
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
 import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductRepository;
-import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.repositories.ProductSpecification;
+import com.finalproject.ecommerce.ecommerce.products.infrastructure.persistence.jpa.specifications.ProductSpecification;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -57,8 +57,6 @@ public class ProductQueryServiceImpl implements ProductQueryService {
     public ProductPageResponse handle(GetProductsWithPaginationQuery query, boolean isManager) {
         Boolean activeFilter = isManager ? query.isActive() : Boolean.TRUE;
 
-        System.out.println("DB WAS HIT 🚨");
-
         Sort sort = query.sortDirection().equalsIgnoreCase("desc")
                 ? Sort.by(query.sortBy()).descending()
                 : Sort.by(query.sortBy()).ascending();
@@ -70,14 +68,6 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 pageable
         );
 
-        List<Long> productIds = productPage.getContent().stream()
-                .map(Product::getId)
-                .toList();
-
-        if (!productIds.isEmpty()) {
-            productRepository.findDistinctByIdIn(productIds);
-            productRepository.findByIdIn(productIds);
-        }
 
         var products = productPage.getContent().stream()
                 .map(ProductResponse::fromEntity)
@@ -119,14 +109,6 @@ public class ProductQueryServiceImpl implements ProductQueryService {
                 pageable
         );
 
-        List<Long> productIds = productPage.getContent().stream()
-                .map(Product::getId)
-                .toList();
-
-        if (!productIds.isEmpty()) {
-            productRepository.findDistinctByIdIn(productIds);
-            productRepository.findByIdIn(productIds);
-        }
 
         var products = productPage.getContent().stream()
                 .map(ProductResponseGraphQL::fromEntity)

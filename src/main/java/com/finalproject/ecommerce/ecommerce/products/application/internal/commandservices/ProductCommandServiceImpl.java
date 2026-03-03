@@ -68,11 +68,11 @@ public class ProductCommandServiceImpl implements ProductCommandService {
         }
 
         try {
-            productRepository.save(product);
+            var savedProduct = productRepository.save(product);
+            return savedProduct.getId();
         } catch (Exception e) {
             throw new IllegalArgumentException("Error saving product: %s".formatted(e.getMessage()));
         }
-        return product.getId();
     }
 
     @Override

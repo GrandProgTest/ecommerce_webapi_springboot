@@ -1,4 +1,4 @@
-package com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.repositories;
+package com.finalproject.ecommerce.ecommerce.orderspayments.infrastructure.persistence.jpa.specifications;
 
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.aggregates.Order;
 import jakarta.persistence.criteria.Predicate;
