@@ -9,7 +9,6 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.Order
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper.OrderGraphQLResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.OrderGraphQLMapper.OrderUserGraphQLResource;
-import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
@@ -21,11 +20,15 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
-@RequiredArgsConstructor
 public class OrderQueryResolver {
 
     private final OrderQueryService orderQueryService;
     private final UserQueryService userQueryService;
+
+    public OrderQueryResolver (OrderQueryService orderQueryService, UserQueryService userQueryService) {
+        this.orderQueryService = orderQueryService;
+        this.userQueryService = userQueryService;
+    }
 
     @QueryMapping
     @PreAuthorize("isAuthenticated()")

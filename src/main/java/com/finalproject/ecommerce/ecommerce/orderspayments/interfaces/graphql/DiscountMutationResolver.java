@@ -8,18 +8,21 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.ma
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.DiscountGraphQLMapper.CreateDiscountGraphQLInput;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.DiscountGraphQLMapper.DiscountGraphQLResource;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.DiscountGraphQLMapper.ToggleDiscountStatusGraphQLResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 @Controller
-@RequiredArgsConstructor
 public class DiscountMutationResolver {
 
     private final DiscountCommandService discountCommandService;
     private final DiscountQueryService discountQueryService;
+
+    public DiscountMutationResolver(DiscountCommandService discountCommandService, DiscountQueryService discountQueryService) {
+        this.discountCommandService = discountCommandService;
+        this.discountQueryService = discountQueryService;
+    }
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")

@@ -8,17 +8,20 @@ import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQuer
 import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper.*;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.InvalidPageSizeException;
-import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
 @Controller
-@RequiredArgsConstructor
 public class ProductQueryResolver {
 
     private final ProductQueryService productQueryService;
     private final IamContextFacade iamContextFacade;
+
+    public ProductQueryResolver(ProductQueryService productQueryService, IamContextFacade iamContextFacade) {
+        this.productQueryService = productQueryService;
+        this.iamContextFacade = iamContextFacade;
+    }
 
     @QueryMapping(name = "getProductById")
     public ProductGraphQLResource getProductById(@Argument Long id) {

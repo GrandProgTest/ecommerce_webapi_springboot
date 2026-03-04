@@ -12,7 +12,6 @@ import com.finalproject.ecommerce.ecommerce.iam.domain.services.AddressCommandSe
 import com.finalproject.ecommerce.ecommerce.iam.domain.services.PermissionValidationService;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.AddressRepository;
 import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.repositories.UserRepository;
-import com.finalproject.ecommerce.ecommerce.iam.interfaces.acl.IamContextFacade;
 import com.finalproject.ecommerce.ecommerce.shared.domain.exceptions.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -35,7 +34,7 @@ public class AddressCommandServiceImpl implements AddressCommandService {
     public Address handle(CreateAddressCommand command, Long userId) {
         permissionValidationService.validateUserCanAccessResource(userId);
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with id " + userId + " not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         if (command.isDefault() != null && command.isDefault()) {
             addressRepository.findByUser(user).forEach(address -> {
@@ -52,7 +51,7 @@ public class AddressCommandServiceImpl implements AddressCommandService {
     public Optional<Address> handle(UpdateAddressCommand command, Long userId) {
         permissionValidationService.validateUserCanAccessResource(userId);
 
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User with id " + userId + " not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User", userId));
 
         Optional<Address> addressOptional = addressRepository.findById(command.addressId());
 
@@ -75,7 +74,7 @@ public class AddressCommandServiceImpl implements AddressCommandService {
     public void handle(DeleteAddressCommand command) {
         permissionValidationService.validateUserCanAccessResource(command.userId());
 
-        User user = userRepository.findById(command.userId()).orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " not found"));
+        User user = userRepository.findById(command.userId()).orElseThrow(() -> new ResourceNotFoundException("User", command.userId()));
 
         Optional<Address> addressOptional = addressRepository.findById(command.addressId());
 
@@ -96,7 +95,7 @@ public class AddressCommandServiceImpl implements AddressCommandService {
     public Optional<Address> handle(SetDefaultAddressCommand command) {
         permissionValidationService.validateUserCanAccessResource(command.userId());
 
-        User user = userRepository.findById(command.userId()).orElseThrow(() -> new ResourceNotFoundException("User with id " + command.userId() + " not found"));
+        User user = userRepository.findById(command.userId()).orElseThrow(() -> new ResourceNotFoundException("User", command.userId()));
 
         Optional<Address> addressOptional = addressRepository.findById(command.addressId());
 
