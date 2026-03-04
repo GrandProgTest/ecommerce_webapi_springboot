@@ -27,6 +27,43 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<sonar.organization>your-organization</sonar.organization>
+		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.projectKey>ecommerce-webapi-springboot</sonar.projectKey>
+		<sonar.projectName>E-commerce Web API Spring Boot</sonar.projectName>
+		<sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+		<sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+		<sonar.jacoco.reportPath>${project.basedir}/target/jacoco.exec</sonar.jacoco.reportPath>
+		<sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+		<sonar.language>java</sonar.language>
+		<sonar.sources>src/main/java</sonar.sources>
+		<sonar.tests>src/test/java</sonar.tests>
+		<sonar.exclusions>
+			**/dto/**,
+			**/resources/**,
+			**/config/**,
+			**/configuration/**,
+			**/properties/**,
+			**/EcommerceApplication.java,
+			**/graphql/types/**,
+			**/exceptions/*Exception.java,
+			**/interfaces/rest/**Controller.java,
+			**/interfaces/graphql/**Resolver.java,
+			**/interfaces/rest/mapper/**,
+			**/interfaces/graphql/mapper/**,
+			**/infrastructure/external/**,
+			**/infrastructure/payment/**,
+			**/infrastructure/tokens/**,
+			**/infrastructure/hashing/**,
+			**/infrastructure/authorization/sfs/**,
+			**/infrastructure/email/**,
+			**/infrastructure/templates/**,
+			**/infrastructure/cache/**,
+			**/infrastructure/ratelimit/**,
+			**/application/acl/services/**,
+			**/application/internal/eventhandlers/**,
+			**/application/internal/validatorservices/**
+		</sonar.exclusions>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -230,6 +267,11 @@
 						<exclude>**/application/internal/validatorservices/**</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>4.0.0.4121</version>
 			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

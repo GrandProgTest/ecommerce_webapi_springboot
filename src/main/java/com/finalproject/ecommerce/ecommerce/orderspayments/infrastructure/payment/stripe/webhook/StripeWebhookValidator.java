@@ -9,7 +9,6 @@ import com.stripe.model.EventDataObjectDeserializer;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.StripeObject;
 import com.stripe.net.Webhook;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -18,10 +17,13 @@ import java.util.Optional;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class StripeWebhookValidator {
 
     private final StripeProperties stripeProperties;
+
+    public StripeWebhookValidator(StripeProperties stripeProperties) {
+        this.stripeProperties = stripeProperties;
+    }
 
     public Optional<StripeWebhookEventResponse> validateAndParseWebhook(String payload, String signature) {
         Stripe.apiKey = stripeProperties.getApi().getSecretKey();

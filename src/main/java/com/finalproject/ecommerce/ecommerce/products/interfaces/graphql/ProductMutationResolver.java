@@ -9,20 +9,25 @@ import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductComm
 import com.finalproject.ecommerce.ecommerce.products.domain.services.ProductQueryService;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper;
 import com.finalproject.ecommerce.ecommerce.products.interfaces.graphql.mapper.ProductGraphQLMapper.*;
-import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 
 @Controller
-@RequiredArgsConstructor
 public class ProductMutationResolver {
 
     private final ProductCommandService productCommandService;
     private final ProductQueryService productQueryService;
     private final CategoryCommandService categoryCommandService;
     private final CategoryQueryService categoryQueryService;
+
+    public ProductMutationResolver(ProductCommandService productCommandService, ProductQueryService productQueryService, CategoryCommandService categoryCommandService, CategoryQueryService categoryQueryService) {
+        this.productCommandService = productCommandService;
+        this.productQueryService = productQueryService;
+        this.categoryCommandService = categoryCommandService;
+        this.categoryQueryService = categoryQueryService;
+    }
 
     @MutationMapping
     @PreAuthorize("hasRole('MANAGER')")
