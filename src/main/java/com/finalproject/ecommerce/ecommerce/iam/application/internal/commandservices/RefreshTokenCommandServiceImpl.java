@@ -13,10 +13,10 @@ import com.finalproject.ecommerce.ecommerce.iam.infrastructure.persistence.jpa.r
 import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.JwtProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.annotation.Resource;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -40,15 +40,19 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final JwtProperties jwtProperties;
+    private final RefreshTokenCommandService self;
 
-    @Resource
-    private RefreshTokenCommandService refreshTokenCommandService;
-
-    public RefreshTokenCommandServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, TokenService tokenService, JwtProperties jwtProperties) {
+    public RefreshTokenCommandServiceImpl(
+            RefreshTokenRepository refreshTokenRepository,
+            UserRepository userRepository,
+            TokenService tokenService,
+            JwtProperties jwtProperties,
+            @Lazy RefreshTokenCommandService self) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.userRepository = userRepository;
         this.tokenService = tokenService;
         this.jwtProperties = jwtProperties;
+        this.self = self;
     }
 
     @Override
@@ -111,7 +115,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
 
         String newAccessToken = tokenService.generateToken(user.getUsername());
 
-        String newRefreshToken = refreshTokenCommandService.createRefreshToken(user);
+        String newRefreshToken = self.createRefreshToken(user);
 
         log.info("Token refresh successful for user: {}", user.getUsername());
 

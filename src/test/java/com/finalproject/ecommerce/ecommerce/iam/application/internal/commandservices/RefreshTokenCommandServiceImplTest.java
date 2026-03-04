@@ -18,7 +18,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -40,13 +39,28 @@ class RefreshTokenCommandServiceImplTest {
     @Mock private TokenService tokenService;
     @Mock private JwtProperties jwtProperties;
 
-    @InjectMocks private RefreshTokenCommandServiceImpl service;
+    private RefreshTokenCommandServiceImpl service;
 
     private User user;
     private JwtProperties.RefreshToken refreshTokenProps;
 
     @BeforeEach
     void setUp() {
+        service = new RefreshTokenCommandServiceImpl(
+                refreshTokenRepository,
+                userRepository,
+                tokenService,
+                jwtProperties,
+                null
+        );
+        try {
+            var selfField = RefreshTokenCommandServiceImpl.class.getDeclaredField("self");
+            selfField.setAccessible(true);
+            selfField.set(service, service);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to set self-reference", e);
+        }
+
         user = new User("testuser", "test@example.com", "pass12345", new Role(Roles.ROLE_CLIENT));
         refreshTokenProps = new JwtProperties.RefreshToken();
         refreshTokenProps.setExpirationDays(7);
@@ -59,6 +73,7 @@ class RefreshTokenCommandServiceImplTest {
         @Test
         @DisplayName("should create refresh token and revoke previous ones")
         void shouldCreateToken() {
+
             when(refreshTokenRepository.findByUserAndRevoked(user, false)).thenReturn(List.of());
             when(jwtProperties.getRefreshToken()).thenReturn(refreshTokenProps);
             when(refreshTokenRepository.save(any(RefreshToken.class))).thenAnswer(i -> i.getArgument(0));
