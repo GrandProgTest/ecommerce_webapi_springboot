@@ -39,7 +39,7 @@ public class AddressQueryServiceImpl implements AddressQueryService {
     public List<Address> handle(GetAddressesByUserIdQuery query) {
         permissionValidationService.validateUserCanAccessResource(query.userId());
         User user = userRepository.findById(query.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + query.userId() + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", query.userId()));
         return addressRepository.findByUser(user);
     }
 
@@ -47,7 +47,7 @@ public class AddressQueryServiceImpl implements AddressQueryService {
     public Optional<Address> handle(GetDefaultAddressByUserIdQuery query) {
         permissionValidationService.validateUserCanAccessResource(query.userId());
         User user = userRepository.findById(query.userId())
-                .orElseThrow(() -> new ResourceNotFoundException("User with id " + query.userId() + " not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", query.userId()));
         return addressRepository.findByUserAndIsDefaultTrue(user);
     }
 }
