@@ -4,7 +4,6 @@ import com.finalproject.ecommerce.ecommerce.notifications.domain.exceptions.Emai
 import com.finalproject.ecommerce.ecommerce.shared.infrastructure.configuration.properties.EmailProperties;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,11 +14,15 @@ import java.util.Set;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class GmailEmailProvider implements EmailProvider {
 
     private final JavaMailSender mailSender;
     private final EmailProperties emailProperties;
+
+    public GmailEmailProvider(JavaMailSender mailSender, EmailProperties emailProperties) {
+        this.mailSender = mailSender;
+        this.emailProperties = emailProperties;
+    }
 
     @Override
     public boolean sendEmail(String to, String subject, String htmlBody) {

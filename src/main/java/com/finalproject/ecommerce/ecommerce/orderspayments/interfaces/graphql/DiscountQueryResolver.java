@@ -6,7 +6,6 @@ import com.finalproject.ecommerce.ecommerce.orderspayments.domain.model.queries.
 import com.finalproject.ecommerce.ecommerce.orderspayments.domain.services.DiscountQueryService;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.DiscountGraphQLMapper;
 import com.finalproject.ecommerce.ecommerce.orderspayments.interfaces.graphql.mapper.DiscountGraphQLMapper.DiscountGraphQLResource;
-import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,10 +15,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
-@RequiredArgsConstructor
 public class DiscountQueryResolver {
 
     private final DiscountQueryService discountQueryService;
+
+    public DiscountQueryResolver (DiscountQueryService discountQueryService) {
+        this.discountQueryService = discountQueryService;
+    }
 
     @QueryMapping
     @PreAuthorize("hasRole('MANAGER')")
