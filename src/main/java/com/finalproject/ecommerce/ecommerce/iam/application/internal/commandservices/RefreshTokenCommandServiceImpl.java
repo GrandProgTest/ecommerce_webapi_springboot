@@ -16,6 +16,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.annotation.Resource;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -38,6 +40,9 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final JwtProperties jwtProperties;
+
+    @Resource
+    private RefreshTokenCommandService refreshTokenCommandService;
 
     public RefreshTokenCommandServiceImpl(RefreshTokenRepository refreshTokenRepository, UserRepository userRepository, TokenService tokenService, JwtProperties jwtProperties) {
         this.refreshTokenRepository = refreshTokenRepository;
@@ -106,7 +111,7 @@ public class RefreshTokenCommandServiceImpl implements RefreshTokenCommandServic
 
         String newAccessToken = tokenService.generateToken(user.getUsername());
 
-        String newRefreshToken = createRefreshToken(user);
+        String newRefreshToken = refreshTokenCommandService.createRefreshToken(user);
 
         log.info("Token refresh successful for user: {}", user.getUsername());
 
